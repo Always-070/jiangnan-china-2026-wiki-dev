@@ -11,12 +11,12 @@ export default () => {
     base: `/${teamSlug}/`,
     plugins: [react()],
     server: {
-      host: "localhost",
+      host: "0.0.0.0",
       port: 6172,
       strictPort: true,
     },
     preview: {
-      host: "localhost",
+      host: "0.0.0.0",
       port: 6172,
       strictPort: true,
     },

@@ -42,8 +42,8 @@ export function Navbar() {
   return (
     <BootstrapNavbar expand="lg" className="bg-body-tertiary" fixed="top">
       <Container>
-        <BootstrapNavbar.Brand>
-          {import.meta.env.VITE_TEAM_NAME}
+        <BootstrapNavbar.Brand as={Link} to="/" className="brand-mark">
+          {import.meta.env.VITE_TEAM_NAME} {import.meta.env.VITE_TEAM_YEAR}
         </BootstrapNavbar.Brand>
         <BootstrapNavbar.Toggle aria-controls="basic-navbar-nav" />
         <BootstrapNavbar.Collapse id="basic-navbar-nav">

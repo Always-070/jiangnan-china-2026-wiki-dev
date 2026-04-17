@@ -44,7 +44,7 @@ const Pages: (Page | Folder)[] = [
     title: "Home",
     path: "/",
     component: Home,
-    lead: "Your iGEM Journey Begins Here! We wish you a successful and rewarding season!",
+    lead: "Drafting, design, and migration hub for Jiangnan-China 2026 before the official Team Wiki activation opens.",
   },
   {
     name: "Team",

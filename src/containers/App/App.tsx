@@ -1,7 +1,7 @@
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Route, Routes } from "react-router-dom";
-import { getPathMapping, stringToSlug } from "../../utils";
+import { Route, Routes, useLocation } from "react-router-dom";
+import { getPathMapping } from "../../utils";
 import { useEffect } from "react";
 import { Navbar } from "../../components/Navbar";
 import { Header } from "../../components/Header";
@@ -11,10 +11,8 @@ import { SectionNav } from "../../components/PageScaffold";
 
 const App = () => {
   const pathMapping = getPathMapping();
-  const currentPath =
-    location.pathname
-      .split(`${stringToSlug(import.meta.env.VITE_TEAM_NAME)}`)
-      .pop() || "/";
+  const location = useLocation();
+  const currentPath = location.pathname || "/";
 
   const currentPage = pathMapping[currentPath];
   const showStandardHeader =

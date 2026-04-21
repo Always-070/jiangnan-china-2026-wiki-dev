@@ -644,18 +644,18 @@ section[id] {
   color: var(--ink-soft);
 }
 
-.reference-list a,
-.container a,
-main a {
+.reference-list a:not(.intro-action),
+.container a:not(.intro-action),
+main a:not(.intro-action) {
   color: var(--brand);
 }
 
-.reference-list a:hover,
-.reference-list a:focus,
-.container a:hover,
-.container a:focus,
-main a:hover,
-main a:focus {
+.reference-list a:not(.intro-action):hover,
+.reference-list a:not(.intro-action):focus,
+.container a:not(.intro-action):hover,
+.container a:not(.intro-action):focus,
+main a:not(.intro-action):hover,
+main a:not(.intro-action):focus {
   color: var(--brand-deep);
 }
 

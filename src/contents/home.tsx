@@ -88,6 +88,14 @@ const readingTracks = [
     metric: "Stakeholders, responsibility, deployment",
     href: "/human-practices",
   },
+  {
+    status: "Best Wiki",
+    title: "How the wiki itself is designed to compete",
+    description:
+      "This reserved page keeps the team's wiki-quality checklist visible: story clarity, judge navigation, accessibility, reusable diagrams, and evidence traceability.",
+    metric: "Clarity, access, audit",
+    href: "/wiki-excellence",
+  },
 ];
 
 const proofAgenda = [
@@ -166,6 +174,7 @@ export function Home() {
             ctaLinks={[
               { label: "Open the project description", href: "/description", variant: "primary" },
               { label: "Jump to the roadmap", href: "#home-roadmap", variant: "secondary" },
+              { label: "Best Wiki audit", href: "/wiki-excellence", variant: "secondary" },
             ]}
             heroFigure={{
               label: "Project Arc",

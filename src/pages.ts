@@ -25,6 +25,7 @@ import {
   SafetyAndSecurity,
   Software,
   Sustainability,
+  WikiExcellence,
 } from "./contents";
 
 export interface PageDefinition {
@@ -81,6 +82,14 @@ const notebookAnchors: PageAnchor[] = [
   { id: "wet-lab", label: "Wet Lab" },
   { id: "dry-lab", label: "Dry Lab" },
   { id: "coordination", label: "Coordination" },
+  { id: "references", label: "References" },
+];
+
+const wikiExcellenceAnchors: PageAnchor[] = [
+  { id: "criteria", label: "Criteria" },
+  { id: "navigation", label: "Judge Path" },
+  { id: "audit", label: "Audit" },
+  { id: "handoff", label: "Handoff" },
   { id: "references", label: "References" },
 ];
 
@@ -162,6 +171,19 @@ const homeFigure: HeroFigure = {
   ],
 };
 
+const wikiExcellenceFigure: HeroFigure = {
+  label: "Best Wiki Readiness",
+  title: "Story clarity -> Navigation -> Accessibility -> Evidence traceability",
+  description:
+    "This page keeps wiki quality visible as a project deliverable, not just a final-week decoration task.",
+  items: [
+    "Make the project understandable within the first minute.",
+    "Keep judging pages reachable through obvious routes and anchors.",
+    "Preserve core explanations as real, accessible HTML text.",
+    "Tie claims back to results, notebook entries, attributions, and references.",
+  ],
+};
+
 const descriptionCtas: CallToAction[] = [
   { label: "Jump to design logic", href: "#design", variant: "primary" },
   { label: "See engineering page", href: "/engineering", variant: "secondary" },
@@ -185,6 +207,11 @@ const hpCtas: CallToAction[] = [
 const notebookCtas: CallToAction[] = [
   { label: "Jump to timeline", href: "#timeline", variant: "primary" },
   { label: "See coordination notes", href: "#coordination", variant: "secondary" },
+];
+
+const wikiExcellenceCtas: CallToAction[] = [
+  { label: "Open audit checklist", href: "#audit", variant: "primary" },
+  { label: "Back to homepage", href: "/", variant: "secondary" },
 ];
 
 const Pages: (PageDefinition | FolderDefinition)[] = [
@@ -271,6 +298,21 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         anchorSections: resultsAnchors,
         heroFigure: resultsFigure,
         ctaLinks: resultsCtas,
+      },
+      {
+        name: "Wiki Excellence",
+        title: "Best Wiki Readiness",
+        path: "/wiki-excellence",
+        component: WikiExcellence,
+        lead: "Reserve a dedicated page for Best Wiki preparation: story clarity, judge navigation, accessibility, visual consistency, and evidence traceability.",
+        summaryBullets: [
+          "Use this page as an internal audit board before the final wiki freeze.",
+          "Make page structure, routes, diagrams, and text accessibility visible to the whole team.",
+          "Show that the wiki is designed as a judging experience, not assembled as a static report.",
+        ],
+        anchorSections: wikiExcellenceAnchors,
+        heroFigure: wikiExcellenceFigure,
+        ctaLinks: wikiExcellenceCtas,
       },
       {
         name: "Contribution",

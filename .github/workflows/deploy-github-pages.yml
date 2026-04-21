@@ -36,6 +36,7 @@ jobs:
         run: yarn build
         env:
           VITE_BASE_PATH: /jiangnan-china-2026-wiki-dev/
+          VITE_ROUTER_MODE: hash
 
       - name: Add SPA fallback
         run: cp dist/index.html dist/404.html

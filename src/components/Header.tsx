@@ -1,18 +1,37 @@
+import type {
+  CallToAction,
+  HeroFigure,
+} from "./PageScaffold";
+import { PageIntro } from "./PageScaffold";
+
 interface HeaderProps {
   title: string;
   lead: string;
+  summaryBullets?: string[];
+  heroFigure?: HeroFigure;
+  ctaLinks?: CallToAction[];
 }
 
-export function Header({ title, lead }: HeaderProps) {
+export function Header({
+  title,
+  lead,
+  summaryBullets,
+  heroFigure,
+  ctaLinks,
+}: HeaderProps) {
   return (
-    <header className="bg-hero py-5 mb-5">
-      <div className="container h-100">
-        <div className="row h-100 align-items-center">
-          <div className="col-lg-12">
-            <h1 className="display-4 text-white mt-5 mb-2">{title}</h1>
-            <p className="lead mb-5 text-white-50">{lead}</p>
-          </div>
-        </div>
+    <header className="bg-hero page-hero-shell">
+      <div className="container">
+        <PageIntro
+          eyebrow="Jiangnan-China 2026"
+          title={title}
+          summary={lead}
+          bullets={summaryBullets}
+          heroFigure={heroFigure}
+          ctaLinks={ctaLinks}
+          tone="dark"
+          className="page-hero"
+        />
       </div>
     </header>
   );

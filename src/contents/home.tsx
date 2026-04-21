@@ -1,283 +1,293 @@
-import { Inspirations, InspirationLink } from "../components/Inspirations";
+import {
+  EvidenceGrid,
+  FlowDiagram,
+  MetricStrip,
+  PageIntro,
+  ReferenceBlock,
+  SectionNav,
+} from "../components/PageScaffold";
 
-const inspirationLinks: InspirationLink[] = [
-  { year: 2025, teamName: "Example", pageName: "" },
-  { year: 2024, teamName: "Heidelberg", pageName: "" },
-  { year: 2024, teamName: "Marburg", pageName: "" },
-  { year: 2024, teamName: "BNUZH-China", pageName: "" },
-  { year: 2024, teamName: "XMU-China", pageName: "" },
+const homeSections = [
+  { id: "home-roadmap", label: "Roadmap" },
+  { id: "home-tracks", label: "Modules" },
+  { id: "home-progress", label: "Proof Agenda" },
+  { id: "home-references", label: "References" },
 ];
 
-const architectureCards = [
+const sceneCards = [
   {
-    title: "Team",
-    summary: "Show the people, the support network, and clean attribution logic early.",
-    pages: ["Members", "Attributions"],
+    label: "Pressure",
+    title: "Steroid hormones matter, but current production is cumbersome",
+    text: "Traditional routes still rely heavily on plant or animal sterol feedstocks and multistep chemical or microbial transformations that are difficult to scale cleanly.",
   },
   {
-    title: "Project",
-    summary: "Build the main scientific story around problem framing, engineering, and results.",
-    pages: ["Description", "Engineering", "Results", "Contribution"],
+    label: "Breakthrough",
+    title: "Yeasts and fungi can build the steroid scaffold de novo",
+    text: "Instead of upgrading external sterols, engineered fungal hosts can turn simple carbon sources into sterol nuclei through the mevalonate pathway.",
   },
   {
-    title: "Wet Lab",
-    summary: "Keep experiments, protocols, notebook records, and safety material synchronized.",
-    pages: ["Experiments", "Notebook", "Measurement", "Plant", "Safety and Security"],
-  },
-  {
-    title: "Dry Lab",
-    summary: "Separate modeling, software, and hardware so each track can grow without collisions.",
-    pages: ["Model", "Software", "Hardware"],
-  },
-  {
-    title: "Engagement",
-    summary: "Connect human practices, education, entrepreneurship, and sustainability with one narrative.",
-    pages: ["Human Practices", "Education", "Entrepreneurship", "Inclusivity", "Sustainability"],
+    label: "Ambition",
+    title: "The project is bigger than a single enzyme or titer",
+    text: "Our direction is to integrate flux rewiring, P450 catalysis, and transport redesign into an intelligent steroid hormone biomanufacturing platform.",
   },
 ];
 
-const weeklyFocus = [
-  "Lock the page structure before visual polish grows too large.",
-  "Start writing in English now, then refine for clarity with each experiment cycle.",
-  "Store every figure, citation, and raw note with a clear filename and date.",
-  "Keep React as the competition line and reserve Vue for side learning only.",
+const roadmapSteps = [
+  {
+    label: "Need",
+    title: "Steroid hormones are essential but hard to make well",
+    text: "These molecules regulate metabolism, reproduction, stress adaptation, and are widely used as valuable pharmaceuticals.",
+  },
+  {
+    label: "Gap",
+    title: "De novo biosynthesis is blocked by three bottlenecks",
+    text: "Precursor supply, side-chain cleavage and hydroxylation, and intracellular transport/export all limit performance in microbial hosts.",
+  },
+  {
+    label: "Build",
+    title: "Reprogram the cell factory around those bottlenecks",
+    text: "Use metabolic rewiring, enzyme engineering, and transport engineering to push carbon flux, improve catalysis, and relieve toxicity.",
+  },
+  {
+    label: "Impact",
+    title: "Move toward an intelligent biomanufacturing platform",
+    text: "The long-term goal is a scalable, data-driven, sustainable microbial platform for steroid hormone production from simple carbon sources.",
+  },
 ];
 
-const workflowRules = [
-  "Keep main stable and use one branch per task.",
-  "Open a Merge Request for anything larger than a typo or wording tweak.",
-  "Write first, restyle second, animate last.",
-  "Treat this repository as the drafting space until the official wiki opens.",
+const readingTracks = [
+  {
+    status: "Description",
+    title: "Why steroid hormone biomanufacturing needs a new route",
+    description:
+      "This track frames the medical and industrial relevance of steroid hormones, the limitations of semisynthesis, and why de novo microbial production is worth pursuing.",
+    metric: "Need, chassis, project logic",
+    href: "/description",
+  },
+  {
+    status: "Engineering",
+    title: "How the cell factory is redesigned",
+    description:
+      "This page focuses on the three engineering layers: precursor flux rewiring, P450 side-chain cleavage and hydroxylation, and transport compatibility across organelles and membranes.",
+    metric: "Flux, catalysis, transport",
+    href: "/engineering",
+  },
+  {
+    status: "Results",
+    title: "What the platform must eventually prove",
+    description:
+      "Results will be organized as a proof ladder from sterol scaffold supply to catalytic conversion, export robustness, and integrated platform performance.",
+    metric: "Scaffold, conversion, export, platform",
+    href: "/results",
+  },
+  {
+    status: "Human Practices",
+    title: "Why sustainability and implementation matter",
+    description:
+      "This track links pharmaceutical access, green manufacturing, biosafety, and industrial feasibility to the decisions made in the project itself.",
+    metric: "Stakeholders, responsibility, deployment",
+    href: "/human-practices",
+  },
 ];
 
-const migrationSteps = [
+const proofAgenda = [
   {
-    label: "Now",
-    text: "Draft content, test layout decisions, and stabilize the navigation tree in this temporary repository.",
+    status: "Workstream 1",
+    title: "Increase flux toward the steroid scaffold",
+    description:
+      "Strengthen precursor supply from simple carbon sources by rewiring the mevalonate pathway, host metabolism, and subcellular organization.",
+    metric: "Flux and chassis readiness",
   },
   {
-    label: "When Wiki Opens",
-    text: "Activate the official React wiki from the iGEM Deliverables dashboard and mirror the same structure there.",
+    status: "Workstream 2",
+    title: "Break the catalytic bottleneck at side-chain cleavage and hydroxylation",
+    description:
+      "Improve rate-limiting enzymes, especially P450-driven reactions, through host-compatible design, electron transfer engineering, and pathway balancing.",
+    metric: "Catalysis and selectivity",
   },
   {
-    label: "Migration",
-    text: "Move polished pages, assets, and styles into the official repository, then update team-specific links.",
+    status: "Workstream 3",
+    title: "Relieve intracellular accumulation and export constraints",
+    description:
+      "Redesign transport among LDs, ER, mitochondria, plasma membrane, and cell wall so hydrophobic intermediates stop acting like hidden toxicity traps.",
+    metric: "Transport and robustness",
   },
   {
-    label: "Freeze Phase",
-    text: "Run final CI/CD checks, content review, and link validation only on the official team wiki repository.",
+    status: "Workstream 4",
+    title: "Assemble a data-driven microbial production platform",
+    description:
+      "Use DBTL logic, AI-guided design, and iterative measurement to turn separate engineering wins into a scalable steroid hormone biomanufacturing workflow.",
+    metric: "Platform integration",
+  },
+];
+
+const referenceItems = [
+  {
+    label: "Chen et al. 2025 review on steroid hormone biosynthesis",
+    href: "https://doi.org/10.1016/j.tibtech.2025.12.012",
+    note: "The core review that defines this year's problem framing, bottlenecks, and platform vision.",
+  },
+  {
+    label: "BASIS-China 2023",
+    href: "https://2023.igem.wiki/basis-china/",
+    note: "A benchmark for long-form scientific storytelling that still keeps the reader oriented.",
+  },
+  {
+    label: "TJI-Seoul 2025",
+    href: "https://2025.igem.wiki/tji-seoul",
+    note: "Useful for chapter-based homepage pacing and integrated Human Practices logic.",
+  },
+  {
+    label: "UppsalaUniversity 2025",
+    href: "https://2025.igem.wiki/uppsalauniversity/index.html",
+    note: "Helpful for keeping a scientific homepage readable under judge time pressure.",
+  },
+  {
+    label: "iGEM Team Wiki deliverables",
+    href: "https://competition.igem.org/deliverables/team-wiki",
+    note: "Official requirements for repository links, hosted assets, and page delivery.",
   },
 ];
 
 export function Home() {
   return (
     <>
-      <div className="row g-4">
-        <div className="col-lg-8">
-          <div className="hero-panel hero-grid">
+      <section className="home-hero-shell">
+        <div className="container">
+          <PageIntro
+            eyebrow="Jiangnan University x iGEM 2026"
+            title="From simple carbon sources to steroid hormones: redesign the cell factory, then let the platform scale."
+            summary="This year's wiki is built around one scientific story: replacing feedstock-dependent steroid production with a sustainable and intelligent microbial platform that integrates metabolic rewiring, enzyme engineering, and transport redesign."
+            bullets={[
+              "Start from the pharmaceutical and manufacturing need, not from a list of enzymes.",
+              "Keep the three bottlenecks visible: flux, catalysis, and transport.",
+              "End every page by pointing back to the intelligent, scalable platform vision.",
+            ]}
+            ctaLinks={[
+              { label: "Open the project description", href: "/description", variant: "primary" },
+              { label: "Jump to the roadmap", href: "#home-roadmap", variant: "secondary" },
+            ]}
+            heroFigure={{
+              label: "Project Arc",
+              title: "Need -> Bottlenecks -> Engineered Cell Factory -> Intelligent Platform",
+              description:
+                "The homepage should let a reader understand the whole project logic before they read a single experiment.",
+              items: [
+                "Why steroid hormone production still needs a better route",
+                "Why fungi and yeasts are attractive chassis",
+                "Why P450 catalysis and transport remain decisive bottlenecks",
+                "Why the long-term goal is a sustainable, data-driven platform",
+              ],
+            }}
+          />
+
+          <MetricStrip
+            items={[
+              {
+                label: "Target",
+                value: "Steroid hormones",
+                note: "A medically important family of molecules with broad roles in metabolism, reproduction, stress, and therapy.",
+              },
+              {
+                label: "Starting point",
+                value: "Simple carbon source",
+                note: "The platform vision is de novo biosynthesis rather than sterol-dependent semisynthesis.",
+              },
+              {
+                label: "Core bottlenecks",
+                value: "3 layers",
+                note: "Metabolic flux, catalytic conversion, and transport/export are the dominant barriers.",
+              },
+              {
+                label: "Destination",
+                value: "Intelligent platform",
+                note: "DBTL, AI-guided design, and scalable fermentation define the long-term direction.",
+              },
+            ]}
+          />
+
+          <div className="story-band story-band-hero">
             <div>
-              <span className="eyebrow">Jiangnan University x iGEM 2026</span>
-              <p className="hero-kicker">Draft early. Organize calmly. Migrate later.</p>
-              <h2>Jiangnan-China 2026 Wiki starts here.</h2>
-              <p className="hero-copy">
-                This React repository is the team&apos;s staging ground before the official
-                iGEM Team Wiki activation opens. We can use it to shape our information
-                architecture, practice the toolchain, and turn weekly lab progress into
-                pages instead of last-minute scramble.
-              </p>
-              <div className="metric-grid">
-                <div className="metric-pill">
-                  <span>Team ID</span>
-                  <strong>6172</strong>
-                </div>
-                <div className="metric-pill">
-                  <span>Status</span>
-                  <strong>Accepted</strong>
-                </div>
-                <div className="metric-pill">
-                  <span>Stack</span>
-                  <strong>React + TS + Vite</strong>
-                </div>
-                <div className="metric-pill">
-                  <span>Role</span>
-                  <strong>Training + Drafting</strong>
-                </div>
-              </div>
+              <span className="story-band-label">Theme statement</span>
+              <h2 className="story-band-title">This is not just a pathway project. It is a manufacturing-platform project.</h2>
             </div>
-            <div className="hero-note">
-              <h3>Current GitLab Setup</h3>
-              <ul className="status-list">
-                <li>
-                  <strong>Repository:</strong> personal temporary repo for Jiangnan-China
-                </li>
-                <li>
-                  <strong>Official team wiki:</strong> not open yet
-                </li>
-                <li>
-                  <strong>Authentication:</strong> HTTPS + Personal Access Token
-                </li>
-                <li>
-                  <strong>Recommended flow:</strong> branch, commit, MR, review
-                </li>
-              </ul>
-            </div>
+            <p className="story-band-text">
+              The most important shift in this year's story is moving from isolated biosynthetic
+              steps to an integrated and sustainable steroid hormone production system.
+            </p>
           </div>
-        </div>
-        <div className="col-lg-4">
-          <div className="status-card">
-            <h3>What Is Already Ready</h3>
-            <ul className="status-list">
-              <li>React template forked into a working team draft repository.</li>
-              <li>Local clone and production build verified successfully.</li>
-              <li>Navbar, footer, and homepage customized for Jiangnan-China.</li>
-              <li>HTTPS push flow tested so local collaboration can start now.</li>
-            </ul>
-            <div className="bd-callout bd-callout-info compact-callout">
-              The goal of this page is not to be final yet. It is the stable launchpad for
-              drafting the real final wiki.
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="row g-4 mt-1">
-        <div className="col-lg-4">
-          <div className="content-card">
-            <h3>This Week&apos;s Focus</h3>
-            <ul className="card-list">
-              {weeklyFocus.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="col-lg-4">
-          <div className="content-card">
-            <h3>Collaboration Rules</h3>
-            <ul className="card-list">
-              {workflowRules.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="col-lg-4">
-          <div className="content-card">
-            <h3>Reference Links</h3>
-            <ul className="card-list">
-              <li>
-                <a
-                  href="https://competition.igem.org/deliverables/team-wiki"
-                  target="_blank"
-                >
-                  Team Wiki Requirements
-                </a>
-              </li>
-              <li>
-                <a href="https://competition.igem.org/judging/medals" target="_blank">
-                  Medals
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://competition.igem.org/judging/project-prizes"
-                  target="_blank"
-                >
-                  Project Prizes
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://competition.igem.org/judging/special-prizes"
-                  target="_blank"
-                >
-                  Special Prizes
-                </a>
-              </li>
-              <li>
-                <a href="https://competition.igem.org/calendar" target="_blank">
-                  Competition Calendar
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div className="row mt-4">
-        <div className="col">
-          <h2>Content Architecture</h2>
-          <hr />
-          <p className="section-intro">
-            The navigation tree is already broad enough for medal, prize, and documentation
-            needs. What matters now is turning each section into a clean writing track with
-            owners, source materials, and a predictable update rhythm.
-          </p>
-        </div>
-      </div>
-      <div className="row g-4">
-        {architectureCards.map((card) => (
-          <div className="col-md-6 col-xl" key={card.title}>
-            <div className="content-card track-card">
-              <span className="track-tag">{card.title}</span>
-              <p>{card.summary}</p>
-              <ul className="tag-list">
-                {card.pages.map((page) => (
-                  <li key={page}>{page}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="row g-4 mt-1">
-        <div className="col-lg-8">
-          <h2>Migration Roadmap</h2>
-          <hr />
-          <div className="roadmap">
-            {migrationSteps.map((step) => (
-              <div className="roadmap-step" key={step.label}>
-                <span className="roadmap-label">{step.label}</span>
-                <p>{step.text}</p>
-              </div>
+          <div className="scene-grid">
+            {sceneCards.map((scene) => (
+              <article className="scene-card" key={scene.title}>
+                <span>{scene.label}</span>
+                <h3>{scene.title}</h3>
+                <p>{scene.text}</p>
+              </article>
             ))}
           </div>
-        </div>
-        <div className="col-lg-4">
-          <div className="content-card">
-            <h3>Priority Pages to Draft First</h3>
-            <ul className="card-list">
-              <li>Team / Members</li>
-              <li>Project Description</li>
-              <li>Notebook</li>
-              <li>Human Practices</li>
-              <li>Results</li>
-              <li>Attributions</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
-      <div className="row mt-4">
-        <div className="col-lg-8">
-          <h2>Learning Track</h2>
-          <hr />
-          <p className="section-intro">
-            Your team wants both practical delivery and real frontend growth. The safest
-            competition strategy is still React first, Vue second.
-          </p>
-          <div className="content-card">
-            <ul className="card-list">
-              <li>Use React here for routing, page assembly, reusable sections, and layout control.</li>
-              <li>Keep Vue in a side branch or a separate sandbox so the main wiki line stays stable.</li>
-              <li>Make figures, writing, references, and captions framework-agnostic from day one.</li>
-              <li>After the React version is stable, rebuild one small page in Vue as a study exercise.</li>
-            </ul>
+          <SectionNav sections={homeSections} />
+        </div>
+      </section>
+
+      <section id="home-roadmap" className="container story-section">
+        <div className="section-shell section-shell-emerald">
+          <div className="section-heading">
+            <h2>The homepage roadmap</h2>
+            <p>
+              This is the backbone the rest of the wiki should inherit. If a reader understands
+              this sequence, every later page becomes easier to justify and easier to remember.
+            </p>
+          </div>
+          <div className="split-layout">
+            <FlowDiagram
+              title="One scientific arc for the whole project"
+              lead="The homepage should move from medical and industrial necessity to the three engineering bottlenecks, and then forward into the platform vision."
+              steps={roadmapSteps}
+            />
+            <aside className="quote-card">
+              <span className="quote-mark">Reader memory</span>
+              <h3>The site should leave readers with one clear memory: steroid hormone biomanufacturing becomes possible only when flux, catalysis, and transport are solved together.</h3>
+              <p>
+                That systems view is stronger than presenting the project as just one new enzyme
+                or one higher titer.
+              </p>
+            </aside>
           </div>
         </div>
-        <Inspirations inspirationLinkList={inspirationLinks} />
-      </div>
+      </section>
+
+      <section id="home-tracks" className="container story-section">
+        <div className="story-band">
+          <div>
+            <span className="story-band-label">Reading logic</span>
+            <h2 className="story-band-title">Each page should deepen one part of the same platform story.</h2>
+          </div>
+          <p className="story-band-text">
+            The homepage is where we split the full project into readable modules without
+            breaking the scientific continuity.
+          </p>
+        </div>
+        <EvidenceGrid items={readingTracks} />
+      </section>
+
+      <section id="home-progress" className="container story-section">
+        <div className="section-shell section-shell-amber">
+          <div className="section-heading">
+            <h2>The proof agenda for this season</h2>
+            <p>
+              Even before all experiments are finished, the homepage can already tell readers
+              exactly what the project needs to prove to become a real platform.
+            </p>
+          </div>
+          <EvidenceGrid items={proofAgenda} />
+        </div>
+      </section>
+
+      <section id="home-references" className="container story-section story-section-last">
+        <ReferenceBlock title="References that shape this year's story" items={referenceItems} />
+      </section>
     </>
   );
 }

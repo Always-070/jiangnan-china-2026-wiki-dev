@@ -14,17 +14,17 @@ export function Footer() {
           <div className="col-lg-5 col-xs-12">
             <h4 className="mb-3">Jiangnan-China 2026</h4>
             <p>
-              Temporary development wiki for Jiangnan-China while the official
-              iGEM Team Wiki activation is not yet open. This repository is
-              used to learn the stack, organize content early, and reduce
-              last-minute work before the official Wiki freeze.
+              A narrative-first wiki scaffold for Jiangnan-China 2026. This site
+              is used to align project story, evidence structure, and
+              judging-facing navigation before the final season content is fully
+              locked.
             </p>
           </div>
           <div className="col-lg-4 col-xs-12">
             <h4 className="mt-lg-0 mt-sm-3">Quick Links</h4>
             <ul className="m-2 p-2">
               <li>
-                <a href="https://teams.igem.org/6172" target="_blank">
+                <a href="https://teams.igem.org/6172" target="_blank" rel="noreferrer">
                   Team profile
                 </a>
               </li>
@@ -32,17 +32,26 @@ export function Footer() {
                 <a
                   href="https://competition.igem.org/deliverables/team-wiki"
                   target="_blank"
+                  rel="noreferrer"
                 >
                   Team Wiki requirements
                 </a>
               </li>
               <li>
-                <a href="https://competition.igem.org/calendar" target="_blank">
+                <a
+                  href="https://competition.igem.org/calendar"
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Competition calendar
                 </a>
               </li>
               <li>
-                <a href={`https://gitlab.igem.org/${repoPath}`} target="_blank">
+                <a
+                  href={`https://gitlab.igem.org/${repoPath}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Development repository
                 </a>
               </li>
@@ -51,7 +60,7 @@ export function Footer() {
           <div className="col-lg-3 col-xs-12">
             <h4 className="mt-lg-0 mt-sm-4 mb-3">Current Status</h4>
             <p>Team ID: {import.meta.env.VITE_TEAM_ID}</p>
-            <p className="mb-0">Official wiki: not activated yet</p>
+            <p className="mb-0">Reading mode: story-first, judge-friendly</p>
             <p>Stack: React + TypeScript + Vite</p>
           </div>
         </div>
@@ -61,7 +70,7 @@ export function Footer() {
           <div className="col">
             <p className="mb-0">
               <small>
-                © {teamYear} - Content on this site is licensed under a{" "}
+                Copyright {teamYear} - Content on this site is licensed under a{" "}
                 <a
                   className="subfoot"
                   href="https://creativecommons.org/licenses/by/4.0/"

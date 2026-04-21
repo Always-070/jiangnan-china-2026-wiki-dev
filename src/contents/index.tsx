@@ -1,25 +1,20 @@
-export * from "./home.tsx";
-// Team
-export * from "./members.tsx";
-export * from "./attributions.tsx";
-// Project
-export * from "./description.tsx";
-export * from "./engineering.tsx";
-export * from "./results.tsx";
-export * from "./contribution.tsx";
-// Wet Lab
-export * from "./experiments.tsx";
-export * from "./notebook.tsx";
-export * from "./measurement.tsx";
-export * from "./plant.tsx";
-export * from "./safety-and-security.tsx";
-// Dry Lab
-export * from "./model.tsx";
-export * from "./software.tsx";
-export * from "./hardware.tsx";
-// Engagement
-export * from "./entrepreneurship.tsx";
-export * from "./human-practices.tsx";
-export * from "./education.tsx";
-export * from "./inclusivity.tsx";
-export * from "./sustainability.tsx";
+export { Home } from "./home.tsx";
+export { Members } from "./members.tsx";
+export { Attributions } from "./attributions.tsx";
+export { Description } from "./description.tsx";
+export { Engineering } from "./engineering.tsx";
+export { Results } from "./results.tsx";
+export { Contribution } from "./contribution.tsx";
+export { Experiments } from "./experiments.tsx";
+export { Notebook } from "./notebook.tsx";
+export { Measurement } from "./measurement.tsx";
+export { Plant } from "./plant.tsx";
+export { SafetyAndSecurity } from "./safety-and-security.tsx";
+export { Model } from "./model.tsx";
+export { Software } from "./software.tsx";
+export { Hardware } from "./hardware.tsx";
+export { Entrepreneurship } from "./entrepreneurship.tsx";
+export { HumanPractices } from "./human-practices.tsx";
+export { Education } from "./education.tsx";
+export { Inclusivity } from "./inclusivity.tsx";
+export { Sustainability } from "./sustainability.tsx";

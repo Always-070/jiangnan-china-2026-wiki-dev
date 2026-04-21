@@ -7,6 +7,7 @@ import { Navbar } from "../../components/Navbar";
 import { Header } from "../../components/Header";
 import { NotFound } from "../../components/NotFound";
 import { Footer } from "../../components/Footer";
+import { SectionNav } from "../../components/PageScaffold";
 
 const App = () => {
   const pathMapping = getPathMapping();
@@ -15,9 +16,12 @@ const App = () => {
       .split(`${stringToSlug(import.meta.env.VITE_TEAM_NAME)}`)
       .pop() || "/";
 
+  const currentPage = pathMapping[currentPath];
+  const showStandardHeader =
+    currentPath !== "/" && currentPath !== "/attributions" && !!currentPage;
+
   // Set Page Title
-  const title =
-    currentPath in pathMapping ? pathMapping[currentPath].title : "Not Found";
+  const title = currentPage?.title || "Not Found";
 
   useEffect(() => {
     document.title = `${title || ""} | ${import.meta.env.VITE_TEAM_NAME} - iGEM ${import.meta.env.VITE_TEAM_YEAR}`;
@@ -31,16 +35,42 @@ const App = () => {
       {/* Header and PageContent */}
       <Routes>
         {Object.entries(pathMapping).map(
-          ([path, { title, lead, component: Component }]) => (
+          ([
+            path,
+            {
+              title,
+              lead,
+              component: Component,
+              summaryBullets,
+              heroFigure,
+              ctaLinks,
+              anchorSections,
+            },
+          ]) => (
             <Route
               key={path}
               path={path}
               element={
                 <>
-                  <Header title={title || ""} lead={lead || ""} />
-                  <div className="container">
+                  {showStandardHeader && path === currentPath ? (
+                    <Header
+                      title={title || ""}
+                      lead={lead || ""}
+                      summaryBullets={summaryBullets}
+                      heroFigure={heroFigure}
+                      ctaLinks={ctaLinks}
+                    />
+                  ) : null}
+                  {path === "/" || path === "/attributions" ? (
                     <Component />
-                  </div>
+                  ) : (
+                    <div className="container page-shell">
+                      {anchorSections?.length ? (
+                        <SectionNav sections={anchorSections} />
+                      ) : null}
+                      <Component />
+                    </div>
+                  )}
                 </>
               }
             />

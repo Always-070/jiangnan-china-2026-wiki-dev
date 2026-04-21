@@ -5,6 +5,22 @@ import { BrowserRouter, HashRouter } from "react-router-dom";
 
 const useHashRouter = import.meta.env.VITE_ROUTER_MODE === "hash";
 
+if (useHashRouter) {
+  const sectionFallbacks: Record<string, string> = {
+    design: "/description",
+    cycle: "/engineering",
+    milestones: "/results",
+    stakeholders: "/human-practices",
+    implementation: "/human-practices",
+  };
+  const rawHash = window.location.hash.slice(1);
+
+  if (rawHash && !rawHash.startsWith("/")) {
+    const route = sectionFallbacks[rawHash] || "/";
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${route}`);
+  }
+}
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {useHashRouter ? (

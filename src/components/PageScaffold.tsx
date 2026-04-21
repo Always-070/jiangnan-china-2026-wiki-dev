@@ -172,13 +172,15 @@ export function SectionNav({ sections }: { sections: PageAnchor[] }) {
       <span className="section-nav-label">On this page</span>
       <div className="section-nav-links">
         {sections.map((section) => (
-          <a
+          <button
+            type="button"
             key={section.id}
             className={activeId === section.id ? "is-active" : ""}
-            href={`#${section.id}`}
+            aria-current={activeId === section.id ? "location" : undefined}
+            onClick={() => scrollToSection(section.id)}
           >
             {section.label}
-          </a>
+          </button>
         ))}
       </div>
     </nav>
@@ -261,10 +263,12 @@ function InlineLink({
   external?: boolean;
 }) {
   if (href.startsWith("#")) {
+    const sectionId = href.slice(1);
+
     return (
-      <a className={className} href={href}>
+      <button className={className} type="button" onClick={() => scrollToSection(sectionId)}>
         {label}
-      </a>
+      </button>
     );
   }
 
@@ -286,6 +290,18 @@ function InlineLink({
       {label}
     </a>
   );
+}
+
+function scrollToSection(sectionId: string) {
+  const target = document.getElementById(sectionId);
+
+  if (!target) {
+    return;
+  }
+
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+  target.setAttribute("tabindex", "-1");
+  target.focus({ preventScroll: true });
 }
 
 export function ReferenceBlock({

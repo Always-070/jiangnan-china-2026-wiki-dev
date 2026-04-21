@@ -152,6 +152,7 @@ section[id] {
 .track-tag,
 .hero-figure-label,
 .section-nav-links a,
+.section-nav-links button,
 .evidence-status,
 .metric-card span,
 .roadmap-label {
@@ -221,6 +222,8 @@ section[id] {
 }
 
 .intro-action {
+  appearance: none;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -229,6 +232,7 @@ section[id] {
   border-radius: 999px;
   border: 1px solid transparent;
   font-weight: 700;
+  font: inherit;
   text-decoration: none;
   transition:
     transform 180ms ease,
@@ -251,6 +255,18 @@ section[id] {
 .intro-action-primary:focus {
   background: var(--brand-deep);
   color: #f8f5ed;
+}
+
+.page-intro-dark .intro-action-primary {
+  background: linear-gradient(135deg, var(--accent), #f4c174);
+  color: var(--brand-deep);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.18);
+}
+
+.page-intro-dark .intro-action-primary:hover,
+.page-intro-dark .intro-action-primary:focus {
+  background: linear-gradient(135deg, #e9ad5e, #ffd08b);
+  color: #082817;
 }
 
 .intro-action-secondary {
@@ -358,7 +374,11 @@ section[id] {
   gap: 0.65rem;
 }
 
-.section-nav-links a {
+.section-nav-links a,
+.section-nav-links button {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -369,6 +389,7 @@ section[id] {
   color: var(--ink-soft);
   font-size: 0.75rem;
   font-weight: 700;
+  font-family: inherit;
   text-decoration: none;
   transition:
     background 160ms ease,
@@ -377,13 +398,16 @@ section[id] {
 }
 
 .section-nav-links a:hover,
-.section-nav-links a:focus {
+.section-nav-links a:focus,
+.section-nav-links button:hover,
+.section-nav-links button:focus {
   color: var(--brand);
   background: rgba(29, 91, 55, 0.08);
   transform: translateY(-1px);
 }
 
-.section-nav-links a.is-active {
+.section-nav-links a.is-active,
+.section-nav-links button.is-active {
   background: var(--brand);
   color: #f8f5ed;
 }

@@ -1,8 +1,9 @@
+import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   EvidenceGrid,
   FlowDiagram,
   MetricStrip,
-  PageIntro,
   ReferenceBlock,
   SectionNav,
 } from "../components/PageScaffold";
@@ -157,39 +158,230 @@ const referenceItems = [
   },
 ];
 
+function SteroidSignalCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let animationFrame = 0;
+    let startTime = performance.now();
+
+    const draw = (time: number) => {
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(1, rect.width);
+      const height = Math.max(1, rect.height);
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+
+      if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
+      }
+
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, width, height);
+
+      const progress = reduceMotion ? 0.48 : ((time - startTime) % 5200) / 5200;
+      const centerX = width * 0.52;
+      const centerY = height * 0.48;
+      const radius = Math.min(width, height) * 0.27;
+      const orbitRadius = radius * 1.48;
+
+      context.lineCap = "round";
+      context.lineJoin = "round";
+
+      for (let i = 0; i < 5; i += 1) {
+        const x = width * (0.16 + i * 0.18);
+        context.beginPath();
+        context.moveTo(x, height * 0.1);
+        context.lineTo(x, height * 0.88);
+        context.strokeStyle = "rgba(241, 229, 202, 0.11)";
+        context.lineWidth = 1;
+        context.stroke();
+      }
+
+      context.beginPath();
+      context.ellipse(centerX, centerY, radius * 1.42, radius * 0.74, -0.28, 0, Math.PI * 2);
+      context.strokeStyle = "rgba(216, 162, 76, 0.4)";
+      context.lineWidth = 1.5;
+      context.stroke();
+
+      context.beginPath();
+      context.ellipse(centerX, centerY, radius * 1.04, radius * 0.58, 0.48, 0, Math.PI * 2);
+      context.strokeStyle = "rgba(146, 180, 172, 0.34)";
+      context.stroke();
+
+      for (let i = 0; i < 6; i += 1) {
+        const angle = progress * Math.PI * 2 + i * (Math.PI / 3);
+        const x = centerX + Math.cos(angle) * orbitRadius;
+        const y = centerY + Math.sin(angle) * orbitRadius * 0.42;
+        const pulse = 0.5 + Math.sin(time / 360 + i) * 0.5;
+
+        context.beginPath();
+        context.arc(x, y, 2.8 + pulse * 1.8, 0, Math.PI * 2);
+        context.fillStyle = i % 2 ? "rgba(216, 162, 76, 0.72)" : "rgba(146, 180, 172, 0.72)";
+        context.fill();
+      }
+
+      const nodes = [
+        [centerX - radius * 0.78, centerY - radius * 0.38],
+        [centerX + radius * 0.08, centerY - radius * 0.62],
+        [centerX + radius * 0.76, centerY - radius * 0.04],
+        [centerX + radius * 0.3, centerY + radius * 0.66],
+        [centerX - radius * 0.65, centerY + radius * 0.42],
+      ];
+
+      nodes.forEach(([x, y], index) => {
+        const next = nodes[(index + 1) % nodes.length];
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(next[0], next[1]);
+        context.strokeStyle = "rgba(246, 239, 222, 0.38)";
+        context.lineWidth = 2;
+        context.stroke();
+      });
+
+      nodes.forEach(([x, y], index) => {
+        context.beginPath();
+        context.arc(x, y, index === 2 ? 8 : 6, 0, Math.PI * 2);
+        context.fillStyle = index === 2 ? "rgba(216, 162, 76, 0.92)" : "rgba(246, 239, 222, 0.86)";
+        context.fill();
+        context.strokeStyle = "rgba(16, 37, 25, 0.42)";
+        context.lineWidth = 1;
+        context.stroke();
+      });
+
+      const sweep = progress * Math.PI * 2;
+      context.beginPath();
+      context.arc(centerX, centerY, radius * 1.1, sweep, sweep + Math.PI * 0.92);
+      context.strokeStyle = "rgba(216, 162, 76, 0.82)";
+      context.lineWidth = 3;
+      context.stroke();
+
+      context.beginPath();
+      context.moveTo(width * 0.12, height * 0.74);
+      context.bezierCurveTo(width * 0.28, height * 0.58, width * 0.38, height * 0.84, width * 0.5, height * 0.66);
+      context.bezierCurveTo(width * 0.64, height * 0.46, width * 0.78, height * 0.58, width * 0.9, height * 0.34);
+      context.strokeStyle = "rgba(146, 180, 172, 0.48)";
+      context.lineWidth = 2;
+      context.stroke();
+
+      if (!reduceMotion) {
+        animationFrame = window.requestAnimationFrame(draw);
+      }
+    };
+
+    animationFrame = window.requestAnimationFrame(draw);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      startTime = performance.now();
+    };
+  }, []);
+
+  return <canvas className="steroid-signal-canvas" ref={canvasRef} aria-hidden="true" />;
+}
+
 export function Home() {
   return (
     <>
       <section className="home-hero-shell">
-        <div className="container">
-          <PageIntro
-            eyebrow="Jiangnan University x iGEM 2026"
-            title="From simple carbon sources to steroid hormones: redesign the cell factory, then let the platform scale."
-            summary="This year's wiki is built around one scientific story: replacing feedstock-dependent steroid production with a sustainable and intelligent microbial platform that integrates metabolic rewiring, enzyme engineering, and transport redesign."
-            bullets={[
-              "Start from the pharmaceutical and manufacturing need, not from a list of enzymes.",
-              "Keep the three bottlenecks visible: flux, catalysis, and transport.",
-              "End every page by pointing back to the intelligent, scalable platform vision.",
-            ]}
-            ctaLinks={[
-              { label: "Open the project description", href: "/description", variant: "primary" },
-              { label: "Jump to the roadmap", href: "#home-roadmap", variant: "secondary" },
-              { label: "Best Wiki audit", href: "/wiki-excellence", variant: "secondary" },
-            ]}
-            heroFigure={{
-              label: "Project Arc",
-              title: "Need -> Bottlenecks -> Engineered Cell Factory -> Intelligent Platform",
-              description:
-                "The homepage should let a reader understand the whole project logic before they read a single experiment.",
-              items: [
-                "Why steroid hormone production still needs a better route",
-                "Why fungi and yeasts are attractive chassis",
-                "Why P450 catalysis and transport remain decisive bottlenecks",
-                "Why the long-term goal is a sustainable, data-driven platform",
-              ],
-            }}
-          />
+        <div className="container home-hero-grid">
+          <div className="home-hero-copy">
+            <span className="home-hero-kicker">Jiangnan University x iGEM 2026</span>
+            <h1>Rewire the cell factory. Manufacture steroid hormones from carbon.</h1>
+            <p>
+              This wiki frames the project as an integrated biomanufacturing platform:
+              metabolic flux, P450 catalysis, and intracellular transport are redesigned
+              together so simple carbon sources can move toward steroid hormone production.
+            </p>
+            <div className="home-hero-actions">
+              <Link className="intro-action intro-action-primary" to="/description">
+                Open the project description
+              </Link>
+              <button
+                className="intro-action intro-action-secondary"
+                type="button"
+                onClick={() => {
+                  const target = document.getElementById("home-roadmap");
 
+                  if (!target) {
+                    return;
+                  }
+
+                  window.scrollTo({
+                    top: Math.max(target.getBoundingClientRect().top + window.scrollY - 96, 0),
+                    behavior: "smooth",
+                  });
+                  window.requestAnimationFrame(() => {
+                    target.setAttribute("tabindex", "-1");
+                    target.focus({ preventScroll: true });
+                  });
+                }}
+              >
+                Jump to the roadmap
+              </button>
+              <Link className="intro-action intro-action-secondary" to="/wiki-excellence">
+                Best Wiki audit
+              </Link>
+            </div>
+            <div className="home-hero-proof" aria-label="Homepage proof points">
+              <span>Need-led story</span>
+              <span>Three bottlenecks</span>
+              <span>Platform vision</span>
+            </div>
+          </div>
+
+          <aside className="platform-visual" aria-label="Steroid hormone biomanufacturing platform map">
+            <SteroidSignalCanvas />
+            <div className="platform-visual-header">
+              <span>Cell factory control map</span>
+              <strong>de novo steroid route</strong>
+            </div>
+            <div className="platform-node platform-node-carbon">Simple carbon source</div>
+            <div className="platform-node platform-node-flux">Flux rewiring</div>
+            <div className="platform-node platform-node-p450">P450 catalysis</div>
+            <div className="platform-node platform-node-export">Transport + export</div>
+            <ol className="platform-ladder">
+              <li>
+                <span>01</span>
+                <strong>Supply sterol scaffold</strong>
+              </li>
+              <li>
+                <span>02</span>
+                <strong>Convert with host-compatible enzymes</strong>
+              </li>
+              <li>
+                <span>03</span>
+                <strong>Scale as an intelligent platform</strong>
+              </li>
+            </ol>
+          </aside>
+        </div>
+
+      </section>
+
+      <main className="home-main-shell">
+        <div className="home-decoration-layer" aria-hidden="true">
+          <span className="decor-trace decor-trace-a" />
+          <span className="decor-trace decor-trace-b" />
+          <span className="decor-chip decor-chip-a">Flux</span>
+          <span className="decor-chip decor-chip-b">Catalysis</span>
+          <span className="decor-chip decor-chip-c">Transport</span>
+        </div>
+
+        <section className="container home-overview story-section">
           <MetricStrip
             items={[
               {
@@ -235,68 +427,70 @@ export function Home() {
               </article>
             ))}
           </div>
+        </section>
 
+        <div className="container home-sticky-nav">
           <SectionNav sections={homeSections} />
         </div>
-      </section>
 
-      <section id="home-roadmap" className="container story-section">
-        <div className="section-shell section-shell-emerald">
-          <div className="section-heading">
-            <h2>The homepage roadmap</h2>
-            <p>
-              This is the backbone the rest of the wiki should inherit. If a reader understands
-              this sequence, every later page becomes easier to justify and easier to remember.
-            </p>
-          </div>
-          <div className="split-layout">
-            <FlowDiagram
-              title="One scientific arc for the whole project"
-              lead="The homepage should move from medical and industrial necessity to the three engineering bottlenecks, and then forward into the platform vision."
-              steps={roadmapSteps}
-            />
-            <aside className="quote-card">
-              <span className="quote-mark">Reader memory</span>
-              <h3>The site should leave readers with one clear memory: steroid hormone biomanufacturing becomes possible only when flux, catalysis, and transport are solved together.</h3>
+        <section id="home-roadmap" className="container story-section">
+          <div className="section-shell section-shell-emerald">
+            <div className="section-heading">
+              <h2>The homepage roadmap</h2>
               <p>
-                That systems view is stronger than presenting the project as just one new enzyme
-                or one higher titer.
+                This is the backbone the rest of the wiki should inherit. If a reader understands
+                this sequence, every later page becomes easier to justify and easier to remember.
               </p>
-            </aside>
+            </div>
+            <div className="split-layout">
+              <FlowDiagram
+                title="One scientific arc for the whole project"
+                lead="The homepage should move from medical and industrial necessity to the three engineering bottlenecks, and then forward into the platform vision."
+                steps={roadmapSteps}
+              />
+              <aside className="quote-card">
+                <span className="quote-mark">Reader memory</span>
+                <h3>The site should leave readers with one clear memory: steroid hormone biomanufacturing becomes possible only when flux, catalysis, and transport are solved together.</h3>
+                <p>
+                  That systems view is stronger than presenting the project as just one new enzyme
+                  or one higher titer.
+                </p>
+              </aside>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="home-tracks" className="container story-section">
-        <div className="story-band">
-          <div>
-            <span className="story-band-label">Reading logic</span>
-            <h2 className="story-band-title">Each page should deepen one part of the same platform story.</h2>
-          </div>
-          <p className="story-band-text">
-            The homepage is where we split the full project into readable modules without
-            breaking the scientific continuity.
-          </p>
-        </div>
-        <EvidenceGrid items={readingTracks} />
-      </section>
-
-      <section id="home-progress" className="container story-section">
-        <div className="section-shell section-shell-amber">
-          <div className="section-heading">
-            <h2>The proof agenda for this season</h2>
-            <p>
-              Even before all experiments are finished, the homepage can already tell readers
-              exactly what the project needs to prove to become a real platform.
+        <section id="home-tracks" className="container story-section">
+          <div className="story-band">
+            <div>
+              <span className="story-band-label">Reading logic</span>
+              <h2 className="story-band-title">Each page should deepen one part of the same platform story.</h2>
+            </div>
+            <p className="story-band-text">
+              The homepage is where we split the full project into readable modules without
+              breaking the scientific continuity.
             </p>
           </div>
-          <EvidenceGrid items={proofAgenda} />
-        </div>
-      </section>
+          <EvidenceGrid items={readingTracks} />
+        </section>
 
-      <section id="home-references" className="container story-section story-section-last">
-        <ReferenceBlock title="References that shape this year's story" items={referenceItems} />
-      </section>
+        <section id="home-progress" className="container story-section">
+          <div className="section-shell section-shell-amber">
+            <div className="section-heading">
+              <h2>The proof agenda for this season</h2>
+              <p>
+                Even before all experiments are finished, the homepage can already tell readers
+                exactly what the project needs to prove to become a real platform.
+              </p>
+            </div>
+            <EvidenceGrid items={proofAgenda} />
+          </div>
+        </section>
+
+        <section id="home-references" className="container story-section story-section-last">
+          <ReferenceBlock title="References that shape this year's story" items={referenceItems} />
+        </section>
+      </main>
     </>
   );
 }

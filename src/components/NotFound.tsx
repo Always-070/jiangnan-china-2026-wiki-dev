@@ -2,15 +2,15 @@ import { Link } from "react-router-dom";
 
 export function NotFound() {
   return (
-    <div className="d-flex flex-column justify-content-center align-items-center">
-      <h1 className="not-found-title" style={{ fontSize: "100pt" }}>
-        404
-      </h1>
-      <div className="my-5">
-        <Link to="/" className="btn btn-secondary btn-lg">
-          Back to Home
-        </Link>
-      </div>
-    </div>
+    <main className="container not-found-state">
+      <p className="not-found-kicker">Page missing</p>
+      <h1 className="not-found-title">404</h1>
+      <p className="not-found-copy">
+        The page may have moved while the wiki story is still being assembled.
+      </p>
+      <Link to="/" className="intro-action intro-action-primary">
+        Back to Home
+      </Link>
+    </main>
   );
 }

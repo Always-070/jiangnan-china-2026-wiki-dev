@@ -299,9 +299,18 @@ function scrollToSection(sectionId: string) {
     return;
   }
 
-  target.scrollIntoView({ behavior: "smooth", block: "start" });
-  target.setAttribute("tabindex", "-1");
-  target.focus({ preventScroll: true });
+  const navOffset = 96;
+  const targetTop = target.getBoundingClientRect().top + window.scrollY - navOffset;
+
+  window.scrollTo({
+    top: Math.max(targetTop, 0),
+    behavior: "smooth",
+  });
+
+  window.requestAnimationFrame(() => {
+    target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+  });
 }
 
 export function ReferenceBlock({

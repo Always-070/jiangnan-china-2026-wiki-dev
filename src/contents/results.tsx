@@ -4,6 +4,7 @@ import {
   MetricStrip,
   ReferenceBlock,
 } from "../components/PageScaffold";
+import { EvidenceSpiral, NextStopBanner } from "../components/AtlasShowpieces";
 
 const resultsReferences = [
   {
@@ -129,6 +130,7 @@ export function Results() {
             </article>
           ))}
         </div>
+        <EvidenceSpiral />
       </section>
 
       <section id="evidence" className="story-section">
@@ -219,6 +221,13 @@ export function Results() {
 
       <section id="references" className="story-section story-section-last">
         <ReferenceBlock title="References and result framing sources" items={resultsReferences} />
+        <NextStopBanner
+          eyebrow="Next Stop"
+          title="Human Practices tests whether the platform should exist in the real world."
+          text="Connect scientific progress to stakeholders, manufacturing reality, sustainability, access, and biosafety decisions."
+          href="/human-practices"
+          actionLabel="Continue to Human Practices"
+        />
       </section>
     </>
   );

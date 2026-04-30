@@ -1,164 +1,112 @@
-import { useEffect, useRef } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties, PointerEvent, WheelEvent } from "react";
 import { Link } from "react-router-dom";
-import {
-  EvidenceGrid,
-  FlowDiagram,
-  MetricStrip,
-  ReferenceBlock,
-  SectionNav,
-} from "../components/PageScaffold";
+import teamLogoUrl from "../assets/team-logo-symbol.svg";
+import { SectionNav } from "../components/PageScaffold";
+
+const HomeAtlasThreeScene = lazy(() =>
+  import("../components/AtlasThreeScenes").then((module) => ({
+    default: module.HomeAtlasThreeScene,
+  })),
+);
 
 const homeSections = [
-  { id: "home-roadmap", label: "Roadmap" },
-  { id: "home-tracks", label: "Modules" },
-  { id: "home-progress", label: "Proof Agenda" },
-  { id: "home-references", label: "References" },
+  { id: "atlas-story", label: "Story Mode" },
+  { id: "atlas-modules", label: "Modules" },
+  { id: "atlas-proof", label: "Proof Slots" },
+  { id: "atlas-next", label: "Next Stop" },
 ];
 
-const sceneCards = [
-  {
-    label: "Pressure",
-    title: "Steroid hormones matter, but current production is cumbersome",
-    text: "Traditional routes still rely heavily on plant or animal sterol feedstocks and multistep chemical or microbial transformations that are difficult to scale cleanly.",
-  },
-  {
-    label: "Breakthrough",
-    title: "Yeasts and fungi can build the steroid scaffold de novo",
-    text: "Instead of upgrading external sterols, engineered fungal hosts can turn simple carbon sources into sterol nuclei through the mevalonate pathway.",
-  },
-  {
-    label: "Ambition",
-    title: "The project is bigger than a single enzyme or titer",
-    text: "Our direction is to integrate flux rewiring, P450 catalysis, and transport redesign into an intelligent steroid hormone biomanufacturing platform.",
-  },
-];
-
-const roadmapSteps = [
+const storySteps = [
   {
     label: "Need",
-    title: "Steroid hormones are essential but hard to make well",
-    text: "These molecules regulate metabolism, reproduction, stress adaptation, and are widely used as valuable pharmaceuticals.",
+    title: "Steroid hormones matter, but today's routes stay heavy.",
+    text: "The wiki opens from manufacturing pressure: valuable molecules, complex routes, and a clear reason to search for cleaner de novo production.",
   },
   {
     label: "Gap",
-    title: "De novo biosynthesis is blocked by three bottlenecks",
-    text: "Precursor supply, side-chain cleavage and hydroxylation, and intracellular transport/export all limit performance in microbial hosts.",
+    title: "Flux, catalysis, and transport block the cell factory together.",
+    text: "The first-round narrative keeps the three bottlenecks visible so judges remember the system challenge rather than one isolated pathway step.",
   },
   {
-    label: "Build",
-    title: "Reprogram the cell factory around those bottlenecks",
-    text: "Use metabolic rewiring, enzyme engineering, and transport engineering to push carbon flux, improve catalysis, and relieve toxicity.",
-  },
-  {
-    label: "Impact",
-    title: "Move toward an intelligent biomanufacturing platform",
-    text: "The long-term goal is a scalable, data-driven, sustainable microbial platform for steroid hormone production from simple carbon sources.",
+    label: "Answer",
+    title: "A fungal cell factory becomes the project atlas.",
+    text: "The Atlas Engine turns ER, LD, mitochondria, P450 hotspots, and transport arcs into one visual control map for the whole site.",
   },
 ];
 
-const readingTracks = [
+const moduleCards = [
   {
-    status: "Description",
-    title: "Why steroid hormone biomanufacturing needs a new route",
-    description:
-      "This track frames the medical and industrial relevance of steroid hormones, the limitations of semisynthesis, and why de novo microbial production is worth pursuing.",
-    metric: "Need, chassis, project logic",
+    label: "Description",
+    title: "Old route vs. cell-factory answer",
+    text: "Frame Need, Gap, and Platform Answer before diving into pathway details.",
     href: "/description",
   },
   {
-    status: "Engineering",
-    title: "How the cell factory is redesigned",
-    description:
-      "This page focuses on the three engineering layers: precursor flux rewiring, P450 side-chain cleavage and hydroxylation, and transport compatibility across organelles and membranes.",
-    metric: "Flux, catalysis, transport",
+    label: "Engineering",
+    title: "Metabolic control map",
+    text: "Turn DBTL, ER membrane, P450 catalysis, and transport into a judge-friendly interface.",
     href: "/engineering",
   },
   {
-    status: "Results",
-    title: "What the platform must eventually prove",
-    description:
-      "Results will be organized as a proof ladder from sterol scaffold supply to catalytic conversion, export robustness, and integrated platform performance.",
-    metric: "Scaffold, conversion, export, platform",
+    label: "Results",
+    title: "Evidence spiral",
+    text: "Reserve clean slots for assays, figures, and milestone evidence without inventing data.",
     href: "/results",
   },
   {
-    status: "Human Practices",
-    title: "Why sustainability and implementation matter",
-    description:
-      "This track links pharmaceutical access, green manufacturing, biosafety, and industrial feasibility to the decisions made in the project itself.",
-    metric: "Stakeholders, responsibility, deployment",
+    label: "Human Practices",
+    title: "Responsible platform loop",
+    text: "Connect manufacturing reality, stakeholder feedback, sustainability, and safety decisions.",
     href: "/human-practices",
   },
-  {
-    status: "Best Wiki",
-    title: "How the wiki itself is designed to compete",
-    description:
-      "This reserved page keeps the team's wiki-quality checklist visible: story clarity, judge navigation, accessibility, reusable diagrams, and evidence traceability.",
-    metric: "Clarity, access, audit",
-    href: "/wiki-excellence",
-  },
 ];
 
-const proofAgenda = [
-  {
-    status: "Workstream 1",
-    title: "Increase flux toward the steroid scaffold",
-    description:
-      "Strengthen precursor supply from simple carbon sources by rewiring the mevalonate pathway, host metabolism, and subcellular organization.",
-    metric: "Flux and chassis readiness",
-  },
-  {
-    status: "Workstream 2",
-    title: "Break the catalytic bottleneck at side-chain cleavage and hydroxylation",
-    description:
-      "Improve rate-limiting enzymes, especially P450-driven reactions, through host-compatible design, electron transfer engineering, and pathway balancing.",
-    metric: "Catalysis and selectivity",
-  },
-  {
-    status: "Workstream 3",
-    title: "Relieve intracellular accumulation and export constraints",
-    description:
-      "Redesign transport among LDs, ER, mitochondria, plasma membrane, and cell wall so hydrophobic intermediates stop acting like hidden toxicity traps.",
-    metric: "Transport and robustness",
-  },
-  {
-    status: "Workstream 4",
-    title: "Assemble a data-driven microbial production platform",
-    description:
-      "Use DBTL logic, AI-guided design, and iterative measurement to turn separate engineering wins into a scalable steroid hormone biomanufacturing workflow.",
-    metric: "Platform integration",
-  },
+const proofSlots = [
+  "Sterol scaffold readiness",
+  "P450 conversion checkpoint",
+  "Transport and toxicity readout",
+  "Integrated platform milestone",
 ];
 
-const referenceItems = [
-  {
-    label: "Chen et al. 2025 review on steroid hormone biosynthesis",
-    href: "https://doi.org/10.1016/j.tibtech.2025.12.012",
-    note: "The core review that defines this year's problem framing, bottlenecks, and platform vision.",
-  },
-  {
-    label: "BASIS-China 2023",
-    href: "https://2023.igem.wiki/basis-china/",
-    note: "A benchmark for long-form scientific storytelling that still keeps the reader oriented.",
-  },
-  {
-    label: "TJI-Seoul 2025",
-    href: "https://2025.igem.wiki/tji-seoul",
-    note: "Useful for chapter-based homepage pacing and integrated Human Practices logic.",
-  },
-  {
-    label: "UppsalaUniversity 2025",
-    href: "https://2025.igem.wiki/uppsalauniversity/index.html",
-    note: "Helpful for keeping a scientific homepage readable under judge time pressure.",
-  },
-  {
-    label: "iGEM Team Wiki deliverables",
-    href: "https://competition.igem.org/deliverables/team-wiki",
-    note: "Official requirements for repository links, hosted assets, and page delivery.",
-  },
-];
+type HomeIntroPhase = "atom" | "travel" | "scaffold" | "docking" | "docked";
 
-function SteroidSignalCanvas() {
+const introTitleWords = "Build a steroid hormone cell factory from simple carbon.".split(" ");
+const INTRO_ANIMATION_MS = 1850;
+
+function clampIntroProgress(value: number) {
+  return Math.min(Math.max(value, 0), 1);
+}
+
+function easeIntroProgress(value: number) {
+  const t = clampIntroProgress(value);
+
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function drawRoundedCell(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const r = Math.min(radius, width / 2, height / 2);
+
+  context.beginPath();
+  context.moveTo(x + r, y);
+  context.lineTo(x + width - r, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + r);
+  context.lineTo(x + width, y + height - r);
+  context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  context.lineTo(x + r, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - r);
+  context.lineTo(x, y + r);
+  context.quadraticCurveTo(x, y, x + r, y);
+}
+
+function AtlasCellCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -176,7 +124,7 @@ function SteroidSignalCanvas() {
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let animationFrame = 0;
-    let startTime = performance.now();
+    const startTime = performance.now();
 
     const draw = (time: number) => {
       const rect = canvas.getBoundingClientRect();
@@ -184,7 +132,10 @@ function SteroidSignalCanvas() {
       const height = Math.max(1, rect.height);
       const ratio = Math.min(window.devicePixelRatio || 1, 2);
 
-      if (canvas.width !== Math.round(width * ratio) || canvas.height !== Math.round(height * ratio)) {
+      if (
+        canvas.width !== Math.round(width * ratio) ||
+        canvas.height !== Math.round(height * ratio)
+      ) {
         canvas.width = Math.round(width * ratio);
         canvas.height = Math.round(height * ratio);
       }
@@ -192,88 +143,217 @@ function SteroidSignalCanvas() {
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       context.clearRect(0, 0, width, height);
 
-      const progress = reduceMotion ? 0.48 : ((time - startTime) % 5200) / 5200;
-      const centerX = width * 0.52;
+      const elapsed = reduceMotion ? 2400 : time - startTime;
+      const progress = (elapsed % 7600) / 7600;
+      const centerX = width * 0.55;
       const centerY = height * 0.48;
-      const radius = Math.min(width, height) * 0.27;
-      const orbitRadius = radius * 1.48;
+      const cellRadius = Math.min(width, height) * 0.36;
+
+      const background = context.createRadialGradient(
+        centerX,
+        centerY,
+        cellRadius * 0.1,
+        centerX,
+        centerY,
+        cellRadius * 1.7,
+      );
+      background.addColorStop(0, "rgba(18, 103, 216, 0.28)");
+      background.addColorStop(0.52, "rgba(6, 27, 104, 0.16)");
+      background.addColorStop(1, "rgba(6, 27, 104, 0)");
+      context.fillStyle = background;
+      context.fillRect(0, 0, width, height);
 
       context.lineCap = "round";
       context.lineJoin = "round";
 
-      for (let i = 0; i < 5; i += 1) {
-        const x = width * (0.16 + i * 0.18);
+      for (let i = 0; i < 12; i += 1) {
+        const waveY = height * (0.08 + i * 0.08);
+        const phase = progress * Math.PI * 2 + i * 0.5;
+
         context.beginPath();
-        context.moveTo(x, height * 0.1);
-        context.lineTo(x, height * 0.88);
-        context.strokeStyle = "rgba(241, 229, 202, 0.11)";
+        context.moveTo(width * -0.05, waveY);
+
+        for (let x = -20; x <= width + 40; x += 40) {
+          const y = waveY + Math.sin(x * 0.018 + phase) * 14;
+          context.lineTo(x, y);
+        }
+
+        context.strokeStyle = i % 2
+          ? "rgba(158, 219, 255, 0.08)"
+          : "rgba(18, 103, 216, 0.08)";
         context.lineWidth = 1;
         context.stroke();
       }
 
-      context.beginPath();
-      context.ellipse(centerX, centerY, radius * 1.42, radius * 0.74, -0.28, 0, Math.PI * 2);
-      context.strokeStyle = "rgba(216, 162, 76, 0.4)";
+      drawRoundedCell(
+        context,
+        centerX - cellRadius * 1.12,
+        centerY - cellRadius * 0.8,
+        cellRadius * 2.24,
+        cellRadius * 1.6,
+        cellRadius * 0.55,
+      );
+      context.fillStyle = "rgba(158, 219, 255, 0.045)";
+      context.fill();
+      context.strokeStyle = "rgba(158, 219, 255, 0.22)";
       context.lineWidth = 1.5;
       context.stroke();
 
+      const ldX = centerX + cellRadius * 0.38;
+      const ldY = centerY - cellRadius * 0.08;
+      const mitoX = centerX - cellRadius * 0.48;
+      const mitoY = centerY + cellRadius * 0.18;
+      const erX = centerX - cellRadius * 0.16;
+      const erY = centerY - cellRadius * 0.42;
+
       context.beginPath();
-      context.ellipse(centerX, centerY, radius * 1.04, radius * 0.58, 0.48, 0, Math.PI * 2);
-      context.strokeStyle = "rgba(146, 180, 172, 0.34)";
+      context.ellipse(mitoX, mitoY, cellRadius * 0.42, cellRadius * 0.18, -0.25, 0, Math.PI * 2);
+      context.fillStyle = "rgba(7, 21, 140, 0.36)";
+      context.fill();
+      context.strokeStyle = "rgba(158, 219, 255, 0.34)";
+      context.lineWidth = 2;
       context.stroke();
 
-      for (let i = 0; i < 6; i += 1) {
-        const angle = progress * Math.PI * 2 + i * (Math.PI / 3);
-        const x = centerX + Math.cos(angle) * orbitRadius;
-        const y = centerY + Math.sin(angle) * orbitRadius * 0.42;
-        const pulse = 0.5 + Math.sin(time / 360 + i) * 0.5;
-
+      for (let i = 0; i < 4; i += 1) {
         context.beginPath();
-        context.arc(x, y, 2.8 + pulse * 1.8, 0, Math.PI * 2);
-        context.fillStyle = i % 2 ? "rgba(216, 162, 76, 0.72)" : "rgba(146, 180, 172, 0.72)";
-        context.fill();
+        context.moveTo(mitoX - cellRadius * 0.22 + i * cellRadius * 0.13, mitoY - cellRadius * 0.08);
+        context.quadraticCurveTo(
+          mitoX - cellRadius * 0.12 + i * cellRadius * 0.13,
+          mitoY,
+          mitoX - cellRadius * 0.22 + i * cellRadius * 0.13,
+          mitoY + cellRadius * 0.08,
+        );
+        context.strokeStyle = "rgba(158, 219, 255, 0.34)";
+        context.lineWidth = 1.2;
+        context.stroke();
       }
 
-      const nodes = [
-        [centerX - radius * 0.78, centerY - radius * 0.38],
-        [centerX + radius * 0.08, centerY - radius * 0.62],
-        [centerX + radius * 0.76, centerY - radius * 0.04],
-        [centerX + radius * 0.3, centerY + radius * 0.66],
-        [centerX - radius * 0.65, centerY + radius * 0.42],
+      for (let i = 0; i < 4; i += 1) {
+        context.beginPath();
+        const offset = i * cellRadius * 0.1;
+        context.moveTo(erX - cellRadius * 0.5 + offset, erY + i * 6);
+        context.bezierCurveTo(
+          erX - cellRadius * 0.18 + offset,
+          erY - cellRadius * 0.22,
+          erX + cellRadius * 0.26 + offset,
+          erY + cellRadius * 0.2,
+          erX + cellRadius * 0.52,
+          erY - cellRadius * 0.05 + i * 8,
+        );
+        context.strokeStyle = "rgba(158, 219, 255, 0.42)";
+        context.lineWidth = 3.2;
+        context.stroke();
+      }
+
+      const ldGlow = context.createRadialGradient(ldX, ldY, 0, ldX, ldY, cellRadius * 0.34);
+      ldGlow.addColorStop(0, "rgba(255, 232, 74, 0.95)");
+      ldGlow.addColorStop(0.35, "rgba(255, 232, 74, 0.32)");
+      ldGlow.addColorStop(1, "rgba(255, 232, 74, 0)");
+      context.fillStyle = ldGlow;
+      context.beginPath();
+      context.arc(ldX, ldY, cellRadius * 0.34, 0, Math.PI * 2);
+      context.fill();
+      context.beginPath();
+      context.arc(ldX, ldY, cellRadius * 0.14, 0, Math.PI * 2);
+      context.fillStyle = "rgba(255, 232, 74, 0.94)";
+      context.fill();
+
+      const steroidNodes = [
+        [centerX - cellRadius * 0.15, centerY - cellRadius * 0.2],
+        [centerX + cellRadius * 0.16, centerY - cellRadius * 0.34],
+        [centerX + cellRadius * 0.45, centerY - cellRadius * 0.16],
+        [centerX + cellRadius * 0.34, centerY + cellRadius * 0.16],
+        [centerX + cellRadius * 0.02, centerY + cellRadius * 0.22],
+        [centerX - cellRadius * 0.26, centerY + cellRadius * 0.05],
       ];
 
-      nodes.forEach(([x, y], index) => {
-        const next = nodes[(index + 1) % nodes.length];
-        context.beginPath();
-        context.moveTo(x, y);
-        context.lineTo(next[0], next[1]);
-        context.strokeStyle = "rgba(246, 239, 222, 0.38)";
-        context.lineWidth = 2;
-        context.stroke();
-      });
-
-      nodes.forEach(([x, y], index) => {
-        context.beginPath();
-        context.arc(x, y, index === 2 ? 8 : 6, 0, Math.PI * 2);
-        context.fillStyle = index === 2 ? "rgba(216, 162, 76, 0.92)" : "rgba(246, 239, 222, 0.86)";
-        context.fill();
-        context.strokeStyle = "rgba(16, 37, 25, 0.42)";
-        context.lineWidth = 1;
-        context.stroke();
-      });
-
-      const sweep = progress * Math.PI * 2;
       context.beginPath();
-      context.arc(centerX, centerY, radius * 1.1, sweep, sweep + Math.PI * 0.92);
-      context.strokeStyle = "rgba(216, 162, 76, 0.82)";
-      context.lineWidth = 3;
+      steroidNodes.forEach(([x, y], index) => {
+        if (index === 0) {
+          context.moveTo(x, y);
+        } else {
+          context.lineTo(x, y);
+        }
+      });
+      context.closePath();
+      context.strokeStyle = "rgba(246, 250, 255, 0.78)";
+      context.lineWidth = 2.4;
       context.stroke();
 
       context.beginPath();
-      context.moveTo(width * 0.12, height * 0.74);
-      context.bezierCurveTo(width * 0.28, height * 0.58, width * 0.38, height * 0.84, width * 0.5, height * 0.66);
-      context.bezierCurveTo(width * 0.64, height * 0.46, width * 0.78, height * 0.58, width * 0.9, height * 0.34);
-      context.strokeStyle = "rgba(146, 180, 172, 0.48)";
+      context.moveTo(steroidNodes[2][0], steroidNodes[2][1]);
+      context.lineTo(centerX + cellRadius * 0.72, centerY - cellRadius * 0.34);
+      context.lineTo(centerX + cellRadius * 0.86, centerY - cellRadius * 0.02);
+      context.strokeStyle = "rgba(246, 250, 255, 0.48)";
+      context.stroke();
+
+      steroidNodes.forEach(([x, y], index) => {
+        context.beginPath();
+        context.arc(x, y, index === 2 ? 6 : 4.5, 0, Math.PI * 2);
+        context.fillStyle = index === 2 ? "rgba(217, 155, 77, 0.95)" : "rgba(246, 250, 255, 0.86)";
+        context.fill();
+      });
+
+      const paths = [
+        {
+          startX: width * 0.08,
+          startY: height * 0.68,
+          midX: centerX - cellRadius * 0.55,
+          midY: centerY - cellRadius * 0.08,
+          endX: ldX,
+          endY: ldY,
+          color: "rgba(39, 196, 106, 0.72)",
+        },
+        {
+          startX: width * 0.18,
+          startY: height * 0.34,
+          midX: erX,
+          midY: erY,
+          endX: centerX + cellRadius * 0.46,
+          endY: centerY - cellRadius * 0.15,
+          color: "rgba(158, 219, 255, 0.78)",
+        },
+        {
+          startX: mitoX,
+          startY: mitoY,
+          midX: centerX + cellRadius * 0.05,
+          midY: centerY + cellRadius * 0.52,
+          endX: centerX + cellRadius * 0.82,
+          endY: centerY - cellRadius * 0.03,
+          color: "rgba(217, 155, 77, 0.72)",
+        },
+      ];
+
+      paths.forEach((path, pathIndex) => {
+        context.beginPath();
+        context.moveTo(path.startX, path.startY);
+        context.quadraticCurveTo(path.midX, path.midY, path.endX, path.endY);
+        context.strokeStyle = path.color.replace("0.72", "0.28").replace("0.78", "0.28");
+        context.lineWidth = 2;
+        context.stroke();
+
+        for (let i = 0; i < 18; i += 1) {
+          const t = (progress + i / 18 + pathIndex * 0.16) % 1;
+          const x =
+            (1 - t) * (1 - t) * path.startX +
+            2 * (1 - t) * t * path.midX +
+            t * t * path.endX;
+          const y =
+            (1 - t) * (1 - t) * path.startY +
+            2 * (1 - t) * t * path.midY +
+            t * t * path.endY;
+
+          context.beginPath();
+          context.arc(x, y, 1.8 + Math.sin(t * Math.PI) * 1.8, 0, Math.PI * 2);
+          context.fillStyle = path.color;
+          context.fill();
+        }
+      });
+
+      const ripple = reduceMotion ? 0.7 : Math.sin(progress * Math.PI * 2) * 0.5 + 0.5;
+      context.beginPath();
+      context.arc(steroidNodes[2][0], steroidNodes[2][1], 18 + ripple * 32, 0, Math.PI * 2);
+      context.strokeStyle = `rgba(217, 155, 77, ${0.32 - ripple * 0.18})`;
       context.lineWidth = 2;
       context.stroke();
 
@@ -286,209 +366,434 @@ function SteroidSignalCanvas() {
 
     return () => {
       window.cancelAnimationFrame(animationFrame);
-      startTime = performance.now();
     };
   }, []);
 
-  return <canvas className="steroid-signal-canvas" ref={canvasRef} aria-hidden="true" />;
+  return <canvas className="atlas-canvas" ref={canvasRef} aria-hidden="true" />;
+}
+
+function scrollToHomeSection(sectionId: string) {
+  const target = document.getElementById(sectionId);
+
+  if (!target) {
+    return;
+  }
+
+  const targetTop = target.getBoundingClientRect().top + window.scrollY - 92;
+
+  window.scrollTo({
+    top: Math.max(targetTop, 0),
+    behavior: "smooth",
+  });
+
+  window.requestAnimationFrame(() => {
+    target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+  });
+}
+
+function HomeCinematicIntro({
+  phase,
+  progress,
+  onBegin,
+  onScrub,
+  onDock,
+}: {
+  phase: Exclude<HomeIntroPhase, "docked">;
+  progress: number;
+  onBegin: () => void;
+  onScrub: (deltaY: number) => void;
+  onDock: () => void;
+}) {
+  const isScaffold = phase === "scaffold";
+  const isDocking = phase === "docking";
+  const titleOpacity = phase === "atom" ? 0 : clampIntroProgress((progress - 0.58) / 0.28);
+  const carbonOpacity = clampIntroProgress(1 - progress * 1.45);
+  const introStyle = {
+    "--intro-progress": progress,
+    "--title-opacity": titleOpacity,
+    "--title-offset": `${(1 - titleOpacity) * 2.8}rem`,
+    "--title-scale": 0.94 + titleOpacity * 0.06,
+    "--carbon-opacity": carbonOpacity,
+    "--carbon-scale": 1 + progress * 5.5,
+    "--carbon-rotate-x": "0deg",
+    "--carbon-rotate-y": "0deg",
+    "--scene-shift-x": "0px",
+    "--scene-shift-y": "0px",
+    "--title-rotate-x": "8deg",
+    "--title-rotate-y": "0deg",
+    "--fluid-x": `${progress * -5}%`,
+    "--fluid-y": `${progress * 3}%`,
+    "--fluid-rotate": `${progress * 16}deg`,
+  } as CSSProperties;
+
+  const updatePointerVars = (event: PointerEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+
+    event.currentTarget.style.setProperty("--carbon-rotate-x", `${y * -18}deg`);
+    event.currentTarget.style.setProperty("--carbon-rotate-y", `${x * 24}deg`);
+    event.currentTarget.style.setProperty("--scene-shift-x", `${x * 24}px`);
+    event.currentTarget.style.setProperty("--scene-shift-y", `${y * -18}px`);
+    event.currentTarget.style.setProperty("--title-rotate-x", `${8 + y * -4}deg`);
+    event.currentTarget.style.setProperty("--title-rotate-y", `${x * 6}deg`);
+  };
+
+  const resetPointerVars = (event: PointerEvent<HTMLElement>) => {
+    event.currentTarget.style.setProperty("--carbon-rotate-x", "0deg");
+    event.currentTarget.style.setProperty("--carbon-rotate-y", "0deg");
+    event.currentTarget.style.setProperty("--scene-shift-x", "0px");
+    event.currentTarget.style.setProperty("--scene-shift-y", "0px");
+    event.currentTarget.style.setProperty("--title-rotate-x", "8deg");
+    event.currentTarget.style.setProperty("--title-rotate-y", "0deg");
+  };
+
+  const handleWheel = (event: WheelEvent<HTMLElement>) => {
+    if (isScaffold || isDocking) {
+      return;
+    }
+
+    event.preventDefault();
+    onScrub(event.deltaY);
+  };
+
+  return (
+    <section
+      className={`home-cinematic home-cinematic-${phase}`}
+      style={introStyle}
+      onClick={() => {
+        if (isScaffold) {
+          onDock();
+          return;
+        }
+
+        if (!isDocking) {
+          onBegin();
+        }
+      }}
+      onPointerMove={updatePointerVars}
+      onPointerLeave={resetPointerVars}
+      onWheel={handleWheel}
+      aria-label="Atlas Engine cinematic entry"
+    >
+      <Suspense fallback={<div className="cinematic-carbon-fallback" aria-hidden="true" />}>
+        <HomeAtlasThreeScene logoUrl={teamLogoUrl} mode={phase} progress={progress} />
+      </Suspense>
+
+      <div className="cinematic-carbon-shell" aria-hidden="true">
+        <div className="cinematic-carbon-orbit cinematic-carbon-orbit-a" />
+        <div className="cinematic-carbon-orbit cinematic-carbon-orbit-b" />
+        <div className="cinematic-carbon-orbit cinematic-carbon-orbit-c" />
+        <div className="cinematic-carbon-core">C</div>
+      </div>
+
+      <div className="cinematic-title-wrap" aria-hidden={phase === "atom"}>
+        <span className="cinematic-kicker">The Atlas Engine</span>
+        <h1 aria-label="Build a steroid hormone cell factory from simple carbon.">
+          {introTitleWords.map((word, index) => (
+            <span key={`${word}-${index}`} data-word={word} style={{ "--word-index": index } as CSSProperties}>
+              {word}
+            </span>
+          ))}
+        </h1>
+      </div>
+
+      {isScaffold ? (
+        <button
+          className="cinematic-dock-button"
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDock();
+          }}
+        >
+          Enter Atlas
+        </button>
+      ) : null}
+    </section>
+  );
 }
 
 export function Home() {
+  const heroRef = useRef<HTMLElement | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const dockTimeoutRef = useRef<number | null>(null);
+  const [introPhase, setIntroPhase] = useState<HomeIntroPhase>("atom");
+  const [introProgress, setIntroProgress] = useState(0);
+
+  const stopDockTimer = useCallback(() => {
+    if (dockTimeoutRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(dockTimeoutRef.current);
+    dockTimeoutRef.current = null;
+  }, []);
+
+  const stopIntroAnimation = useCallback(() => {
+    if (animationRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(animationRef.current);
+    animationRef.current = null;
+  }, []);
+
+  useEffect(
+    () => () => {
+      stopIntroAnimation();
+      stopDockTimer();
+    },
+    [stopDockTimer, stopIntroAnimation],
+  );
+
+  const commitIntroProgress = useCallback(
+    (nextProgress: number) => {
+      const next = clampIntroProgress(nextProgress);
+
+      setIntroProgress(next);
+
+      if (next >= 0.995) {
+        setIntroProgress(1);
+        setIntroPhase("scaffold");
+        stopIntroAnimation();
+        return;
+      }
+
+      setIntroPhase(next <= 0.02 ? "atom" : "travel");
+    },
+    [stopIntroAnimation],
+  );
+
+  const beginIntro = useCallback(() => {
+    if (introPhase === "scaffold" || introPhase === "docking" || introPhase === "docked") {
+      return;
+    }
+
+    stopIntroAnimation();
+    setIntroPhase("travel");
+
+    const startedAt = performance.now();
+    const startProgress = introProgress;
+    const remaining = Math.max(0.08, 1 - startProgress);
+
+    const tick = (time: number) => {
+      const elapsed = time - startedAt;
+      const rawProgress = clampIntroProgress(elapsed / (INTRO_ANIMATION_MS * remaining));
+      const easedProgress = startProgress + (1 - startProgress) * easeIntroProgress(rawProgress);
+
+      commitIntroProgress(easedProgress);
+
+      if (easedProgress < 0.995) {
+        animationRef.current = window.requestAnimationFrame(tick);
+      }
+    };
+
+    animationRef.current = window.requestAnimationFrame(tick);
+  }, [commitIntroProgress, introPhase, introProgress, stopIntroAnimation]);
+
+  const scrubIntro = useCallback(
+    (deltaY: number) => {
+      if (introPhase === "scaffold" || introPhase === "docking" || introPhase === "docked") {
+        return;
+      }
+
+      stopIntroAnimation();
+      commitIntroProgress(introProgress + deltaY * 0.00125);
+    },
+    [commitIntroProgress, introPhase, introProgress, stopIntroAnimation],
+  );
+
+  const dockIntro = useCallback(() => {
+    stopIntroAnimation();
+    stopDockTimer();
+    setIntroProgress(1);
+    setIntroPhase("docking");
+
+    dockTimeoutRef.current = window.setTimeout(() => {
+      setIntroPhase("docked");
+      dockTimeoutRef.current = null;
+
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }, 1250);
+  }, [stopDockTimer, stopIntroAnimation]);
+
   return (
     <>
-      <section className="home-hero-shell">
-        <div className="container home-hero-grid">
-          <div className="home-hero-copy">
-            <span className="home-hero-kicker">Jiangnan University x iGEM 2026</span>
-            <h1>Rewire the cell factory. Manufacture steroid hormones from carbon.</h1>
+      {introPhase !== "docked" ? (
+        <HomeCinematicIntro
+          phase={introPhase}
+          progress={introProgress}
+          onBegin={beginIntro}
+          onScrub={scrubIntro}
+          onDock={dockIntro}
+        />
+      ) : null}
+      <section
+        className={`atlas-hero ${introPhase === "docked" ? "is-docked" : "is-waiting"}`}
+        ref={heroRef}
+        onMouseMove={(event) => {
+          const target = heroRef.current;
+
+          if (!target) {
+            return;
+          }
+
+          const rect = target.getBoundingClientRect();
+          const x = ((event.clientX - rect.left) / rect.width - 0.5).toFixed(3);
+          const y = ((event.clientY - rect.top) / rect.height - 0.5).toFixed(3);
+
+          target.style.setProperty("--hero-x", x);
+          target.style.setProperty("--hero-y", y);
+        }}
+        onMouseLeave={() => {
+          const target = heroRef.current;
+
+          if (!target) {
+            return;
+          }
+
+          target.style.setProperty("--hero-x", "0");
+          target.style.setProperty("--hero-y", "0");
+        }}
+      >
+        <div className="atlas-fluid" aria-hidden="true" />
+        <div className="container atlas-hero-grid">
+          <div className="atlas-copy">
+            <span className="atlas-kicker">Jiangnan-China iGEM 2026 / The Atlas Engine</span>
+            <h1>Build a steroid hormone cell factory from simple carbon.</h1>
             <p>
-              This wiki frames the project as an integrated biomanufacturing platform:
-              metabolic flux, P450 catalysis, and intracellular transport are redesigned
-              together so simple carbon sources can move toward steroid hormone production.
+              A blue scientific atlas for an engineered fungal platform: carbon flux,
+              P450 catalysis, lipid droplets, ER membranes, and transport routes are
+              drawn as one living cell-factory system.
             </p>
-            <div className="home-hero-actions">
+            <div className="atlas-actions">
               <Link className="intro-action intro-action-primary" to="/description">
-                Open the project description
+                Enter judge path
               </Link>
               <button
                 className="intro-action intro-action-secondary"
                 type="button"
-                onClick={() => {
-                  const target = document.getElementById("home-roadmap");
-
-                  if (!target) {
-                    return;
-                  }
-
-                  window.scrollTo({
-                    top: Math.max(target.getBoundingClientRect().top + window.scrollY - 96, 0),
-                    behavior: "smooth",
-                  });
-                  window.requestAnimationFrame(() => {
-                    target.setAttribute("tabindex", "-1");
-                    target.focus({ preventScroll: true });
-                  });
-                }}
+                onClick={() => scrollToHomeSection("atlas-story")}
               >
-                Jump to the roadmap
+                Open story mode
               </button>
-              <Link className="intro-action intro-action-secondary" to="/wiki-excellence">
-                Best Wiki audit
-              </Link>
             </div>
-            <div className="home-hero-proof" aria-label="Homepage proof points">
-              <span>Need-led story</span>
-              <span>Three bottlenecks</span>
-              <span>Platform vision</span>
+            <div className="atlas-badges" aria-label="Atlas engine signals">
+              <span>ER membrane</span>
+              <span>P450 hotspot</span>
+              <span>LD node</span>
             </div>
           </div>
 
-          <aside className="platform-visual" aria-label="Steroid hormone biomanufacturing platform map">
-            <SteroidSignalCanvas />
-            <div className="platform-visual-header">
-              <span>Cell factory control map</span>
-              <strong>de novo steroid route</strong>
-            </div>
-            <div className="platform-node platform-node-carbon">Simple carbon source</div>
-            <div className="platform-node platform-node-flux">Flux rewiring</div>
-            <div className="platform-node platform-node-p450">P450 catalysis</div>
-            <div className="platform-node platform-node-export">Transport + export</div>
-            <ol className="platform-ladder">
-              <li>
-                <span>01</span>
-                <strong>Supply sterol scaffold</strong>
-              </li>
-              <li>
-                <span>02</span>
-                <strong>Convert with host-compatible enzymes</strong>
-              </li>
-              <li>
-                <span>03</span>
-                <strong>Scale as an intelligent platform</strong>
-              </li>
+          <aside className="atlas-stage" aria-label="3D-inspired cell factory atlas">
+            <div className="atlas-stage-rainbow" aria-hidden="true" />
+            <AtlasCellCanvas />
+            {introPhase === "docked" ? (
+              <Suspense fallback={null}>
+                <HomeAtlasThreeScene logoUrl={teamLogoUrl} mode="docked" progress={1} />
+              </Suspense>
+            ) : null}
+            <img className="atlas-team-mark" src={teamLogoUrl} alt="Jiangnan-China iGEM 2026 team symbol" />
+            <div className="atlas-stage-label atlas-stage-label-er">ER membrane</div>
+            <div className="atlas-stage-label atlas-stage-label-ld">LD</div>
+            <div className="atlas-stage-label atlas-stage-label-mito">Mitochondria</div>
+            <div className="atlas-stage-label atlas-stage-label-p450">P450 catalysis</div>
+            <ol className="atlas-orbit" aria-label="DBTL loop">
+              <li>Design</li>
+              <li>Build</li>
+              <li>Test</li>
+              <li>Learn</li>
             </ol>
           </aside>
         </div>
-
       </section>
 
-      <main className="home-main-shell">
-        <div className="home-decoration-layer" aria-hidden="true">
-          <span className="decor-trace decor-trace-a" />
-          <span className="decor-trace decor-trace-b" />
-          <span className="decor-chip decor-chip-a">Flux</span>
-          <span className="decor-chip decor-chip-b">Catalysis</span>
-          <span className="decor-chip decor-chip-c">Transport</span>
+      <main className="atlas-main">
+        <div className="container atlas-sticky-nav">
+          <SectionNav sections={homeSections} />
         </div>
 
-        <section className="container home-overview story-section">
-          <MetricStrip
-            items={[
-              {
-                label: "Target",
-                value: "Steroid hormones",
-                note: "A medically important family of molecules with broad roles in metabolism, reproduction, stress, and therapy.",
-              },
-              {
-                label: "Starting point",
-                value: "Simple carbon source",
-                note: "The platform vision is de novo biosynthesis rather than sterol-dependent semisynthesis.",
-              },
-              {
-                label: "Core bottlenecks",
-                value: "3 layers",
-                note: "Metabolic flux, catalytic conversion, and transport/export are the dominant barriers.",
-              },
-              {
-                label: "Destination",
-                value: "Intelligent platform",
-                note: "DBTL, AI-guided design, and scalable fermentation define the long-term direction.",
-              },
-            ]}
-          />
-
-          <div className="story-band story-band-hero">
-            <div>
-              <span className="story-band-label">Theme statement</span>
-              <h2 className="story-band-title">This is not just a pathway project. It is a manufacturing-platform project.</h2>
-            </div>
-            <p className="story-band-text">
-              The most important shift in this year's story is moving from isolated biosynthetic
-              steps to an integrated and sustainable steroid hormone production system.
+        <section id="atlas-story" className="container atlas-section atlas-story-section">
+          <div className="atlas-section-heading">
+            <span>Story Mode</span>
+            <h2>From manufacturing burden to a programmable steroid cell factory.</h2>
+            <p>
+              The first round keeps the homepage focused and judge-readable: one visual
+              world, one scientific arc, and no invented experimental claims.
             </p>
           </div>
-
-          <div className="scene-grid">
-            {sceneCards.map((scene) => (
-              <article className="scene-card" key={scene.title}>
-                <span>{scene.label}</span>
-                <h3>{scene.title}</h3>
-                <p>{scene.text}</p>
+          <div className="atlas-story-grid">
+            {storySteps.map((step, index) => (
+              <article className="atlas-story-card" key={step.title}>
+                <span>{step.label}</span>
+                <strong>{`0${index + 1}`}</strong>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <div className="container home-sticky-nav">
-          <SectionNav sections={homeSections} />
-        </div>
-
-        <section id="home-roadmap" className="container story-section">
-          <div className="section-shell section-shell-emerald">
-            <div className="section-heading">
-              <h2>The homepage roadmap</h2>
-              <p>
-                This is the backbone the rest of the wiki should inherit. If a reader understands
-                this sequence, every later page becomes easier to justify and easier to remember.
-              </p>
-            </div>
-            <div className="split-layout">
-              <FlowDiagram
-                title="One scientific arc for the whole project"
-                lead="The homepage should move from medical and industrial necessity to the three engineering bottlenecks, and then forward into the platform vision."
-                steps={roadmapSteps}
-              />
-              <aside className="quote-card">
-                <span className="quote-mark">Reader memory</span>
-                <h3>The site should leave readers with one clear memory: steroid hormone biomanufacturing becomes possible only when flux, catalysis, and transport are solved together.</h3>
-                <p>
-                  That systems view is stronger than presenting the project as just one new enzyme
-                  or one higher titer.
-                </p>
-              </aside>
-            </div>
-          </div>
-        </section>
-
-        <section id="home-tracks" className="container story-section">
-          <div className="story-band">
+        <section id="atlas-modules" className="container atlas-section">
+          <div className="atlas-band">
             <div>
-              <span className="story-band-label">Reading logic</span>
-              <h2 className="story-band-title">Each page should deepen one part of the same platform story.</h2>
+              <span>Wiki Architecture</span>
+              <h2>Two routes through the same atlas.</h2>
             </div>
-            <p className="story-band-text">
-              The homepage is where we split the full project into readable modules without
-              breaking the scientific continuity.
+            <p>
+              Judge Path follows the story. Lab Path keeps experiments, notebook,
+              model, and software within reach for technical readers.
             </p>
           </div>
-          <EvidenceGrid items={readingTracks} />
-        </section>
-
-        <section id="home-progress" className="container story-section">
-          <div className="section-shell section-shell-amber">
-            <div className="section-heading">
-              <h2>The proof agenda for this season</h2>
-              <p>
-                Even before all experiments are finished, the homepage can already tell readers
-                exactly what the project needs to prove to become a real platform.
-              </p>
-            </div>
-            <EvidenceGrid items={proofAgenda} />
+          <div className="atlas-module-grid">
+            {moduleCards.map((module) => (
+              <Link className="atlas-module-card" to={module.href} key={module.title}>
+                <span>{module.label}</span>
+                <h3>{module.title}</h3>
+                <p>{module.text}</p>
+              </Link>
+            ))}
           </div>
         </section>
 
-        <section id="home-references" className="container story-section story-section-last">
-          <ReferenceBlock title="References that shape this year's story" items={referenceItems} />
+        <section id="atlas-proof" className="container atlas-section">
+          <div className="atlas-section-heading">
+            <span>Proof Slots</span>
+            <h2>Evidence placeholders are visible, honest, and ready for real data.</h2>
+            <p>
+              The homepage marks the scientific proof ladder without fabricating assays,
+              charts, or titers before the wet-lab evidence is available.
+            </p>
+          </div>
+          <div className="atlas-proof-spiral" aria-label="Reserved proof agenda">
+            {proofSlots.map((slot, index) => (
+              <article className="atlas-proof-card" key={slot}>
+                <span>{`Level 0${index + 1}`}</span>
+                <h3>{slot}</h3>
+                <p>Reserved for verified figures, assay notes, or notebook-linked evidence.</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="atlas-next" className="container atlas-section atlas-section-last">
+          <div className="atlas-next-banner">
+            <div>
+              <span>Next Stop</span>
+              <h2>Description turns the atlas into a project argument.</h2>
+              <p>
+                Start with the burden of current steroid production, then move into the
+                platform answer: flux, catalysis, transport, and responsible deployment.
+              </p>
+            </div>
+            <Link className="intro-action intro-action-primary" to="/description">
+              Continue to Description
+            </Link>
+          </div>
         </section>
       </main>
     </>

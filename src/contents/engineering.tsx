@@ -4,6 +4,7 @@ import {
   MetricStrip,
   ReferenceBlock,
 } from "../components/PageScaffold";
+import { MetabolicControlMap, NextStopBanner } from "../components/AtlasShowpieces";
 
 const engineeringReferences = [
   {
@@ -83,6 +84,7 @@ export function Engineering() {
             },
           ]}
         />
+        <MetabolicControlMap />
       </section>
 
       <section id="build" className="story-section">
@@ -174,6 +176,13 @@ export function Engineering() {
 
       <section id="references" className="story-section story-section-last">
         <ReferenceBlock title="References and engineering guidance" items={engineeringReferences} />
+        <NextStopBanner
+          eyebrow="Next Stop"
+          title="Results turns the control map into a proof spiral."
+          text="Move from design intent into scaffold supply, catalytic conversion, transport compatibility, and platform coherence."
+          href="/results"
+          actionLabel="Continue to Results"
+        />
       </section>
     </>
   );

@@ -2,12 +2,23 @@ import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { getPathMapping } from "../../utils";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { Navbar } from "../../components/Navbar";
 import { Header } from "../../components/Header";
 import { NotFound } from "../../components/NotFound";
 import { Footer } from "../../components/Footer";
+import { MolecularLoader } from "../../components/MolecularLoader";
 import { SectionNav } from "../../components/PageScaffold";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return null;
+}
 
 const App = () => {
   const pathMapping = getPathMapping();
@@ -26,7 +37,9 @@ const App = () => {
   }, [title]);
 
   return (
-    <>
+    <div className="atlas-app-shell">
+      <ScrollToTop />
+      <MolecularLoader routeKey={location.pathname} />
       {/* Navigation */}
       <Navbar />
 
@@ -91,7 +104,7 @@ const App = () => {
       {/* Footer */}
       {/* MUST mention license AND have a link to team wiki's repository on gitlab.igem.org */}
       <Footer />
-    </>
+    </div>
   );
 };
 

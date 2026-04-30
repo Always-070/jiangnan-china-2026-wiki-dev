@@ -4,6 +4,7 @@ import {
   MetricStrip,
   ReferenceBlock,
 } from "../components/PageScaffold";
+import { NextStopBanner, RouteComparison } from "../components/AtlasShowpieces";
 
 const descriptionReferences = [
   {
@@ -122,6 +123,7 @@ export function Description() {
             </article>
           ))}
         </div>
+        <RouteComparison />
       </section>
 
       <section id="gap" className="story-section">
@@ -211,6 +213,13 @@ export function Description() {
 
       <section id="references" className="story-section story-section-last">
         <ReferenceBlock title="References and framing sources" items={descriptionReferences} />
+        <NextStopBanner
+          eyebrow="Next Stop"
+          title="Engineering turns the platform answer into an interactive control map."
+          text="Follow the DBTL loop through flux, P450 catalysis, and transport compatibility."
+          href="/engineering"
+          actionLabel="Continue to Engineering"
+        />
       </section>
     </>
   );

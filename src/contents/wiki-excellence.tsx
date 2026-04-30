@@ -87,6 +87,18 @@ const referenceItems = [
 export function WikiExcellence() {
   return (
     <>
+      <section className="award-rainbow-hero" aria-label="Best Wiki rainbow arc signal">
+        <div className="award-rainbow-arc" aria-hidden="true" />
+        <div>
+          <span>Best Wiki / Awards Signal</span>
+          <h2>Rainbow arcs appear here as a deliberate achievement marker.</h2>
+          <p>
+            The team-logo rainbow language is reserved for the homepage and this excellence
+            board, so it reads as a rare signal rather than general decoration.
+          </p>
+        </div>
+      </section>
+
       <section id="criteria" className="story-section story-section-first">
         <div className="section-heading">
           <h2>What this page is for</h2>

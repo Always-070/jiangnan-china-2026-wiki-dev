@@ -26,8 +26,9 @@ const App = () => {
   const currentPath = location.pathname || "/";
 
   const currentPage = pathMapping[currentPath];
+  const isImmersiveResults = currentPath === "/results";
   const showStandardHeader =
-    currentPath !== "/" && currentPath !== "/attributions" && !!currentPage;
+    currentPath !== "/" && currentPath !== "/attributions" && !isImmersiveResults && !!currentPage;
 
   // Set Page Title
   const title = currentPage?.title || "Not Found";
@@ -75,8 +76,8 @@ const App = () => {
                   {path === "/" || path === "/attributions" ? (
                     <Component />
                   ) : (
-                    <div className="container page-shell">
-                      {anchorSections?.length ? (
+                    <div className={`container page-shell ${path === "/results" ? "page-shell-results" : ""}`.trim()}>
+                      {path !== "/results" && anchorSections?.length ? (
                         <SectionNav sections={anchorSections} />
                       ) : null}
                       <Component />

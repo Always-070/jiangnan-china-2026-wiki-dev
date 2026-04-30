@@ -50,32 +50,88 @@ const fluidVertexShader = `
 
 const fluidFragmentShader = `
   uniform float uTime;
+  uniform float uAlpha;
   uniform vec2 uPointer;
   varying vec2 vUv;
 
-  float wave(vec2 p, float speed, float scale) {
-    return sin((p.x * 2.1 + p.y * 1.4) * scale + uTime * speed);
+  float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+
+    return fract(p.x * p.y);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+  }
+
+  float fbm(vec2 p) {
+    float value = 0.0;
+    float amplitude = 0.52;
+    mat2 turn = mat2(0.82, -0.57, 0.57, 0.82);
+
+    for (int i = 0; i < 5; i++) {
+      value += amplitude * noise(p);
+      p = turn * p * 2.03 + 17.13;
+      amplitude *= 0.5;
+    }
+
+    return value;
   }
 
   void main() {
     vec2 p = vUv * 2.0 - 1.0;
-    p += uPointer * 0.08;
+    p.x *= 1.46;
+    p += uPointer * 0.055;
 
-    float w1 = wave(p, 0.24, 3.2);
-    float w2 = wave(vec2(p.y, p.x), -0.18, 4.4);
-    float w3 = sin(length(p + vec2(0.34, -0.16)) * 7.2 - uTime * 0.42);
-    float field = smoothstep(-1.0, 1.0, w1 * 0.46 + w2 * 0.32 + w3 * 0.22);
-    float glow = 1.0 - smoothstep(0.0, 1.25, length(p - vec2(0.18, -0.05)));
+    float t = uTime * 0.075;
+    vec2 drift = vec2(t * -0.72, t * 0.48);
+    vec2 q = vec2(
+      fbm(p * 1.08 + drift + vec2(0.0, 3.7)),
+      fbm(p * 1.04 - drift.yx + vec2(5.2, 1.1))
+    );
+    vec2 r = vec2(
+      fbm(p * 1.82 + q * 2.35 + vec2(1.7, -0.8) + drift.yx),
+      fbm(p * 1.66 + q * 2.1 + vec2(-2.6, 2.4) - drift)
+    );
 
-    vec3 deep = vec3(0.023, 0.105, 0.407);
-    vec3 blue = vec3(0.071, 0.404, 0.847);
+    vec2 warp = (q - 0.5) * 1.02 + (r - 0.5) * 0.64;
+    float slowSwell = fbm(p * 0.34 + warp * 0.5 + vec2(t * 0.5, -t * 0.34));
+    float waveA = sin((p.x + warp.x) * 2.95 + (p.y + warp.y) * 3.55 + t * 5.9);
+    float waveB = sin((p.x - warp.y) * 4.85 - (p.y + warp.x) * 2.55 - t * 5.05);
+    float waveC = sin(length(p + warp * 0.7) * 5.35 - t * 4.7);
+    float waveMix = waveA * 0.48 + waveB * 0.34 + waveC * 0.18;
+    float cytoplasm = 0.5 + 0.5 * waveMix;
+    float filament = pow(1.0 - abs(waveMix), 2.35) * smoothstep(0.18, 0.88, slowSwell);
+    float caustic = smoothstep(0.86, 0.99, cytoplasm) * (0.36 + slowSwell * 0.64);
+    float undercurrent = smoothstep(0.62, 0.98, fbm(p * 1.18 + warp * 1.4 + vec2(-t * 1.25, t * 0.52)));
+    float pulse = cytoplasm * 0.72 + slowSwell * 0.28;
+    float vignette = smoothstep(1.72, 0.12, length(p * vec2(0.62, 0.92)));
+
+    vec3 deep = vec3(0.0235, 0.1059, 0.4078);
+    vec3 abyss = vec3(0.0039, 0.017, 0.082);
+    vec3 electrophoresis = vec3(0.0706, 0.4039, 0.8471);
     vec3 ice = vec3(0.62, 0.86, 1.0);
-    vec3 color = mix(deep, blue, field * 0.62);
-    color += ice * glow * 0.18;
-    color += vec3(0.15, 0.78, 0.42) * max(0.0, field - 0.78) * 0.12;
-    float edge = 1.0 - smoothstep(0.62, 1.04, length(p * vec2(0.74, 1.25)));
+    vec3 color = mix(abyss, deep, 0.58 + slowSwell * 0.34);
+    color = mix(color, electrophoresis, 0.08 + pulse * 0.34);
+    color += ice * filament * 0.145;
+    color += electrophoresis * vignette * 0.035;
+    color += vec3(0.08, 0.66, 1.0) * caustic * 0.072;
+    color += vec3(0.15, 0.78, 0.42) * undercurrent * 0.038;
+    color *= 0.78 + vignette * 0.26;
 
-    gl_FragColor = vec4(color, 0.74 * edge);
+    float alpha = uAlpha * (0.72 + pulse * 0.24 + filament * 0.18 + caustic * 0.08);
+
+    gl_FragColor = vec4(color, alpha);
   }
 `;
 
@@ -175,15 +231,19 @@ function ringPoints(radius: number, sides: number, phase = 0) {
   });
 }
 
-function FluidBackdrop({ reducedMotion }: { reducedMotion: boolean }) {
+function FluidBackdrop({ reducedMotion, alpha = 0.38 }: { reducedMotion: boolean; alpha?: number }) {
+  const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const { camera, size } = useThree();
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
+      uAlpha: { value: 0.38 },
       uPointer: { value: new THREE.Vector2(0, 0) },
     }),
     [],
   );
+  const direction = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(({ clock, pointer }) => {
     if (!materialRef.current) {
@@ -191,11 +251,29 @@ function FluidBackdrop({ reducedMotion }: { reducedMotion: boolean }) {
     }
 
     materialRef.current.uniforms.uTime.value = reducedMotion ? 2.2 : clock.getElapsedTime();
+    materialRef.current.uniforms.uAlpha.value = alpha;
     materialRef.current.uniforms.uPointer.value.set(pointer.x, pointer.y);
+
+    if (!meshRef.current) {
+      return;
+    }
+
+    const distance = 9.5;
+
+    camera.getWorldDirection(direction);
+    meshRef.current.position.copy(camera.position).add(direction.multiplyScalar(distance));
+    meshRef.current.quaternion.copy(camera.quaternion);
+
+    if (camera instanceof THREE.PerspectiveCamera) {
+      const height = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * distance;
+      const width = height * (size.width / Math.max(size.height, 1));
+
+      meshRef.current.scale.set(width * 1.18, height * 1.18, 1);
+    }
   });
 
   return (
-    <mesh position={[0.22, 0, -2.25]} scale={[8.3, 4.9, 1]}>
+    <mesh ref={meshRef} renderOrder={-20}>
       <planeGeometry args={[1, 1, 48, 48]} />
       <shaderMaterial
         ref={materialRef}
@@ -204,6 +282,7 @@ function FluidBackdrop({ reducedMotion }: { reducedMotion: boolean }) {
         fragmentShader={fluidFragmentShader}
         transparent
         depthWrite={false}
+        side={THREE.DoubleSide}
       />
     </mesh>
   );
@@ -1021,7 +1100,10 @@ function HeroAtlasModel({
 
   return (
     <>
-      <FluidBackdrop reducedMotion={reducedMotion} />
+      <FluidBackdrop
+        reducedMotion={reducedMotion}
+        alpha={mode === "atom" ? 0.76 : mode === "travel" ? 0.72 + reveal * 0.16 : 0.86}
+      />
       <HeroCameraRig reducedMotion={reducedMotion} mode={mode} progress={progress} />
       <CarbonAtomFocus reducedMotion={reducedMotion} opacity={atomOpacity} />
       <group ref={rootRef} position={[0, 0, 0]} rotation={[-0.03, -0.08, 0]} scale={targetScale} visible={sceneVisible}>
@@ -1271,13 +1353,14 @@ function EvidenceHelixModel({
 }) {
   const rootRef = useRef<THREE.Group>(null);
   const descent = easeInOut(scrollProgress);
+  const activeIndex = Math.min(3, Math.max(0, Math.round(scrollProgress * 3)));
   const helixA = useMemo(
     () =>
-      Array.from({ length: 110 }, (_, index) => {
-        const t = index / 109;
-        const angle = t * Math.PI * 5.25;
+      Array.from({ length: 150 }, (_, index) => {
+        const t = index / 149;
+        const angle = t * Math.PI * 7.2;
 
-        return new THREE.Vector3(Math.cos(angle) * 0.82, 1.25 - t * 2.5, Math.sin(angle) * 0.82);
+        return new THREE.Vector3(Math.cos(angle) * 0.96, 1.78 - t * 3.56, Math.sin(angle) * 0.96);
       }),
     [],
   );
@@ -1285,9 +1368,9 @@ function EvidenceHelixModel({
     () =>
       helixA.map((point, index) => {
         const t = index / (helixA.length - 1);
-        const angle = t * Math.PI * 5.25 + Math.PI;
+        const angle = t * Math.PI * 7.2 + Math.PI;
 
-        return new THREE.Vector3(Math.cos(angle) * 0.82, point.y, Math.sin(angle) * 0.82);
+        return new THREE.Vector3(Math.cos(angle) * 0.96, point.y, Math.sin(angle) * 0.96);
       }),
     [helixA],
   );
@@ -1301,21 +1384,26 @@ function EvidenceHelixModel({
   });
 
   return (
-    <group ref={rootRef} position={[0, descent * 0.7, 0]} rotation={[0.1, -0.25 + descent * Math.PI * 0.85, 0]} scale={1.12}>
+    <group
+      ref={rootRef}
+      position={[0, -0.18 + descent * 1.32, 0]}
+      rotation={[0.12, -0.42 + descent * Math.PI * 1.8, 0]}
+      scale={1.28}
+    >
       <mesh>
-        <cylinderGeometry args={[0.035, 0.035, 3.2, 32]} />
-        <meshBasicMaterial color="#9edbff" transparent opacity={0.32} blending={THREE.AdditiveBlending} />
+        <cylinderGeometry args={[0.042, 0.042, 4.35, 32]} />
+        <meshBasicMaterial color="#9edbff" transparent opacity={0.42} blending={THREE.AdditiveBlending} />
       </mesh>
       <mesh scale={[7, 1, 7]}>
         <sphereGeometry args={[0.1, 32, 16]} />
         <meshBasicMaterial color="#1267d8" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
-      <Line points={helixA} color="#9edbff" lineWidth={2.1} transparent opacity={0.72} />
-      <Line points={helixB} color="#ffe84a" lineWidth={1.5} transparent opacity={0.56} />
-      {helixA.filter((_, index) => index % 9 === 0).map((point, index) => (
+      <Line points={helixA} color="#9edbff" lineWidth={2.45} transparent opacity={0.82} />
+      <Line points={helixB} color="#ffe84a" lineWidth={1.75} transparent opacity={0.66} />
+      {helixA.filter((_, index) => index % 10 === 0).map((point, index) => (
         <Line
           key={index}
-          points={[point, helixB[index * 9] || point]}
+          points={[point, helixB[index * 10] || point]}
           color={index % 2 ? "#27c46a" : "#d99b4d"}
           lineWidth={1}
           transparent
@@ -1323,17 +1411,18 @@ function EvidenceHelixModel({
         />
       ))}
       {["01", "02", "03", "04"].map((label, index) => {
-        const angle = index * Math.PI * 1.4 + 0.4;
+        const angle = index * Math.PI * 1.82 + 0.4 + descent * Math.PI * 1.8;
+        const isActive = activeIndex === index;
 
         return (
-          <group key={label} position={[Math.cos(angle) * 1.42, 0.92 - index * 0.62, Math.sin(angle) * 1.42]}>
+          <group key={label} position={[Math.cos(angle) * 1.58, 1.18 - index * 0.76, Math.sin(angle) * 1.58]}>
             <mesh>
-              <boxGeometry args={[0.58, 0.28, 0.035]} />
-              <meshBasicMaterial color="#f6faff" transparent opacity={0.13} />
+              <boxGeometry args={[isActive ? 0.72 : 0.58, 0.28, 0.035]} />
+              <meshBasicMaterial color={isActive ? "#ffe84a" : "#f6faff"} transparent opacity={isActive ? 0.28 : 0.13} />
             </mesh>
             <mesh position={[-0.22, 0, 0.04]}>
-              <sphereGeometry args={[0.055, 18, 18]} />
-              <meshBasicMaterial color={index === 1 ? "#d99b4d" : "#9edbff"} transparent opacity={0.9} />
+              <sphereGeometry args={[isActive ? 0.075 : 0.055, 18, 18]} />
+              <meshBasicMaterial color={isActive ? "#ffe84a" : index === 1 ? "#d99b4d" : "#9edbff"} transparent opacity={0.9} />
             </mesh>
           </group>
         );

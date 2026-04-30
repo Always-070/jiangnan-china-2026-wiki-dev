@@ -62,10 +62,7 @@ const engineeringAnchors: PageAnchor[] = [
 ];
 
 const resultsAnchors: PageAnchor[] = [
-  { id: "milestones", label: "Milestones" },
-  { id: "evidence", label: "Evidence" },
-  { id: "limitations", label: "Limits" },
-  { id: "next-steps", label: "Next Steps" },
+  { id: "milestones", label: "Helix" },
   { id: "references", label: "References" },
 ];
 
@@ -120,15 +117,15 @@ const engineeringFigure: HeroFigure = {
 };
 
 const resultsFigure: HeroFigure = {
-  label: "Proof Ladder",
-  title: "Scaffold -> Conversion -> Compatibility -> Platform",
+  label: "DNA Evidence Chain",
+  title: "Level 01 -> 04 around the central light column",
   description:
-    "The most convincing Results page for this theme shows how separate engineering gains start to assemble into a real steroid production platform.",
+    "The Results page is organized as a scroll-controlled virtual helix rather than a stack of flat report sections.",
   items: [
-    "Start by showing precursor readiness and chassis capability.",
-    "Highlight the key catalytic breakthrough or remaining bottleneck.",
-    "Show whether transport or localization mismatches are being relieved.",
-    "End by asking whether the platform is becoming more integrated and scalable.",
+    "Level 01 reserves scaffold-supply evidence slots.",
+    "Level 02 opens catalytic conversion slots.",
+    "Level 03 frames transport compatibility data.",
+    "Level 04 closes with platform-coherence evidence.",
   ],
 };
 
@@ -195,7 +192,7 @@ const engineeringCtas: CallToAction[] = [
 ];
 
 const resultsCtas: CallToAction[] = [
-  { label: "Open milestone view", href: "#milestones", variant: "primary" },
+  { label: "Enter evidence helix", href: "#milestones", variant: "primary" },
   { label: "Back to engineering", href: "/engineering", variant: "secondary" },
 ];
 
@@ -289,11 +286,11 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Results",
         path: "/results",
         component: Results,
-        lead: "Present the strongest evidence that the steroid hormone platform is becoming viable, while naming the bottlenecks that still remain.",
+        lead: "Move through a scroll-controlled DNA helix evidence chain for scaffold supply, catalytic conversion, transport compatibility, and platform coherence.",
         summaryBullets: [
-          "Organize the page as a proof ladder from scaffold supply to platform integration.",
-          "Show catalytic gains and transport compatibility alongside honest remaining limits.",
-          "Use the closing section to identify the next limiting layer for industrial relevance.",
+          "Use the central light column as the Results spine.",
+          "Open holographic data pads for Assay, Figure, and Report slots at each level.",
+          "Keep every slot honest until wet-lab data is ready.",
         ],
         anchorSections: resultsAnchors,
         heroFigure: resultsFigure,

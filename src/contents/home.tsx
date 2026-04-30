@@ -72,7 +72,7 @@ const proofSlots = [
 type HomeIntroPhase = "atom" | "travel" | "scaffold" | "docking" | "docked";
 
 const introTitleWords = "Build a steroid hormone cell factory from simple carbon.".split(" ");
-const INTRO_ANIMATION_MS = 1850;
+const INTRO_ANIMATION_MS = 3400;
 
 function clampIntroProgress(value: number) {
   return Math.min(Math.max(value, 0), 1);
@@ -81,7 +81,7 @@ function clampIntroProgress(value: number) {
 function easeIntroProgress(value: number) {
   const t = clampIntroProgress(value);
 
-  return 1 - Math.pow(1 - t, 3);
+  return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
 function drawRoundedCell(

@@ -226,47 +226,126 @@ export function MetabolicControlMap() {
 
 export function EvidenceSpiral() {
   const { ref, progress } = useElementScrollProgress<HTMLElement>();
+  const activeIndex = Math.min(3, Math.max(0, Math.round(progress * 3)));
   const levels = [
     {
       level: "Level 01",
       title: "Scaffold supply",
-      text: "Reserve this slot for evidence that the chassis can support the upstream steroid nucleus.",
+      text: "Reserve the first evidence tier for precursor readiness and upstream steroid nucleus support.",
+      slots: ["Assay: precursor pool", "Figure: scaffold trace", "Report: chassis baseline"],
     },
     {
       level: "Level 02",
       title: "Catalytic conversion",
-      text: "Reserve this slot for verified P450 conversion, hydroxylation, or side-chain cleavage data.",
+      text: "Open the second tier when P450 conversion, hydroxylation, or side-chain cleavage has measurable support.",
+      slots: ["Assay: P450 activity", "Figure: conversion curve", "Report: enzyme checkpoint"],
     },
     {
       level: "Level 03",
       title: "Transport compatibility",
-      text: "Reserve this slot for routing, export, accumulation, or toxicity readouts.",
+      text: "Use the third tier for routing, export, accumulation, membrane stress, or toxicity readouts.",
+      slots: ["Assay: export/routing", "Figure: burden readout", "Report: compatibility note"],
     },
     {
       level: "Level 04",
       title: "Platform coherence",
-      text: "Reserve this slot for the strongest combined result across multiple engineering layers.",
+      text: "Close the spiral with the strongest combined result across flux, catalysis, and transport layers.",
+      slots: ["Assay: integrated run", "Figure: evidence summary", "Report: platform milestone"],
     },
   ];
+  const helixRungs = Array.from({ length: 18 }, (_, index) => index);
 
   return (
     <section
       className="evidence-spiral"
       aria-label="DNA helix evidence chain"
       ref={ref}
-      style={{ "--scene-progress": progress } as CSSProperties}
+      style={{ "--scene-progress": progress, "--active-level": activeIndex } as CSSProperties}
     >
-      <div className="evidence-spiral-core" aria-hidden="true" />
-      <Suspense fallback={null}>
-        <EvidenceSpiralThreeScene scrollProgress={progress} />
-      </Suspense>
-      {levels.map((level, index) => (
-        <article className="evidence-spiral-card" key={level.level} style={{ "--level": index } as CSSProperties}>
-          <span>{level.level}</span>
-          <h3>{level.title}</h3>
-          <p>{level.text}</p>
-        </article>
-      ))}
+      <div className="evidence-spiral-sticky">
+        <div className="evidence-spiral-heading">
+          <span>DNA Helix Evidence Chain</span>
+          <h2>Scroll down the central light column to descend through four proof tiers.</h2>
+        </div>
+
+        <div className="evidence-helix-stage" aria-hidden="true">
+          <div className="evidence-spiral-core" />
+          <Suspense fallback={null}>
+            <EvidenceSpiralThreeScene scrollProgress={progress} />
+          </Suspense>
+          <div className="evidence-helix-world">
+            <svg className="evidence-helix-svg" viewBox="0 0 520 1260" preserveAspectRatio="none">
+              <path
+                className="evidence-helix-path evidence-helix-path-a"
+                d="M260 0 C35 86 35 184 260 270 C485 356 485 454 260 540 C35 626 35 724 260 810 C485 896 485 994 260 1080 C35 1166 35 1232 260 1260"
+              />
+              <path
+                className="evidence-helix-path evidence-helix-path-b"
+                d="M260 0 C485 86 485 184 260 270 C35 356 35 454 260 540 C485 626 485 724 260 810 C35 896 35 994 260 1080 C485 1166 485 1232 260 1260"
+              />
+              {helixRungs.map((rung) => {
+                const y = 38 + rung * 68;
+                const phase = rung % 4;
+                const left = phase < 2 ? 114 + phase * 58 : 348 - (phase - 2) * 58;
+                const right = 520 - left;
+
+                return (
+                  <line
+                    className="evidence-helix-rung"
+                    key={rung}
+                    x1={left}
+                    x2={right}
+                    y1={y}
+                    y2={y + 28}
+                  />
+                );
+              })}
+            </svg>
+            <ol className="evidence-helix-levels">
+              {levels.map((level, index) => (
+                <li
+                  key={level.level}
+                  className={activeIndex === index ? "is-active" : ""}
+                  style={
+                    {
+                      "--level": index,
+                      "--level-x": `${Math.sin((index + progress * 3) * Math.PI * 2) * 8}rem`,
+                    } as CSSProperties
+                  }
+                >
+                  <span>{level.level.replace("Level ", "L")}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        <div className="evidence-datapads">
+          {levels.map((level, index) => (
+            <article
+              className={`evidence-spiral-card ${activeIndex === index ? "is-active" : ""}`}
+              key={level.level}
+              style={
+                {
+                  "--level": index,
+                  "--depth": index - activeIndex,
+                  "--depth-abs": Math.abs(index - activeIndex),
+                  zIndex: 12 - Math.abs(index - activeIndex),
+                } as CSSProperties
+              }
+            >
+              <span>{level.level}</span>
+              <h3>{level.title}</h3>
+              <p>{level.text}</p>
+              <ul className="evidence-slot-list" aria-label={`${level.level} data slots`}>
+                {level.slots.map((slot) => (
+                  <li key={slot}>{slot}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

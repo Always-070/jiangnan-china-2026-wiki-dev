@@ -27,6 +27,9 @@ interface SceneShellProps {
   className: string;
   children: (reducedMotion: boolean) => ReactNode;
   cameraPosition?: [number, number, number];
+  bloomIntensity?: number;
+  bloomThreshold?: number;
+  bloomSmoothing?: number;
 }
 
 const moduleColors: Record<string, string> = {
@@ -135,6 +138,68 @@ const fluidFragmentShader = `
   }
 `;
 
+const burdenVertexShader = `
+  varying vec2 vUv;
+  varying vec3 vWorldPosition;
+
+  void main() {
+    vUv = uv;
+    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+    vWorldPosition = worldPosition.xyz;
+    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+  }
+`;
+
+const burdenFragmentShader = `
+  uniform float uTime;
+  uniform float uCollapse;
+  uniform float uAlpha;
+  uniform float uSeed;
+  varying vec2 vUv;
+  varying vec3 vWorldPosition;
+
+  float hash(vec2 p) {
+    p = fract(p * vec2(127.1, 311.7));
+    p += dot(p, p + 74.7 + uSeed);
+
+    return fract(p.x * p.y);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+  }
+
+  void main() {
+    vec2 p = vUv * vec2(7.8, 5.2) + vec2(uSeed, -uSeed * 0.37);
+    float grain = noise(p + uTime * 0.035);
+    float dust = noise(p * 4.7 + vec2(uTime * 0.11, -uTime * 0.05));
+    float fracture = smoothstep(0.62, 0.96, noise(vWorldPosition.xy * 4.4 + uSeed * 3.1 + uCollapse * 3.0));
+    float edge = smoothstep(0.48, 0.5, max(abs(vUv.x - 0.5), abs(vUv.y - 0.5)));
+
+    vec3 soot = vec3(0.052, 0.058, 0.073);
+    vec3 slate = vec3(0.26, 0.29, 0.34);
+    vec3 ash = vec3(0.48, 0.52, 0.58);
+    vec3 color = mix(soot, slate, grain * 0.58 + 0.16);
+    color = mix(color, ash, dust * 0.18);
+    color *= 0.72 + edge * 0.22;
+    color += vec3(0.08, 0.1, 0.13) * fracture * (0.34 + uCollapse * 0.46);
+    color *= 1.0 - uCollapse * 0.24;
+
+    float alpha = uAlpha * (0.86 - fracture * 0.12 + dust * 0.08);
+
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
+
 function clamp01(value: number) {
   return Math.min(Math.max(value, 0), 1);
 }
@@ -161,9 +226,18 @@ function cubicBezierPoint(
   const u = 1 - t;
 
   return new THREE.Vector3(
-    u * u * u * a.x + 3 * u * u * t * b.x + 3 * u * t * t * c.x + t * t * t * d.x,
-    u * u * u * a.y + 3 * u * u * t * b.y + 3 * u * t * t * c.y + t * t * t * d.y,
-    u * u * u * a.z + 3 * u * u * t * b.z + 3 * u * t * t * c.z + t * t * t * d.z,
+    u * u * u * a.x +
+      3 * u * u * t * b.x +
+      3 * u * t * t * c.x +
+      t * t * t * d.x,
+    u * u * u * a.y +
+      3 * u * u * t * b.y +
+      3 * u * t * t * c.y +
+      t * t * t * d.y,
+    u * u * u * a.z +
+      3 * u * u * t * b.z +
+      3 * u * t * t * c.z +
+      t * t * t * d.z,
   );
 }
 
@@ -195,6 +269,9 @@ function SceneShell({
   className,
   children,
   cameraPosition = [0, 0.15, 6.2],
+  bloomIntensity = 0.72,
+  bloomThreshold = 0.12,
+  bloomSmoothing = 0.8,
 }: SceneShellProps) {
   const reducedMotion = usePrefersReducedMotion();
 
@@ -204,16 +281,37 @@ function SceneShell({
         camera={{ position: cameraPosition, fov: 42 }}
         dpr={[1, 1.75]}
         frameloop={reducedMotion ? "demand" : "always"}
-        gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+        gl={{
+          alpha: true,
+          antialias: true,
+          powerPreference: "high-performance",
+        }}
       >
         <ambientLight intensity={0.55} />
-        <directionalLight color="#9edbff" intensity={1.25} position={[4, 5, 5]} />
-        <pointLight color="#ffe84a" intensity={3.1} position={[1.4, 0.85, 2.2]} />
-        <pointLight color="#1267d8" intensity={2.3} position={[-3.2, -1.2, 2.5]} />
+        <directionalLight
+          color="#9edbff"
+          intensity={1.25}
+          position={[4, 5, 5]}
+        />
+        <pointLight
+          color="#ffe84a"
+          intensity={3.1}
+          position={[1.4, 0.85, 2.2]}
+        />
+        <pointLight
+          color="#1267d8"
+          intensity={2.3}
+          position={[-3.2, -1.2, 2.5]}
+        />
         <Suspense fallback={null}>{children(reducedMotion)}</Suspense>
         {!reducedMotion && (
           <EffectComposer multisampling={0}>
-            <Bloom intensity={0.72} luminanceThreshold={0.12} luminanceSmoothing={0.8} mipmapBlur />
+            <Bloom
+              intensity={bloomIntensity}
+              luminanceThreshold={bloomThreshold}
+              luminanceSmoothing={bloomSmoothing}
+              mipmapBlur
+            />
             <Vignette eskil={false} offset={0.16} darkness={0.68} />
           </EffectComposer>
         )}
@@ -227,11 +325,21 @@ function ringPoints(radius: number, sides: number, phase = 0) {
   return Array.from({ length: sides + 1 }, (_, index) => {
     const angle = phase + (index / sides) * Math.PI * 2;
 
-    return new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+    return new THREE.Vector3(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+      0,
+    );
   });
 }
 
-function FluidBackdrop({ reducedMotion, alpha = 0.38 }: { reducedMotion: boolean; alpha?: number }) {
+function FluidBackdrop({
+  reducedMotion,
+  alpha = 0.38,
+}: {
+  reducedMotion: boolean;
+  alpha?: number;
+}) {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const { camera, size } = useThree();
@@ -250,7 +358,9 @@ function FluidBackdrop({ reducedMotion, alpha = 0.38 }: { reducedMotion: boolean
       return;
     }
 
-    materialRef.current.uniforms.uTime.value = reducedMotion ? 2.2 : clock.getElapsedTime();
+    materialRef.current.uniforms.uTime.value = reducedMotion
+      ? 2.2
+      : clock.getElapsedTime();
     materialRef.current.uniforms.uAlpha.value = alpha;
     materialRef.current.uniforms.uPointer.value.set(pointer.x, pointer.y);
 
@@ -261,11 +371,14 @@ function FluidBackdrop({ reducedMotion, alpha = 0.38 }: { reducedMotion: boolean
     const distance = 9.5;
 
     camera.getWorldDirection(direction);
-    meshRef.current.position.copy(camera.position).add(direction.multiplyScalar(distance));
+    meshRef.current.position
+      .copy(camera.position)
+      .add(direction.multiplyScalar(distance));
     meshRef.current.quaternion.copy(camera.quaternion);
 
     if (camera instanceof THREE.PerspectiveCamera) {
-      const height = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * distance;
+      const height =
+        2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * distance;
       const width = height * (size.width / Math.max(size.height, 1));
 
       meshRef.current.scale.set(width * 1.18, height * 1.18, 1);
@@ -299,7 +412,11 @@ function SteroidScaffold({
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const baseScale = heroMode ? (focusMode ? 0.78 : 1.1) : 0.82;
-  const basePosition = heroMode ? (focusMode ? [0.04, 0.32, 1.04] : [0.12, -0.06, 0.78]) : [0.36, -0.12, 0.82];
+  const basePosition = heroMode
+    ? focusMode
+      ? [0.04, 0.32, 1.04]
+      : [0.12, -0.06, 0.78]
+    : [0.36, -0.12, 0.82];
   const hex = useMemo(() => ringPoints(0.38, 6, Math.PI / 6), []);
   const pent = useMemo(() => ringPoints(0.32, 5, Math.PI / 2), []);
   const rings = useMemo(
@@ -328,19 +445,39 @@ function SteroidScaffold({
     const time = clock.getElapsedTime();
 
     if (heroMode) {
-      const targetY = Math.sin(time * 0.18) * (focusMode ? 0.18 : 0.12) + pointer.x * (focusMode ? 0.58 : 0.32);
-      const targetX = Math.sin(time * 0.14) * (focusMode ? 0.12 : 0.08) - pointer.y * (focusMode ? 0.36 : 0.18);
+      const targetY =
+        Math.sin(time * 0.18) * (focusMode ? 0.18 : 0.12) +
+        pointer.x * (focusMode ? 0.58 : 0.32);
+      const targetX =
+        Math.sin(time * 0.14) * (focusMode ? 0.12 : 0.08) -
+        pointer.y * (focusMode ? 0.36 : 0.18);
       const targetZ = focusMode ? pointer.x * 0.08 : 0.04;
 
-      groupRef.current.rotation.y = THREE.MathUtils.damp(groupRef.current.rotation.y, targetY, 5, delta);
-      groupRef.current.rotation.x = THREE.MathUtils.damp(groupRef.current.rotation.x, targetX, 5, delta);
-      groupRef.current.rotation.z = THREE.MathUtils.damp(groupRef.current.rotation.z, targetZ, 5, delta);
+      groupRef.current.rotation.y = THREE.MathUtils.damp(
+        groupRef.current.rotation.y,
+        targetY,
+        5,
+        delta,
+      );
+      groupRef.current.rotation.x = THREE.MathUtils.damp(
+        groupRef.current.rotation.x,
+        targetX,
+        5,
+        delta,
+      );
+      groupRef.current.rotation.z = THREE.MathUtils.damp(
+        groupRef.current.rotation.z,
+        targetZ,
+        5,
+        delta,
+      );
 
       if (focusMode) {
         const pulse = 1 + Math.sin(time * 1.05) * 0.018;
 
         groupRef.current.scale.setScalar(baseScale * pulse);
-        groupRef.current.position.y = basePosition[1] + Math.sin(time * 0.72) * 0.035;
+        groupRef.current.position.y =
+          basePosition[1] + Math.sin(time * 0.72) * 0.035;
       }
 
       return;
@@ -361,7 +498,15 @@ function SteroidScaffold({
         <group key={index} position={ring.position}>
           {heroMode ? (
             <mesh>
-              <tubeGeometry args={[tubeRings[index].curve, 128, focusMode ? 0.032 : 0.026, 14, true]} />
+              <tubeGeometry
+                args={[
+                  tubeRings[index].curve,
+                  128,
+                  focusMode ? 0.032 : 0.026,
+                  14,
+                  true,
+                ]}
+              />
               <meshPhysicalMaterial
                 color="#f6faff"
                 emissive="#9edbff"
@@ -377,16 +522,26 @@ function SteroidScaffold({
               />
             </mesh>
           ) : (
-            <Line points={ring.points} color="#f6faff" lineWidth={2.4} transparent opacity={0.78} />
+            <Line
+              points={ring.points}
+              color="#f6faff"
+              lineWidth={2.4}
+              transparent
+              opacity={0.78}
+            />
           )}
           {ring.points.slice(0, -1).map((point, nodeIndex) => (
             <mesh key={nodeIndex} position={point}>
-              <sphereGeometry args={[heroMode ? (focusMode ? 0.042 : 0.038) : 0.028, 18, 18]} />
+              <sphereGeometry
+                args={[heroMode ? (focusMode ? 0.042 : 0.038) : 0.028, 18, 18]}
+              />
               <meshBasicMaterial
                 color={index === 2 && nodeIndex === 1 ? "#d99b4d" : "#f6faff"}
                 transparent
                 opacity={heroMode ? (focusMode ? 1 : 0.92) : 1}
-                blending={heroMode ? THREE.AdditiveBlending : THREE.NormalBlending}
+                blending={
+                  heroMode ? THREE.AdditiveBlending : THREE.NormalBlending
+                }
                 depthTest={!focusMode}
               />
             </mesh>
@@ -407,7 +562,13 @@ function SteroidScaffold({
       {heroMode ? (
         <mesh position={[0.48, 0.02, -0.08]} scale={[2.55, 1.02, 0.4]}>
           <sphereGeometry args={[0.54, 48, 24]} />
-          <meshBasicMaterial color="#9edbff" transparent opacity={0.07} blending={THREE.AdditiveBlending} depthWrite={false} />
+          <meshBasicMaterial
+            color="#9edbff"
+            transparent
+            opacity={0.07}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
         </mesh>
       ) : null}
     </group>
@@ -431,15 +592,30 @@ function CellShell({ topologyMode }: { topologyMode: boolean }) {
       </mesh>
       <mesh>
         <sphereGeometry args={[1.62, 48, 24]} />
-        <meshBasicMaterial color="#9edbff" transparent opacity={0.09} wireframe />
+        <meshBasicMaterial
+          color="#9edbff"
+          transparent
+          opacity={0.09}
+          wireframe
+        />
       </mesh>
     </group>
   );
 }
 
-function LipidDroplet({ active, quiet = false }: { active: boolean; quiet?: boolean }) {
+function LipidDroplet({
+  active,
+  quiet = false,
+}: {
+  active: boolean;
+  quiet?: boolean;
+}) {
   return (
-    <Float speed={quiet ? 0.75 : 1.2} rotationIntensity={0.08} floatIntensity={quiet ? 0.08 : 0.16}>
+    <Float
+      speed={quiet ? 0.75 : 1.2}
+      rotationIntensity={0.08}
+      floatIntensity={quiet ? 0.08 : 0.16}
+    >
       <group position={[0.96, 0.12, 0.3]}>
         <mesh>
           <sphereGeometry args={[quiet ? 0.28 : 0.42, 48, 48]} />
@@ -481,7 +657,11 @@ function Mitochondrion({ active }: { active: boolean }) {
   );
 
   return (
-    <group position={[-0.72, -0.54, 0.12]} rotation={[0.1, 0.25, -0.18]} scale={[1.05, 0.48, 0.42]}>
+    <group
+      position={[-0.72, -0.54, 0.12]}
+      rotation={[0.1, 0.25, -0.18]}
+      scale={[1.05, 0.48, 0.42]}
+    >
       <mesh>
         <sphereGeometry args={[0.56, 42, 24]} />
         <meshPhysicalMaterial
@@ -494,7 +674,14 @@ function Mitochondrion({ active }: { active: boolean }) {
         />
       </mesh>
       {cristae.map((points, index) => (
-        <Line key={index} points={points} color="#9edbff" lineWidth={1.5} transparent opacity={0.62} />
+        <Line
+          key={index}
+          points={points}
+          color="#9edbff"
+          lineWidth={1.5}
+          transparent
+          opacity={0.62}
+        />
       ))}
     </group>
   );
@@ -552,7 +739,10 @@ function CurveTrail({
   const pointRefs = useRef<THREE.Mesh[]>([]);
   const points = useMemo(() => curve.getPoints(92), [curve]);
   const count = quiet ? (active ? 34 : 10) : active ? 72 : 24;
-  const seeds = useMemo(() => Array.from({ length: count }, (_, index) => index / count), [count]);
+  const seeds = useMemo(
+    () => Array.from({ length: count }, (_, index) => index / count),
+    [count],
+  );
 
   useFrame(({ clock }) => {
     if (reducedMotion) {
@@ -570,13 +760,21 @@ function CurveTrail({
 
       const t = (seed + phase + time * 0.075) % 1;
       point.position.copy(curve.getPoint(t));
-      point.scale.setScalar(quiet ? 0.68 + seed * 0.18 : 0.62 + Math.sin(t * Math.PI) * 0.46);
+      point.scale.setScalar(
+        quiet ? 0.68 + seed * 0.18 : 0.62 + Math.sin(t * Math.PI) * 0.46,
+      );
     });
   });
 
   return (
     <group>
-      <Line points={points} color={color} lineWidth={active ? 2.1 : 1.2} transparent opacity={active ? 0.48 : 0.22} />
+      <Line
+        points={points}
+        color={color}
+        lineWidth={active ? 2.1 : 1.2}
+        transparent
+        opacity={active ? 0.48 : 0.22}
+      />
       {seeds.map((seed, index) => {
         const point = curve.getPoint((seed + phase) % 1);
 
@@ -604,7 +802,13 @@ function CurveTrail({
   );
 }
 
-function ParticleField({ reducedMotion, quiet = false }: { reducedMotion: boolean; quiet?: boolean }) {
+function ParticleField({
+  reducedMotion,
+  quiet = false,
+}: {
+  reducedMotion: boolean;
+  quiet?: boolean;
+}) {
   const ref = useRef<THREE.Points>(null);
   const positions = useMemo(() => {
     const buffer = new Float32Array(quiet ? 720 : 2400);
@@ -632,7 +836,12 @@ function ParticleField({ reducedMotion, quiet = false }: { reducedMotion: boolea
   return (
     <points ref={ref}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={positions.length / 3} array={positions} itemSize={3} />
+        <bufferAttribute
+          attach="attributes-position"
+          count={positions.length / 3}
+          array={positions}
+          itemSize={3}
+        />
       </bufferGeometry>
       <pointsMaterial
         color="#9edbff"
@@ -654,23 +863,50 @@ function LogoTexturePlane({ logoUrl }: HomeAtlasThreeSceneProps) {
   }, [texture]);
 
   return (
-    <mesh position={[-1.1, -1.14, -0.32]} rotation={[0, 0.06, 0]} scale={[1.1, 0.58, 1]}>
+    <mesh
+      position={[-1.1, -1.14, -0.32]}
+      rotation={[0, 0.06, 0]}
+      scale={[1.1, 0.58, 1]}
+    >
       <planeGeometry args={[2.25, 1.18]} />
-      <meshBasicMaterial map={texture} transparent opacity={0.42} depthWrite={false} />
+      <meshBasicMaterial
+        map={texture}
+        transparent
+        opacity={0.42}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
 
 function TopologyNodes({ activeModule }: { activeModule: string }) {
   const nodes = [
-    { id: "flux", position: [-1.2, -0.16, 0.18] as [number, number, number], color: "#27c46a" },
-    { id: "catalysis", position: [0.15, 0.52, 0.28] as [number, number, number], color: "#d99b4d" },
-    { id: "transport", position: [1.24, -0.18, 0.18] as [number, number, number], color: "#9edbff" },
+    {
+      id: "flux",
+      position: [-1.2, -0.16, 0.18] as [number, number, number],
+      color: "#27c46a",
+    },
+    {
+      id: "catalysis",
+      position: [0.15, 0.52, 0.28] as [number, number, number],
+      color: "#d99b4d",
+    },
+    {
+      id: "transport",
+      position: [1.24, -0.18, 0.18] as [number, number, number],
+      color: "#9edbff",
+    },
   ];
 
   return (
     <group>
-      <Line points={nodes.map((node) => new THREE.Vector3(...node.position))} color="#9edbff" lineWidth={1.6} transparent opacity={0.44} />
+      <Line
+        points={nodes.map((node) => new THREE.Vector3(...node.position))}
+        color="#9edbff"
+        lineWidth={1.6}
+        transparent
+        opacity={0.44}
+      />
       <Line
         points={[
           new THREE.Vector3(...nodes[2].position),
@@ -688,11 +924,22 @@ function TopologyNodes({ activeModule }: { activeModule: string }) {
           <group key={node.id} position={node.position}>
             <mesh>
               <sphereGeometry args={[active ? 0.14 : 0.095, 28, 28]} />
-              <meshBasicMaterial color={node.color} transparent opacity={active ? 0.96 : 0.5} blending={THREE.AdditiveBlending} />
+              <meshBasicMaterial
+                color={node.color}
+                transparent
+                opacity={active ? 0.96 : 0.5}
+                blending={THREE.AdditiveBlending}
+              />
             </mesh>
             <mesh scale={active ? 2.7 : 1.9}>
               <sphereGeometry args={[0.14, 24, 24]} />
-              <meshBasicMaterial color={node.color} transparent opacity={active ? 0.18 : 0.07} depthWrite={false} blending={THREE.AdditiveBlending} />
+              <meshBasicMaterial
+                color={node.color}
+                transparent
+                opacity={active ? 0.18 : 0.07}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+              />
             </mesh>
           </group>
         );
@@ -745,7 +992,8 @@ function ControlCameraRig({
       x: targetPosition[0],
       y: targetPosition[1],
       z: targetPosition[2],
-      duration: cinematic && playedIntroRef.current ? 2.1 : topologyMode ? 1.25 : 0.95,
+      duration:
+        cinematic && playedIntroRef.current ? 2.1 : topologyMode ? 1.25 : 0.95,
       ease: "power3.out",
       onUpdate: () => camera.lookAt(0, 0, 0),
     });
@@ -753,7 +1001,14 @@ function ControlCameraRig({
     return () => {
       tween.kill();
     };
-  }, [activeModule, camera, cinematic, posterMode, reducedMotion, topologyMode]);
+  }, [
+    activeModule,
+    camera,
+    cinematic,
+    posterMode,
+    reducedMotion,
+    topologyMode,
+  ]);
 
   return null;
 }
@@ -761,12 +1016,13 @@ function ControlCameraRig({
 function CarbonSeedCluster({ reducedMotion }: { reducedMotion: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
   const atoms = useMemo(
-    () => [
-      [-1.95, -0.78, 1.08, 0.065, "#27c46a"],
-      [-1.75, -0.68, 0.92, 0.044, "#9edbff"],
-      [-1.56, -0.52, 0.72, 0.034, "#f6faff"],
-      [-1.32, -0.32, 0.58, 0.026, "#ffe84a"],
-    ] as const,
+    () =>
+      [
+        [-1.95, -0.78, 1.08, 0.065, "#27c46a"],
+        [-1.75, -0.68, 0.92, 0.044, "#9edbff"],
+        [-1.56, -0.52, 0.72, 0.034, "#f6faff"],
+        [-1.32, -0.32, 0.58, 0.026, "#ffe84a"],
+      ] as const,
     [],
   );
 
@@ -793,7 +1049,12 @@ function CarbonSeedCluster({ reducedMotion }: { reducedMotion: boolean }) {
       {atoms.map(([x, y, z, radius, color], index) => (
         <mesh key={index} position={[x, y, z]}>
           <sphereGeometry args={[radius, 20, 20]} />
-          <meshBasicMaterial color={color} transparent opacity={0.92} blending={THREE.AdditiveBlending} />
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={0.92}
+            blending={THREE.AdditiveBlending}
+          />
         </mesh>
       ))}
     </group>
@@ -817,8 +1078,18 @@ function CarbonAtomFocus({
 
     const time = clock.getElapsedTime();
 
-    groupRef.current.rotation.y = THREE.MathUtils.damp(groupRef.current.rotation.y, time * 0.18 + pointer.x * 0.28, 3.6, delta);
-    groupRef.current.rotation.x = THREE.MathUtils.damp(groupRef.current.rotation.x, pointer.y * -0.18, 3.6, delta);
+    groupRef.current.rotation.y = THREE.MathUtils.damp(
+      groupRef.current.rotation.y,
+      time * 0.18 + pointer.x * 0.28,
+      3.6,
+      delta,
+    );
+    groupRef.current.rotation.x = THREE.MathUtils.damp(
+      groupRef.current.rotation.x,
+      pointer.y * -0.18,
+      3.6,
+      delta,
+    );
     groupRef.current.scale.setScalar(0.72 * (1 + Math.sin(time * 1.6) * 0.045));
 
     orbitRefs.current.forEach((orbit, index) => {
@@ -830,11 +1101,23 @@ function CarbonAtomFocus({
     <group ref={groupRef} position={CARBON_ANCHOR} scale={0.72}>
       <mesh>
         <sphereGeometry args={[0.13, 42, 42]} />
-        <meshBasicMaterial color="#27c46a" transparent opacity={0.88 * opacity} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial
+          color="#27c46a"
+          transparent
+          opacity={0.88 * opacity}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
       </mesh>
       <mesh scale={2.25}>
         <sphereGeometry args={[0.13, 42, 42]} />
-        <meshBasicMaterial color="#27c46a" transparent opacity={0.13 * opacity} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial
+          color="#27c46a"
+          transparent
+          opacity={0.13 * opacity}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
       </mesh>
       {[0, 1, 2].map((index) => (
         <group
@@ -844,15 +1127,30 @@ function CarbonAtomFocus({
               orbitRefs.current[index] = group;
             }
           }}
-          rotation={[index === 1 ? Math.PI / 2 : 0.38, index === 2 ? Math.PI / 2 : 0.1, index * 0.72]}
+          rotation={[
+            index === 1 ? Math.PI / 2 : 0.38,
+            index === 2 ? Math.PI / 2 : 0.1,
+            index * 0.72,
+          ]}
         >
           <mesh>
             <torusGeometry args={[0.34, 0.0048, 8, 96]} />
-            <meshBasicMaterial color={index === 2 ? "#ffe84a" : "#9edbff"} transparent opacity={0.72 * opacity} blending={THREE.AdditiveBlending} depthWrite={false} />
+            <meshBasicMaterial
+              color={index === 2 ? "#ffe84a" : "#9edbff"}
+              transparent
+              opacity={0.72 * opacity}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+            />
           </mesh>
           <mesh position={[0.34, 0, 0]}>
             <sphereGeometry args={[0.026, 18, 18]} />
-            <meshBasicMaterial color="#f6faff" transparent opacity={0.9 * opacity} blending={THREE.AdditiveBlending} />
+            <meshBasicMaterial
+              color="#f6faff"
+              transparent
+              opacity={0.9 * opacity}
+              blending={THREE.AdditiveBlending}
+            />
           </mesh>
         </group>
       ))}
@@ -873,8 +1171,14 @@ function HeroCameraRig({
   const lookAtRef = useRef(SCAFFOLD_TARGET.clone());
   const targetPosition = useMemo(() => new THREE.Vector3(), []);
   const targetLook = useMemo(() => new THREE.Vector3(), []);
-  const atomCamera = useMemo(() => CARBON_ANCHOR.clone().add(new THREE.Vector3(0.02, 0.015, 3.05)), []);
-  const tunnelCameraA = useMemo(() => new THREE.Vector3(-1.58, -0.54, 1.62), []);
+  const atomCamera = useMemo(
+    () => CARBON_ANCHOR.clone().add(new THREE.Vector3(0.02, 0.015, 3.05)),
+    [],
+  );
+  const tunnelCameraA = useMemo(
+    () => new THREE.Vector3(-1.58, -0.54, 1.62),
+    [],
+  );
   const tunnelCameraB = useMemo(() => new THREE.Vector3(-0.38, 0.08, 2.72), []);
   const scaffoldCamera = useMemo(() => new THREE.Vector3(0.08, 0.02, 9.0), []);
   const dockedCamera = useMemo(() => new THREE.Vector3(0.08, 0.04, 7.35), []);
@@ -882,23 +1186,56 @@ function HeroCameraRig({
   useEffect(() => {
     const focusMode = mode === "scaffold" || mode === "docking";
 
-    camera.position.copy(mode === "docked" ? dockedCamera : focusMode ? scaffoldCamera : atomCamera);
-    lookAtRef.current.copy(mode === "docked" ? SCAFFOLD_TARGET : focusMode ? SCAFFOLD_FOCUS_TARGET : CARBON_ANCHOR);
+    camera.position.copy(
+      mode === "docked"
+        ? dockedCamera
+        : focusMode
+          ? scaffoldCamera
+          : atomCamera,
+    );
+    lookAtRef.current.copy(
+      mode === "docked"
+        ? SCAFFOLD_TARGET
+        : focusMode
+          ? SCAFFOLD_FOCUS_TARGET
+          : CARBON_ANCHOR,
+    );
     camera.lookAt(lookAtRef.current);
   }, [atomCamera, camera, dockedCamera, mode, scaffoldCamera]);
 
   useFrame(({ pointer }, delta) => {
-    const travel = mode === "atom" ? 0 : mode === "travel" ? easeInOut(progress) : 1;
+    const travel =
+      mode === "atom" ? 0 : mode === "travel" ? easeInOut(progress) : 1;
     const finalCamera = mode === "docked" ? dockedCamera : scaffoldCamera;
-    const finalFov = mode === "scaffold" || mode === "docking" ? 42 : mode === "docked" ? 42 : 38 - travel * 3;
+    const finalFov =
+      mode === "scaffold" || mode === "docking"
+        ? 42
+        : mode === "docked"
+          ? 42
+          : 38 - travel * 3;
 
     if (mode === "docked") {
       targetPosition.copy(dockedCamera);
     } else {
-      targetPosition.copy(cubicBezierPoint(atomCamera, tunnelCameraA, tunnelCameraB, finalCamera, easeOutCubic(travel)));
+      targetPosition.copy(
+        cubicBezierPoint(
+          atomCamera,
+          tunnelCameraA,
+          tunnelCameraB,
+          finalCamera,
+          easeOutCubic(travel),
+        ),
+      );
     }
 
-    targetLook.copy(CARBON_ANCHOR).lerp(mode === "scaffold" || mode === "docking" ? SCAFFOLD_FOCUS_TARGET : SCAFFOLD_TARGET, easeInOut(travel));
+    targetLook
+      .copy(CARBON_ANCHOR)
+      .lerp(
+        mode === "scaffold" || mode === "docking"
+          ? SCAFFOLD_FOCUS_TARGET
+          : SCAFFOLD_TARGET,
+        easeInOut(travel),
+      );
 
     if (mode === "scaffold" || mode === "docking" || mode === "docked") {
       const isFocus = mode === "scaffold" || mode === "docking";
@@ -909,12 +1246,19 @@ function HeroCameraRig({
       targetPosition.y += pointer.y * (isFocus ? 0.06 : 0.03);
     }
 
-    const damp = reducedMotion ? 1 : 1 - Math.exp(-delta * (mode === "travel" ? 8.5 : 5.2));
+    const damp = reducedMotion
+      ? 1
+      : 1 - Math.exp(-delta * (mode === "travel" ? 8.5 : 5.2));
 
     camera.position.lerp(targetPosition, damp);
     lookAtRef.current.lerp(targetLook, damp);
     if (camera instanceof THREE.PerspectiveCamera) {
-      camera.fov = THREE.MathUtils.damp(camera.fov, finalFov, reducedMotion ? 100 : 4.4, delta);
+      camera.fov = THREE.MathUtils.damp(
+        camera.fov,
+        finalFov,
+        reducedMotion ? 100 : 4.4,
+        delta,
+      );
       camera.updateProjectionMatrix();
     }
 
@@ -934,8 +1278,18 @@ function HeroCellMembrane({ reducedMotion }: { reducedMotion: boolean }) {
 
     const time = clock.getElapsedTime();
 
-    ref.current.rotation.y = THREE.MathUtils.damp(ref.current.rotation.y, pointer.x * 0.08 + Math.sin(time * 0.1) * 0.04, 3, delta);
-    ref.current.rotation.x = THREE.MathUtils.damp(ref.current.rotation.x, -pointer.y * 0.045, 3, delta);
+    ref.current.rotation.y = THREE.MathUtils.damp(
+      ref.current.rotation.y,
+      pointer.x * 0.08 + Math.sin(time * 0.1) * 0.04,
+      3,
+      delta,
+    );
+    ref.current.rotation.x = THREE.MathUtils.damp(
+      ref.current.rotation.x,
+      -pointer.y * 0.045,
+      3,
+      delta,
+    );
   });
 
   return (
@@ -955,7 +1309,13 @@ function HeroCellMembrane({ reducedMotion }: { reducedMotion: boolean }) {
       </mesh>
       <mesh>
         <sphereGeometry args={[1.58, 52, 26]} />
-        <meshBasicMaterial color="#9edbff" transparent opacity={0.075} wireframe depthWrite={false} />
+        <meshBasicMaterial
+          color="#9edbff"
+          transparent
+          opacity={0.075}
+          wireframe
+          depthWrite={false}
+        />
       </mesh>
     </group>
   );
@@ -979,7 +1339,8 @@ function InstancedCurveParticles({
   const seeds = useMemo(
     () =>
       Array.from({ length: count }, (_, index) => ({
-        offset: (index / count + (((index * 37) % 97) / 97) * (1 / count) * 4) % 1,
+        offset:
+          (index / count + (((index * 37) % 97) / 97) * (1 / count) * 4) % 1,
         lane: (index % 7) * 0.012 - 0.036,
         scale: 0.58 + ((index * 17) % 11) / 22,
       })),
@@ -997,10 +1358,14 @@ function InstancedCurveParticles({
       const t = (seed.offset + time * speed) % 1;
       const point = curve.getPoint(t);
       const tangent = curve.getTangent(t);
-      const normal = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize().multiplyScalar(seed.lane);
+      const normal = new THREE.Vector3(-tangent.y, tangent.x, 0)
+        .normalize()
+        .multiplyScalar(seed.lane);
 
       dummy.position.copy(point).add(normal);
-      dummy.scale.setScalar(0.65 + seed.scale * (0.4 + Math.sin(t * Math.PI) * 0.1));
+      dummy.scale.setScalar(
+        0.65 + seed.scale * (0.4 + Math.sin(t * Math.PI) * 0.1),
+      );
       dummy.updateMatrix();
       meshRef.current?.setMatrixAt(index, dummy.matrix);
     });
@@ -1011,7 +1376,13 @@ function InstancedCurveParticles({
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <sphereGeometry args={[0.014, 10, 10]} />
-      <meshBasicMaterial color={color} transparent opacity={0.66} blending={THREE.AdditiveBlending} depthWrite={false} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={0.66}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
     </instancedMesh>
   );
 }
@@ -1045,12 +1416,48 @@ function HeroMetabolicFlux({ reducedMotion }: { reducedMotion: boolean }) {
 
   return (
     <group>
-      <Line points={curves.carbon.getPoints(110)} color="#27c46a" lineWidth={1.2} transparent opacity={0.38} />
-      <Line points={curves.er.getPoints(110)} color="#9edbff" lineWidth={1.5} transparent opacity={0.42} />
-      <Line points={curves.export.getPoints(110)} color="#d99b4d" lineWidth={1.1} transparent opacity={0.34} />
-      <InstancedCurveParticles curve={curves.carbon} color="#27c46a" count={280} speed={0.055} reducedMotion={reducedMotion} />
-      <InstancedCurveParticles curve={curves.er} color="#9edbff" count={340} speed={0.042} reducedMotion={reducedMotion} />
-      <InstancedCurveParticles curve={curves.export} color="#d99b4d" count={220} speed={0.036} reducedMotion={reducedMotion} />
+      <Line
+        points={curves.carbon.getPoints(110)}
+        color="#27c46a"
+        lineWidth={1.2}
+        transparent
+        opacity={0.38}
+      />
+      <Line
+        points={curves.er.getPoints(110)}
+        color="#9edbff"
+        lineWidth={1.5}
+        transparent
+        opacity={0.42}
+      />
+      <Line
+        points={curves.export.getPoints(110)}
+        color="#d99b4d"
+        lineWidth={1.1}
+        transparent
+        opacity={0.34}
+      />
+      <InstancedCurveParticles
+        curve={curves.carbon}
+        color="#27c46a"
+        count={280}
+        speed={0.055}
+        reducedMotion={reducedMotion}
+      />
+      <InstancedCurveParticles
+        curve={curves.er}
+        color="#9edbff"
+        count={340}
+        speed={0.042}
+        reducedMotion={reducedMotion}
+      />
+      <InstancedCurveParticles
+        curve={curves.export}
+        color="#d99b4d"
+        count={220}
+        speed={0.036}
+        reducedMotion={reducedMotion}
+      />
     </group>
   );
 }
@@ -1082,41 +1489,87 @@ function HeroAtlasModel({
   progress: number;
 }) {
   const rootRef = useRef<THREE.Group>(null);
-  const reveal = mode === "atom" ? 0 : mode === "travel" ? easeInOut(progress) : 1;
+  const reveal =
+    mode === "atom" ? 0 : mode === "travel" ? easeInOut(progress) : 1;
   const atomOpacity = mode === "atom" ? 1 : clamp01(1 - progress * 2.4);
   const sceneVisible = reveal > 0.035;
   const scaffoldFocus = mode === "scaffold" || mode === "docking";
-  const targetScale = scaffoldFocus ? 0.78 : mode === "travel" ? 0.5 + reveal * 0.68 : 1;
+  const targetScale = scaffoldFocus
+    ? 0.78
+    : mode === "travel"
+      ? 0.5 + reveal * 0.68
+      : 1;
 
   useFrame(({ pointer }, delta) => {
     if (!rootRef.current || reducedMotion) {
       return;
     }
 
-    rootRef.current.position.x = THREE.MathUtils.damp(rootRef.current.position.x, pointer.x * (mode === "scaffold" ? 0.12 : 0.08), 4, delta);
-    rootRef.current.position.y = THREE.MathUtils.damp(rootRef.current.position.y, pointer.y * (mode === "scaffold" ? 0.072 : 0.045), 4, delta);
-    rootRef.current.scale.setScalar(THREE.MathUtils.damp(rootRef.current.scale.x, targetScale, 4, delta));
+    rootRef.current.position.x = THREE.MathUtils.damp(
+      rootRef.current.position.x,
+      pointer.x * (mode === "scaffold" ? 0.12 : 0.08),
+      4,
+      delta,
+    );
+    rootRef.current.position.y = THREE.MathUtils.damp(
+      rootRef.current.position.y,
+      pointer.y * (mode === "scaffold" ? 0.072 : 0.045),
+      4,
+      delta,
+    );
+    rootRef.current.scale.setScalar(
+      THREE.MathUtils.damp(rootRef.current.scale.x, targetScale, 4, delta),
+    );
   });
 
   return (
     <>
       <FluidBackdrop
         reducedMotion={reducedMotion}
-        alpha={mode === "atom" ? 0.76 : mode === "travel" ? 0.72 + reveal * 0.16 : 0.86}
+        alpha={
+          mode === "atom"
+            ? 0.76
+            : mode === "travel"
+              ? 0.72 + reveal * 0.16
+              : 0.86
+        }
       />
-      <HeroCameraRig reducedMotion={reducedMotion} mode={mode} progress={progress} />
+      <HeroCameraRig
+        reducedMotion={reducedMotion}
+        mode={mode}
+        progress={progress}
+      />
       <CarbonAtomFocus reducedMotion={reducedMotion} opacity={atomOpacity} />
-      <group ref={rootRef} position={[0, 0, 0]} rotation={[-0.03, -0.08, 0]} scale={targetScale} visible={sceneVisible}>
+      <group
+        ref={rootRef}
+        position={[0, 0, 0]}
+        rotation={[-0.03, -0.08, 0]}
+        scale={targetScale}
+        visible={sceneVisible}
+      >
         <HeroCellMembrane reducedMotion={reducedMotion} />
-        <group position={scaffoldFocus ? [0, -0.22, -0.46] : [0, 0, 0]} scale={scaffoldFocus ? 0.72 : 1}>
+        <group
+          position={scaffoldFocus ? [0, -0.22, -0.46] : [0, 0, 0]}
+          scale={scaffoldFocus ? 0.72 : 1}
+        >
           <HeroOrganelleField reducedMotion={reducedMotion} />
           <HeroMetabolicFlux reducedMotion={reducedMotion} />
         </group>
         <group position={scaffoldFocus ? [0, 0.02, 0.42] : [0, 0, 0]}>
-          <SteroidScaffold reducedMotion={reducedMotion} heroMode focusMode={scaffoldFocus} />
+          <SteroidScaffold
+            reducedMotion={reducedMotion}
+            heroMode
+            focusMode={scaffoldFocus}
+          />
           <mesh position={[1.08, 0.05, 0.62]} scale={1.42}>
             <sphereGeometry args={[0.22, 36, 36]} />
-            <meshBasicMaterial color="#d99b4d" transparent opacity={0.11} blending={THREE.AdditiveBlending} depthWrite={false} />
+            <meshBasicMaterial
+              color="#d99b4d"
+              transparent
+              opacity={0.11}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+            />
           </mesh>
         </group>
       </group>
@@ -1177,20 +1630,53 @@ function CellFactoryModel({
     }
 
     const time = clock.getElapsedTime();
-    const catalyticKick = !posterMode && activeModule === "catalysis" ? Math.sin(time * 18) * 0.008 : 0;
+    const catalyticKick =
+      !posterMode && activeModule === "catalysis"
+        ? Math.sin(time * 18) * 0.008
+        : 0;
     const baseY = posterMode ? -0.12 : -0.18;
     const baseX = posterMode ? -0.04 : -0.05;
-    const targetY = Math.sin(time * 0.13) * (posterMode ? 0.1 : 0.18) + pointer.x * (posterMode ? 0.28 : 0.08) + baseY;
-    const targetX = baseX + Math.sin(time * 0.1) * (posterMode ? 0.045 : 0.08) - pointer.y * (posterMode ? 0.11 : 0.04);
+    const targetY =
+      Math.sin(time * 0.13) * (posterMode ? 0.1 : 0.18) +
+      pointer.x * (posterMode ? 0.28 : 0.08) +
+      baseY;
+    const targetX =
+      baseX +
+      Math.sin(time * 0.1) * (posterMode ? 0.045 : 0.08) -
+      pointer.y * (posterMode ? 0.11 : 0.04);
 
-    rootRef.current.rotation.y = THREE.MathUtils.damp(rootRef.current.rotation.y, targetY, posterMode ? 4.8 : 3.2, delta);
-    rootRef.current.rotation.x = THREE.MathUtils.damp(rootRef.current.rotation.x, targetX, posterMode ? 4.2 : 3, delta);
-    rootRef.current.position.x = THREE.MathUtils.damp(rootRef.current.position.x, catalyticKick, 6, delta);
-    rootRef.current.position.y = THREE.MathUtils.damp(rootRef.current.position.y, catalyticKick * 0.55, 6, delta);
+    rootRef.current.rotation.y = THREE.MathUtils.damp(
+      rootRef.current.rotation.y,
+      targetY,
+      posterMode ? 4.8 : 3.2,
+      delta,
+    );
+    rootRef.current.rotation.x = THREE.MathUtils.damp(
+      rootRef.current.rotation.x,
+      targetX,
+      posterMode ? 4.2 : 3,
+      delta,
+    );
+    rootRef.current.position.x = THREE.MathUtils.damp(
+      rootRef.current.position.x,
+      catalyticKick,
+      6,
+      delta,
+    );
+    rootRef.current.position.y = THREE.MathUtils.damp(
+      rootRef.current.position.y,
+      catalyticKick * 0.55,
+      6,
+      delta,
+    );
   });
 
   return (
-    <group ref={rootRef} rotation={[-0.08, posterMode ? -0.12 : -0.18, 0]} scale={topologyMode ? 1.18 : posterMode ? 0.76 : 1}>
+    <group
+      ref={rootRef}
+      rotation={[-0.08, posterMode ? -0.12 : -0.18, 0]}
+      scale={topologyMode ? 1.18 : posterMode ? 0.76 : 1}
+    >
       <ControlCameraRig
         activeModule={activeModule}
         topologyMode={topologyMode}
@@ -1231,37 +1717,737 @@ function CellFactoryModel({
             active={activeModule === "transport"}
             quiet={posterMode}
           />
-          {logoUrl && !posterMode ? <LogoTexturePlane logoUrl={logoUrl} /> : null}
-          {cinematic ? <CarbonSeedCluster reducedMotion={reducedMotion} /> : null}
+          {logoUrl && !posterMode ? (
+            <LogoTexturePlane logoUrl={logoUrl} />
+          ) : null}
+          {cinematic ? (
+            <CarbonSeedCluster reducedMotion={reducedMotion} />
+          ) : null}
         </>
       )}
       {!topologyMode && !posterMode && (
-        <Sparkles count={52} scale={[4.2, 2.2, 1.5]} size={2.1} speed={reducedMotion ? 0 : 0.34} color="#9edbff" />
+        <Sparkles
+          count={52}
+          scale={[4.2, 2.2, 1.5]}
+          size={2.1}
+          speed={reducedMotion ? 0 : 0.34}
+          color="#9edbff"
+        />
       )}
     </group>
   );
 }
 
-export function HomeAtlasThreeScene({ logoUrl, mode = "docked", progress = 1 }: HomeAtlasThreeSceneProps) {
+export function HomeAtlasThreeScene({
+  logoUrl,
+  mode = "docked",
+  progress = 1,
+}: HomeAtlasThreeSceneProps) {
   void logoUrl;
 
   return (
     <SceneShell
       className="atlas-three-scene"
-      cameraPosition={mode === "docked" ? [0.08, 0.04, 7.35] : [-1.93, -0.765, 2.11]}
+      cameraPosition={
+        mode === "docked" ? [0.08, 0.04, 7.35] : [-1.93, -0.765, 2.11]
+      }
     >
-      {(reducedMotion) => <HeroAtlasModel reducedMotion={reducedMotion} mode={mode} progress={progress} />}
+      {(reducedMotion) => (
+        <HeroAtlasModel
+          reducedMotion={reducedMotion}
+          mode={mode}
+          progress={progress}
+        />
+      )}
     </SceneShell>
   );
 }
 
-export function ControlMapThreeScene({ activeModule, topologyMode }: ControlMapThreeSceneProps) {
+export function ControlMapThreeScene({
+  activeModule,
+  topologyMode,
+}: ControlMapThreeSceneProps) {
   return (
     <SceneShell className="control-three-scene" cameraPosition={[0, 0.05, 5.6]}>
       {(reducedMotion) => (
-        <CellFactoryModel activeModule={activeModule} topologyMode={topologyMode} reducedMotion={reducedMotion} />
+        <CellFactoryModel
+          activeModule={activeModule}
+          topologyMode={topologyMode}
+          reducedMotion={reducedMotion}
+        />
       )}
     </SceneShell>
+  );
+}
+
+function RouteBurdenMaterial({
+  collapse,
+  alpha,
+  seed,
+  reducedMotion,
+}: {
+  collapse: number;
+  alpha: number;
+  seed: number;
+  reducedMotion: boolean;
+}) {
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uCollapse: { value: collapse },
+      uAlpha: { value: alpha },
+      uSeed: { value: seed },
+    }),
+    [alpha, collapse, seed],
+  );
+
+  useFrame(({ clock }) => {
+    if (!materialRef.current) {
+      return;
+    }
+
+    materialRef.current.uniforms.uTime.value = reducedMotion
+      ? seed * 2
+      : clock.getElapsedTime();
+    materialRef.current.uniforms.uCollapse.value = collapse;
+    materialRef.current.uniforms.uAlpha.value = alpha;
+  });
+
+  return (
+    <shaderMaterial
+      ref={materialRef}
+      uniforms={uniforms}
+      vertexShader={burdenVertexShader}
+      fragmentShader={burdenFragmentShader}
+      transparent
+    />
+  );
+}
+
+function ExtractionBurdenStack({
+  fold,
+  reducedMotion,
+}: {
+  fold: number;
+  reducedMotion: boolean;
+}) {
+  const rootRef = useRef<THREE.Group>(null);
+  const layers = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, index) => ({
+        width: 1.1 - index * 0.055,
+        depth: 0.78 - index * 0.032,
+        x: -0.18 + index * 0.052,
+        y: index * 0.17,
+        z: -index * 0.035,
+        seed: index * 1.73 + 0.42,
+      })),
+    [],
+  );
+  const feedstockNodes = useMemo(
+    () =>
+      Array.from({ length: 9 }, (_, index) => ({
+        x: -0.56 + (index % 3) * 0.22,
+        y: -0.22 + Math.floor(index / 3) * 0.11,
+        z: -0.44 + ((index * 7) % 5) * 0.08,
+        scale: 0.08 + ((index * 5) % 4) * 0.012,
+      })),
+    [],
+  );
+  const debrisNodes = useMemo(
+    () =>
+      Array.from({ length: 18 }, (_, index) => ({
+        x: -0.64 + ((index * 7) % 9) * 0.14,
+        y: 0.04 + ((index * 5) % 7) * 0.12,
+        z: -0.5 + ((index * 11) % 8) * 0.11,
+        scatter: 0.42 + ((index * 13) % 10) * 0.052,
+        scale: 0.038 + ((index * 3) % 6) * 0.008,
+        spin: 0.38 + index * 0.31,
+      })),
+    [],
+  );
+  const routeStations = useMemo(
+    () => [
+      {
+        label: "FEEDSTOCK",
+        x: -0.9,
+        y: -0.1,
+        z: 0.42,
+        color: "#8d96a8",
+      },
+      {
+        label: "EXTRACT",
+        x: -0.52,
+        y: 0.08,
+        z: 0.46,
+        color: "#a6adba",
+      },
+      {
+        label: "PURIFY",
+        x: -0.08,
+        y: 0.18,
+        z: 0.42,
+        color: "#c1c8d5",
+      },
+      {
+        label: "SEMISYNTH",
+        x: 0.38,
+        y: 0.22,
+        z: 0.36,
+        color: "#d7ddea",
+      },
+    ],
+    [],
+  );
+  const routePoints = routeStations.map((station, index) => {
+    const breakage = easeOutCubic((fold - 0.28 - index * 0.05) / 0.56);
+    const side = index < 2 ? -1 : 1;
+
+    return new THREE.Vector3(
+      station.x + breakage * side * (0.1 + index * 0.045),
+      station.y - breakage * (0.18 + index * 0.08),
+      station.z - breakage * (0.14 + index * 0.04),
+    );
+  });
+
+  useFrame(({ clock, pointer }, delta) => {
+    if (!rootRef.current || reducedMotion) {
+      return;
+    }
+
+    const time = clock.getElapsedTime();
+
+    rootRef.current.rotation.y = THREE.MathUtils.damp(
+      rootRef.current.rotation.y,
+      -0.18 + pointer.x * 0.08 + Math.sin(time * 0.18) * 0.05,
+      4,
+      delta,
+    );
+    rootRef.current.rotation.x = THREE.MathUtils.damp(
+      rootRef.current.rotation.x,
+      pointer.y * -0.04,
+      4,
+      delta,
+    );
+  });
+
+  return (
+    <group ref={rootRef}>
+      <Line
+        points={routePoints}
+        color="#c3cad8"
+        lineWidth={2.2}
+        transparent
+        opacity={clamp01(0.54 - fold * 0.36)}
+      />
+      {routeStations.map((station, index) => {
+        const breakage = easeOutCubic((fold - 0.28 - index * 0.05) / 0.56);
+        const side = index < 2 ? -1 : 1;
+
+        return (
+          <group
+            key={station.label}
+            position={[
+              station.x + breakage * side * (0.16 + index * 0.06),
+              station.y - breakage * (0.24 + index * 0.1),
+              station.z - breakage * (0.18 + index * 0.055),
+            ]}
+            rotation={[
+              0.06 + breakage * (0.44 + index * 0.05),
+              -0.12 + index * 0.08 - breakage * side * 0.34,
+              breakage * side * 0.3,
+            ]}
+            scale={1 - breakage * 0.16}
+          >
+            <mesh>
+              <boxGeometry args={[0.28, 0.075, 0.18, 1, 1, 1]} />
+              <meshStandardMaterial
+                color={station.color}
+                roughness={0.82}
+                metalness={0.04}
+                transparent
+                opacity={clamp01(0.62 - fold * 0.34)}
+              />
+            </mesh>
+            <mesh position={[0, 0, 0.105]}>
+              <sphereGeometry args={[0.052, 18, 18]} />
+              <meshBasicMaterial
+                color={index === 0 ? "#7a829a" : "#f6faff"}
+                transparent
+                opacity={clamp01(0.5 - fold * 0.24)}
+              />
+            </mesh>
+          </group>
+        );
+      })}
+      {layers.map((layer, index) => {
+        const collapse = easeOutCubic((fold - 0.08 - index * 0.048) / 0.7);
+        const drift = collapse * (0.26 + index * 0.068);
+
+        return (
+          <mesh
+            key={layer.seed}
+            position={[
+              layer.x - drift * 1.12,
+              layer.y - collapse * (0.24 + index * 0.15),
+              layer.z - collapse * (0.38 + index * 0.07),
+            ]}
+            rotation={[
+              0.08 + collapse * (0.76 + index * 0.06),
+              0.18 * index - collapse * (0.52 + index * 0.035),
+              -0.16 + collapse * (-0.88 - index * 0.055),
+            ]}
+            scale={1 - collapse * (0.18 + index * 0.022)}
+          >
+            <boxGeometry args={[layer.width, 0.13, layer.depth, 7, 1, 7]} />
+            <RouteBurdenMaterial
+              collapse={collapse}
+              alpha={clamp01(0.84 - fold * 0.66 + index * 0.012)}
+              seed={layer.seed}
+              reducedMotion={reducedMotion}
+            />
+          </mesh>
+        );
+      })}
+      {feedstockNodes.map((node, index) => (
+        <mesh
+          key={`${node.x}-${index}`}
+          position={[
+            node.x - fold * (0.48 + index * 0.015),
+            node.y - fold * (0.74 + index * 0.035),
+            node.z - fold * (0.26 + (index % 3) * 0.05),
+          ]}
+          rotation={[
+            0.3 + index * 0.2 + fold * 1.4,
+            index * 0.62 - fold * 0.9,
+            -0.2 - fold * 0.72,
+          ]}
+          scale={node.scale * (1 - fold * 0.46)}
+        >
+          <dodecahedronGeometry args={[1, 0]} />
+          <meshStandardMaterial
+            color={index % 2 ? "#4d5568" : "#303746"}
+            roughness={0.95}
+            metalness={0.02}
+            transparent
+            opacity={clamp01(0.5 - fold * 0.34)}
+          />
+        </mesh>
+      ))}
+      {debrisNodes.map((node, index) => {
+        const collapse = easeOutCubic((fold - 0.16 - index * 0.012) / 0.7);
+        const side = index % 2 === 0 ? -1 : 1;
+
+        return (
+          <mesh
+            key={`${node.x}-${node.spin}`}
+            position={[
+              node.x + side * collapse * node.scatter,
+              node.y - collapse * (0.58 + index * 0.035),
+              node.z + collapse * (0.22 + (index % 4) * 0.08),
+            ]}
+            rotation={[
+              node.spin + collapse * (1.6 + index * 0.04),
+              index * 0.37 - collapse * 1.1,
+              -0.4 + collapse * side * 1.2,
+            ]}
+            scale={node.scale * (0.78 + collapse * 1.34)}
+          >
+            <tetrahedronGeometry args={[1, 0]} />
+            <meshStandardMaterial
+              color={index % 3 === 0 ? "#6f7689" : "#2d3442"}
+              roughness={1}
+              metalness={0}
+              transparent
+              opacity={clamp01(collapse * (0.46 - fold * 0.18))}
+            />
+          </mesh>
+        );
+      })}
+      <Line
+        points={[
+          new THREE.Vector3(-0.78, 0.92 - fold * 0.68, -0.24),
+          new THREE.Vector3(-0.28, 0.38 - fold * 0.82, 0.12),
+          new THREE.Vector3(0.5, 0.7 - fold * 1.08, -0.16),
+        ]}
+        color="#9ca3b8"
+        lineWidth={1.2}
+        transparent
+        opacity={clamp01(0.38 - fold * 0.32)}
+      />
+      <Sparkles
+        count={42}
+        scale={[1.6, 1.35, 0.96]}
+        size={1.05}
+        speed={reducedMotion ? 0 : 0.08}
+        color="#7a829a"
+      />
+    </group>
+  );
+}
+
+function SteroidRouteHub({
+  fold,
+  reducedMotion,
+}: {
+  fold: number;
+  reducedMotion: boolean;
+}) {
+  const rootRef = useRef<THREE.Group>(null);
+  const hex = useMemo(() => ringPoints(0.32, 6, Math.PI / 6), []);
+  const pent = useMemo(() => ringPoints(0.28, 5, Math.PI / 2), []);
+  const rings = useMemo(
+    () => [
+      { points: hex, position: [-0.58, 0, 0] as [number, number, number] },
+      { points: hex, position: [-0.08, 0.01, 0] as [number, number, number] },
+      { points: hex, position: [0.42, 0.015, 0] as [number, number, number] },
+      { points: pent, position: [0.82, 0.015, 0] as [number, number, number] },
+    ],
+    [hex, pent],
+  );
+
+  useFrame(({ clock, pointer }, delta) => {
+    if (!rootRef.current || reducedMotion) {
+      return;
+    }
+
+    const time = clock.getElapsedTime();
+
+    rootRef.current.rotation.y = THREE.MathUtils.damp(
+      rootRef.current.rotation.y,
+      -0.06 + fold * 0.34 + pointer.x * 0.1 + Math.sin(time * 0.22) * 0.08,
+      4,
+      delta,
+    );
+    rootRef.current.rotation.x = THREE.MathUtils.damp(
+      rootRef.current.rotation.x,
+      0.1 - pointer.y * 0.08 + Math.sin(time * 0.18) * 0.035,
+      4,
+      delta,
+    );
+  });
+
+  return (
+    <group
+      ref={rootRef}
+      scale={0.94 + fold * 0.08}
+      rotation={[0.1, -0.06, 0.04]}
+    >
+      <mesh scale={[3.5, 1.55, 0.34]}>
+        <sphereGeometry args={[0.48, 48, 24]} />
+        <meshBasicMaterial
+          color="#9edbff"
+          transparent
+          opacity={0.055 + fold * 0.04}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      {rings.map((ring, ringIndex) => (
+        <group key={ringIndex} position={ring.position}>
+          <Line
+            points={ring.points}
+            color={ringIndex === 3 ? "#f2dd6a" : "#dff3ff"}
+            lineWidth={2.25 + fold * 1.05}
+            transparent
+            opacity={0.7 + fold * 0.08}
+          />
+          {ring.points.slice(0, -1).map((point, nodeIndex) => (
+            <mesh key={`${ringIndex}-${nodeIndex}`} position={point}>
+              <sphereGeometry args={[0.033 + fold * 0.012, 18, 18]} />
+              <meshBasicMaterial
+                color={
+                  ringIndex === 2 && nodeIndex === 1 ? "#d99b4d" : "#f6faff"
+                }
+                transparent
+                opacity={0.76}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      <mesh position={[0.12, -0.02, -0.08]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.98, 0.01, 8, 120]} />
+        <meshBasicMaterial
+          color="#9edbff"
+          transparent
+          opacity={0.13 + fold * 0.09}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      <Sparkles
+        count={34}
+        scale={[2.3, 1.2, 0.7]}
+        size={1.15}
+        speed={reducedMotion ? 0 : 0.24}
+        color="#f6faff"
+      />
+    </group>
+  );
+}
+
+function RoutePulsePackets({
+  curve,
+  color,
+  count,
+  fold,
+  phase,
+  reducedMotion,
+}: {
+  curve: THREE.CatmullRomCurve3;
+  color: string;
+  count: number;
+  fold: number;
+  phase: number;
+  reducedMotion: boolean;
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const seeds = useMemo(
+    () =>
+      Array.from({ length: count }, (_, index) => ({
+        offset:
+          (index / count + (((index * 29) % 89) / 89) * 0.035 + phase) % 1,
+        lane: ((index % 5) - 2) * 0.012,
+        scale: 0.55 + ((index * 13) % 10) / 18,
+      })),
+    [count, phase],
+  );
+
+  useFrame(({ clock }) => {
+    if (!meshRef.current) {
+      return;
+    }
+
+    const time = reducedMotion ? phase * 7 : clock.getElapsedTime();
+    const speed = 0.036 + fold * 0.074;
+
+    seeds.forEach((seed, index) => {
+      const t = (seed.offset + time * speed) % 1;
+      const point = curve.getPoint(t);
+      const tangent = curve.getTangent(t);
+      const normal = new THREE.Vector3(-tangent.y, tangent.x, 0)
+        .normalize()
+        .multiplyScalar(seed.lane);
+
+      dummy.position.copy(point).add(normal);
+      dummy.scale.setScalar(
+        (0.032 + fold * 0.018) *
+          seed.scale *
+          (0.82 + Math.sin(t * Math.PI) * 0.34),
+      );
+      dummy.updateMatrix();
+      meshRef.current?.setMatrixAt(index, dummy.matrix);
+    });
+
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+      <sphereGeometry args={[1, 10, 10]} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={0.12 + fold * 0.42}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </instancedMesh>
+  );
+}
+
+function RouteEnergyNetwork({
+  fold,
+  reducedMotion,
+}: {
+  fold: number;
+  reducedMotion: boolean;
+}) {
+  const ignition = easeOutCubic((fold - 0.16) / 0.66);
+  const curves = useMemo(
+    () => [
+      {
+        color: "#9edbff",
+        curve: new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-1.05, 0.16, 0.22),
+          new THREE.Vector3(-0.42, 0.56, 0.46),
+          new THREE.Vector3(0.34, 0.22, 0.58),
+          new THREE.Vector3(1.08, 0.08, 0.24),
+        ]),
+      },
+      {
+        color: "#27c46a",
+        curve: new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-1.18, -0.46, 0.18),
+          new THREE.Vector3(-0.42, -0.16, 0.4),
+          new THREE.Vector3(0.24, -0.34, 0.44),
+          new THREE.Vector3(1.18, -0.08, 0.22),
+        ]),
+      },
+      {
+        color: "#ffe84a",
+        curve: new THREE.CatmullRomCurve3([
+          new THREE.Vector3(-0.34, 0.58, 0.08),
+          new THREE.Vector3(0.08, 0.24, 0.44),
+          new THREE.Vector3(0.58, 0.42, 0.36),
+          new THREE.Vector3(0.94, 0.02, 0.2),
+        ]),
+      },
+    ],
+    [],
+  );
+  const nodes = useMemo(
+    () =>
+      Array.from({ length: 24 }, (_, index) => ({
+        curveIndex: index % 3,
+        t: 0.08 + ((index * 17) % 82) / 100,
+        lift: ((index % 5) - 2) * 0.035,
+        scale: 0.032 + ((index * 7) % 8) * 0.006,
+      })),
+    [],
+  );
+
+  return (
+    <group visible={ignition > 0.02} scale={0.84 + ignition * 0.24}>
+      <mesh scale={[3.45 + ignition * 0.86, 1.1 + ignition * 0.24, 0.32]}>
+        <sphereGeometry args={[0.36, 48, 18]} />
+        <meshBasicMaterial
+          color="#7fc8ff"
+          transparent
+          opacity={0.025 + ignition * 0.09}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      {curves.map((item, index) => (
+        <group key={item.color}>
+          <Line
+            points={item.curve.getPoints(110)}
+            color={item.color}
+            lineWidth={1.35 + ignition * (index === 0 ? 2.55 : 2.05)}
+            transparent
+            opacity={0.14 + ignition * 0.48}
+          />
+          <RoutePulsePackets
+            curve={item.curve}
+            color={item.color}
+            count={index === 0 ? 180 : 128}
+            fold={ignition}
+            phase={index * 0.17}
+            reducedMotion={reducedMotion}
+          />
+        </group>
+      ))}
+      {nodes.map((node) => {
+        const curve = curves[node.curveIndex];
+        const point = curve.curve.getPoint(node.t);
+
+        return (
+          <mesh
+            key={`${curve.color}-${node.t}`}
+            position={[point.x, point.y + node.lift, point.z + ignition * 0.08]}
+            scale={node.scale * (0.42 + ignition * 1.7)}
+          >
+            <sphereGeometry args={[1, 16, 16]} />
+            <meshBasicMaterial
+              color={curve.color}
+              transparent
+              opacity={0.05 + ignition * 0.42}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function FungalFactoryRoute({
+  fold,
+  reducedMotion,
+}: {
+  fold: number;
+  reducedMotion: boolean;
+}) {
+  const rootRef = useRef<THREE.Group>(null);
+  const ignition = easeOutCubic((fold - 0.16) / 0.68);
+
+  useFrame(({ clock, pointer }, delta) => {
+    if (!rootRef.current || reducedMotion) {
+      return;
+    }
+
+    const time = clock.getElapsedTime();
+
+    rootRef.current.rotation.y = THREE.MathUtils.damp(
+      rootRef.current.rotation.y,
+      -0.2 + ignition * 0.32 + pointer.x * 0.09 + Math.sin(time * 0.12) * 0.08,
+      4.2,
+      delta,
+    );
+    rootRef.current.rotation.x = THREE.MathUtils.damp(
+      rootRef.current.rotation.x,
+      -0.06 - pointer.y * 0.05,
+      4,
+      delta,
+    );
+  });
+
+  return (
+    <group
+      ref={rootRef}
+      scale={0.7 + ignition * 0.26}
+      rotation={[-0.06, -0.2, 0]}
+    >
+      <CellShell topologyMode={false} />
+      <group scale={0.78}>
+        <ERRibbons active />
+        <Mitochondrion active={ignition > 0.48} />
+        <LipidDroplet active quiet />
+      </group>
+      <RouteEnergyNetwork fold={fold} reducedMotion={reducedMotion} />
+      <mesh scale={[2.8, 1.55, 0.62]}>
+        <sphereGeometry args={[0.42, 48, 24]} />
+        <meshBasicMaterial
+          color="#1267d8"
+          transparent
+          opacity={0.035 + ignition * 0.07}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]} scale={1.08 + ignition * 0.18}>
+        <torusGeometry args={[0.86, 0.012, 10, 140]} />
+        <meshBasicMaterial
+          color="#9edbff"
+          transparent
+          opacity={0.045 + ignition * 0.14}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh rotation={[0.26, Math.PI / 2, 0.18]} scale={0.92 + ignition * 0.2}>
+        <torusGeometry args={[0.92, 0.008, 10, 140]} />
+        <meshBasicMaterial
+          color="#27c46a"
+          transparent
+          opacity={0.03 + ignition * 0.1}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      <Sparkles
+        count={82}
+        scale={[3.8, 2.15, 1.32]}
+        size={1.34}
+        speed={reducedMotion ? 0 : 0.32}
+        color="#9edbff"
+      />
+    </group>
   );
 }
 
@@ -1274,73 +2460,135 @@ function RouteComparisonModel({
 }) {
   const rootRef = useRef<THREE.Group>(null);
   const fold = easeInOut(scrollProgress);
-  const newRouteCurve = useMemo(
-    () =>
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0.15, -0.62, 0.18),
-        new THREE.Vector3(0.84, -0.08, 0.46),
-        new THREE.Vector3(1.35, 0.42, 0.26),
-        new THREE.Vector3(2.02, 0.08, 0.16),
-      ]),
+  const oldCollapse = easeOutCubic((fold - 0.08) / 0.64);
+  const newIgnition = easeOutCubic((fold - 0.18) / 0.62);
+  const oldConnector = useMemo(
+    () => [
+      new THREE.Vector3(-1.5, 0.16, 0.06),
+      new THREE.Vector3(-0.82, 0.22, 0.22),
+      new THREE.Vector3(-0.18, 0.04, 0.34),
+    ],
+    [],
+  );
+  const newConnector = useMemo(
+    () => [
+      new THREE.Vector3(0.18, 0.06, 0.34),
+      new THREE.Vector3(0.84, 0.28, 0.42),
+      new THREE.Vector3(1.64, 0.08, 0.24),
+    ],
     [],
   );
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, pointer }, delta) => {
     if (!rootRef.current || reducedMotion) {
       return;
     }
 
     const time = clock.getElapsedTime();
+    const targetY =
+      -0.68 + fold * 1.62 + pointer.x * 0.08 + Math.sin(time * 0.13) * 0.05;
+    const targetX = 0.08 - fold * 0.34 - pointer.y * 0.04;
+    const targetZ = -0.08 + fold * 0.2;
 
-    rootRef.current.rotation.y = Math.sin(time * 0.16) * 0.18;
+    rootRef.current.rotation.y = THREE.MathUtils.damp(
+      rootRef.current.rotation.y,
+      targetY,
+      4.4,
+      delta,
+    );
+    rootRef.current.rotation.x = THREE.MathUtils.damp(
+      rootRef.current.rotation.x,
+      targetX,
+      4.4,
+      delta,
+    );
+    rootRef.current.rotation.z = THREE.MathUtils.damp(
+      rootRef.current.rotation.z,
+      targetZ,
+      4.4,
+      delta,
+    );
   });
 
   return (
-    <group ref={rootRef} rotation={[-0.02 + fold * 0.18, -0.2 + fold * 0.42, 0]}>
-      <group
-        position={[-1.72 - fold * 0.22, -0.22 - fold * 0.42, -fold * 0.22]}
-        rotation={[0.08 + fold * 0.42, 0.32, -0.08 - fold * 0.38]}
-      >
-        {Array.from({ length: 5 }, (_, index) => (
-          <mesh key={index} position={[0, index * 0.18, -index * 0.04]} rotation={[0.08, 0.12 * index, 0]}>
-            <boxGeometry args={[0.86 - index * 0.05, 0.1, 0.58]} />
-            <meshStandardMaterial
-              color="#7a829a"
-              roughness={0.92}
-              metalness={0.05}
-              transparent
-              opacity={0.36}
-            />
-          </mesh>
-        ))}
-        <Sparkles count={18} scale={[1.2, 0.9, 0.6]} size={1.2} speed={reducedMotion ? 0 : 0.18} color="#9ca3b8" />
-      </group>
+    <>
+      <FluidBackdrop reducedMotion={reducedMotion} alpha={0.3 + fold * 0.16} />
+      <group ref={rootRef} position={[0, -0.08, 0]} scale={1.03}>
+        <group
+          position={[
+            -1.55 - oldCollapse * 0.72,
+            -0.2 - oldCollapse * 0.64,
+            -0.2 - oldCollapse * 0.54,
+          ]}
+          rotation={[
+            0.06 + oldCollapse * 0.82,
+            -0.38 - fold * 0.58,
+            -0.08 - oldCollapse * 0.56,
+          ]}
+          scale={0.9 - oldCollapse * 0.22}
+        >
+          <ExtractionBurdenStack fold={fold} reducedMotion={reducedMotion} />
+        </group>
 
-      <group position={[0, 0.03, 0.18]} scale={0.88}>
-        <SteroidScaffold reducedMotion={reducedMotion} />
-      </group>
+        <group
+          position={[-0.05, 0.0, 0.3]}
+          rotation={[fold * -0.08, fold * 0.32, fold * 0.06]}
+        >
+          <SteroidRouteHub fold={fold} reducedMotion={reducedMotion} />
+        </group>
 
-      <group position={[1.25, -0.08 + fold * 0.18, 0.05 + fold * 0.2]} scale={0.78 + fold * 0.16}>
-        <CellShell topologyMode={false} />
-        <ERRibbons active />
-        <LipidDroplet active />
-        <CurveTrail curve={newRouteCurve} color="#27c46a" reducedMotion={reducedMotion} active />
-      </group>
+        <group
+          position={[
+            1.42 + (1 - newIgnition) * 0.46,
+            -0.08 + newIgnition * 0.18,
+            0.02 + newIgnition * 0.36,
+          ]}
+          rotation={[
+            0.04 - newIgnition * 0.16,
+            0.34 - (1 - newIgnition) * 0.46,
+            0.02 + newIgnition * 0.04,
+          ]}
+          scale={0.78 + newIgnition * 0.36}
+        >
+          <FungalFactoryRoute fold={fold} reducedMotion={reducedMotion} />
+        </group>
 
-      <Line
-        points={[
-          new THREE.Vector3(-1.22, 0.08, 0.08),
-          new THREE.Vector3(-0.55, 0.25, 0.24),
-          new THREE.Vector3(0.1, 0.1, 0.32),
-          new THREE.Vector3(0.82, 0.24, 0.32),
-          new THREE.Vector3(1.5, 0.02, 0.2),
-        ]}
-        color="#ffe84a"
-        lineWidth={1.8}
-        transparent
-        opacity={0.58}
-      />
-    </group>
+        <Line
+          points={oldConnector}
+          color="#7a829a"
+          lineWidth={1.4}
+          transparent
+          opacity={clamp01(0.44 - oldCollapse * 0.42)}
+        />
+        <Line
+          points={newConnector}
+          color="#9edbff"
+          lineWidth={1.35 + newIgnition * 2.55}
+          transparent
+          opacity={0.12 + newIgnition * 0.5}
+        />
+        <mesh position={[0.02, 0, 0.22]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[1.5 + fold * 0.18, 0.01, 8, 180]} />
+          <meshBasicMaterial
+            color="#f1d96d"
+            transparent
+            opacity={0.06 + fold * 0.12}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+        <mesh position={[0.4, 0.02, 0.18]} scale={[2.7, 1.22, 0.22]}>
+          <sphereGeometry args={[0.36, 48, 18]} />
+          <meshBasicMaterial
+            color="#9edbff"
+            transparent
+            opacity={newIgnition * 0.07}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
+    </>
   );
 }
 
@@ -1360,7 +2608,11 @@ function EvidenceHelixModel({
         const t = index / 149;
         const angle = t * Math.PI * 7.2;
 
-        return new THREE.Vector3(Math.cos(angle) * 0.96, 1.78 - t * 3.56, Math.sin(angle) * 0.96);
+        return new THREE.Vector3(
+          Math.cos(angle) * 0.96,
+          1.78 - t * 3.56,
+          Math.sin(angle) * 0.96,
+        );
       }),
     [],
   );
@@ -1370,7 +2622,11 @@ function EvidenceHelixModel({
         const t = index / (helixA.length - 1);
         const angle = t * Math.PI * 7.2 + Math.PI;
 
-        return new THREE.Vector3(Math.cos(angle) * 0.96, point.y, Math.sin(angle) * 0.96);
+        return new THREE.Vector3(
+          Math.cos(angle) * 0.96,
+          point.y,
+          Math.sin(angle) * 0.96,
+        );
       }),
     [helixA],
   );
@@ -1392,37 +2648,79 @@ function EvidenceHelixModel({
     >
       <mesh>
         <cylinderGeometry args={[0.042, 0.042, 4.35, 32]} />
-        <meshBasicMaterial color="#9edbff" transparent opacity={0.42} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial
+          color="#9edbff"
+          transparent
+          opacity={0.42}
+          blending={THREE.AdditiveBlending}
+        />
       </mesh>
       <mesh scale={[7, 1, 7]}>
         <sphereGeometry args={[0.1, 32, 16]} />
-        <meshBasicMaterial color="#1267d8" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
-      </mesh>
-      <Line points={helixA} color="#9edbff" lineWidth={2.45} transparent opacity={0.82} />
-      <Line points={helixB} color="#ffe84a" lineWidth={1.75} transparent opacity={0.66} />
-      {helixA.filter((_, index) => index % 10 === 0).map((point, index) => (
-        <Line
-          key={index}
-          points={[point, helixB[index * 10] || point]}
-          color={index % 2 ? "#27c46a" : "#d99b4d"}
-          lineWidth={1}
+        <meshBasicMaterial
+          color="#1267d8"
           transparent
-          opacity={0.34}
+          opacity={0.06}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
-      ))}
+      </mesh>
+      <Line
+        points={helixA}
+        color="#9edbff"
+        lineWidth={2.45}
+        transparent
+        opacity={0.82}
+      />
+      <Line
+        points={helixB}
+        color="#ffe84a"
+        lineWidth={1.75}
+        transparent
+        opacity={0.66}
+      />
+      {helixA
+        .filter((_, index) => index % 10 === 0)
+        .map((point, index) => (
+          <Line
+            key={index}
+            points={[point, helixB[index * 10] || point]}
+            color={index % 2 ? "#27c46a" : "#d99b4d"}
+            lineWidth={1}
+            transparent
+            opacity={0.34}
+          />
+        ))}
       {["01", "02", "03", "04"].map((label, index) => {
         const angle = index * Math.PI * 1.82 + 0.4 + descent * Math.PI * 1.8;
         const isActive = activeIndex === index;
 
         return (
-          <group key={label} position={[Math.cos(angle) * 1.58, 1.18 - index * 0.76, Math.sin(angle) * 1.58]}>
+          <group
+            key={label}
+            position={[
+              Math.cos(angle) * 1.58,
+              1.18 - index * 0.76,
+              Math.sin(angle) * 1.58,
+            ]}
+          >
             <mesh>
               <boxGeometry args={[isActive ? 0.72 : 0.58, 0.28, 0.035]} />
-              <meshBasicMaterial color={isActive ? "#ffe84a" : "#f6faff"} transparent opacity={isActive ? 0.28 : 0.13} />
+              <meshBasicMaterial
+                color={isActive ? "#ffe84a" : "#f6faff"}
+                transparent
+                opacity={isActive ? 0.28 : 0.13}
+              />
             </mesh>
             <mesh position={[-0.22, 0, 0.04]}>
               <sphereGeometry args={[isActive ? 0.075 : 0.055, 18, 18]} />
-              <meshBasicMaterial color={isActive ? "#ffe84a" : index === 1 ? "#d99b4d" : "#9edbff"} transparent opacity={0.9} />
+              <meshBasicMaterial
+                color={
+                  isActive ? "#ffe84a" : index === 1 ? "#d99b4d" : "#9edbff"
+                }
+                transparent
+                opacity={0.9}
+              />
             </mesh>
           </group>
         );
@@ -1431,18 +2729,39 @@ function EvidenceHelixModel({
   );
 }
 
-export function RouteComparisonThreeScene({ scrollProgress }: ScrollSceneProps) {
+export function RouteComparisonThreeScene({
+  scrollProgress,
+}: ScrollSceneProps) {
   return (
-    <SceneShell className="route-three-scene" cameraPosition={[0, 0.1, 5.4]}>
-      {(reducedMotion) => <RouteComparisonModel reducedMotion={reducedMotion} scrollProgress={scrollProgress} />}
+    <SceneShell
+      className="route-three-scene"
+      cameraPosition={[0, 0.1, 5.4]}
+      bloomIntensity={0.38}
+      bloomThreshold={0.24}
+      bloomSmoothing={0.62}
+    >
+      {(reducedMotion) => (
+        <RouteComparisonModel
+          reducedMotion={reducedMotion}
+          scrollProgress={scrollProgress}
+        />
+      )}
     </SceneShell>
   );
 }
 
 export function EvidenceSpiralThreeScene({ scrollProgress }: ScrollSceneProps) {
   return (
-    <SceneShell className="evidence-three-scene" cameraPosition={[0, 0.02, 4.5]}>
-      {(reducedMotion) => <EvidenceHelixModel reducedMotion={reducedMotion} scrollProgress={scrollProgress} />}
+    <SceneShell
+      className="evidence-three-scene"
+      cameraPosition={[0, 0.02, 4.5]}
+    >
+      {(reducedMotion) => (
+        <EvidenceHelixModel
+          reducedMotion={reducedMotion}
+          scrollProgress={scrollProgress}
+        />
+      )}
     </SceneShell>
   );
 }

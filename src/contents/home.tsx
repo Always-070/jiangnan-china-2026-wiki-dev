@@ -4,10 +4,8 @@ import { Link } from "react-router-dom";
 import teamLogoUrl from "../assets/team-logo-symbol.svg";
 import { SectionNav } from "../components/PageScaffold";
 
-const HomeAtlasThreeScene = lazy(() =>
-  import("../components/AtlasThreeScenes").then((module) => ({
-    default: module.HomeAtlasThreeScene,
-  })),
+const HomeAtlasThreeScene = lazy(
+  () => import("../components/three/HomeAtlasThreeScene"),
 );
 
 const homeSections = [

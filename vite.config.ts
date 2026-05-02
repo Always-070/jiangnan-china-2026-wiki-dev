@@ -8,7 +8,9 @@ function normalizeBasePath(basePath: string) {
   }
 
   const withLeadingSlash = basePath.startsWith("/") ? basePath : `/${basePath}`;
-  return withLeadingSlash.endsWith("/") ? withLeadingSlash : `${withLeadingSlash}/`;
+  return withLeadingSlash.endsWith("/")
+    ? withLeadingSlash
+    : `${withLeadingSlash}/`;
 }
 
 function resolveBasePath(teamSlug: string) {
@@ -30,6 +32,39 @@ function resolveBasePath(teamSlug: string) {
   return "/";
 }
 
+function resolveManualChunk(id: string) {
+  const normalizedId = id.replace(/\\/g, "/");
+
+  if (!normalizedId.includes("/node_modules/")) {
+    return undefined;
+  }
+
+  if (normalizedId.includes("/node_modules/three/")) {
+    return "vendor-three";
+  }
+
+  if (normalizedId.includes("/node_modules/@react-three/fiber/")) {
+    return "vendor-r3f";
+  }
+
+  if (normalizedId.includes("/node_modules/@react-three/drei/")) {
+    return "vendor-drei";
+  }
+
+  if (
+    normalizedId.includes("/node_modules/@react-three/postprocessing/") ||
+    normalizedId.includes("/node_modules/postprocessing/")
+  ) {
+    return "vendor-postprocessing";
+  }
+
+  if (normalizedId.includes("/node_modules/gsap/")) {
+    return "vendor-gsap";
+  }
+
+  return undefined;
+}
+
 // https://vitejs.dev/config/
 export default () => {
   const env = loadEnv("dev", process.cwd());
@@ -47,6 +82,13 @@ export default () => {
       host: "0.0.0.0",
       port: 6172,
       strictPort: true,
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: resolveManualChunk,
+        },
+      },
     },
   });
 };

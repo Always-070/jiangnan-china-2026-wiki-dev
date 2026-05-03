@@ -4,6 +4,7 @@ import {
   ReferenceBlock,
 } from "../components/PageScaffold";
 import { NextStopBanner, RouteComparison } from "../components/AtlasShowpieces";
+import { ProjectArchitectureMap } from "../components/ProjectArchitectureMap";
 
 const descriptionReferences = [
   {
@@ -60,6 +61,7 @@ export function Description() {
           </p>
         </div>
         <RouteComparison />
+        <ProjectArchitectureMap variant="story" defaultActiveNode="scaffold" />
 
         <div className="story-band">
           <div>

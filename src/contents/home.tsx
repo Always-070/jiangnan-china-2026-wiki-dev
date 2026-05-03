@@ -3,12 +3,14 @@ import type { CSSProperties, PointerEvent, WheelEvent } from "react";
 import { Link } from "react-router-dom";
 import teamLogoUrl from "../assets/team-logo-symbol.svg";
 import { SectionNav } from "../components/PageScaffold";
+import { ProjectArchitectureMap } from "../components/ProjectArchitectureMap";
 
 const HomeAtlasThreeScene = lazy(
   () => import("../components/three/HomeAtlasThreeScene"),
 );
 
 const homeSections = [
+  { id: "project-architecture-map", label: "Control Room" },
   { id: "atlas-story", label: "Story Mode" },
   { id: "atlas-modules", label: "Modules" },
   { id: "atlas-proof", label: "Proof Slots" },
@@ -452,7 +454,6 @@ function HomeCinematicIntro({
       return;
     }
 
-    event.preventDefault();
     onScrub(event.deltaY);
   };
 
@@ -714,6 +715,10 @@ export function Home() {
         <div className="container atlas-sticky-nav">
           <SectionNav sections={homeSections} />
         </div>
+
+        <section id="project-architecture-map" className="container atlas-section atlas-control-room-section">
+          <ProjectArchitectureMap variant="compact" />
+        </section>
 
         <section id="atlas-story" className="container atlas-section atlas-story-section">
           <div className="atlas-section-heading">

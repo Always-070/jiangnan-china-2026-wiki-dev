@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   EvidenceGrid,
   FlowDiagram,
@@ -5,6 +6,10 @@ import {
   ReferenceBlock,
 } from "../components/PageScaffold";
 import { MetabolicControlMap, NextStopBanner } from "../components/AtlasShowpieces";
+import {
+  ProjectArchitectureMap,
+  type ArchitectureNodeId,
+} from "../components/ProjectArchitectureMap";
 
 const engineeringReferences = [
   {
@@ -48,7 +53,62 @@ const engineeringBlocks = [
   },
 ];
 
+function useEngineeringArchitectureNode() {
+  const [activeNode, setActiveNode] = useState<ArchitectureNodeId>("p450");
+
+  useEffect(() => {
+    const targets = [
+      { id: "cycle", node: "scaffold" },
+      { id: "build", node: "p450" },
+      { id: "test", node: "transport" },
+    ] as const;
+    const elements = targets
+      .map((target) => ({
+        ...target,
+        element: document.getElementById(target.id),
+      }))
+      .filter(
+        (target): target is (typeof targets)[number] & { element: HTMLElement } =>
+          Boolean(target.element),
+      );
+
+    if (!elements.length) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+
+        if (!visible) {
+          return;
+        }
+
+        const match = elements.find((item) => item.element === visible.target);
+
+        if (match) {
+          setActiveNode(match.node);
+        }
+      },
+      {
+        rootMargin: "-32% 0px -48% 0px",
+        threshold: [0.12, 0.24, 0.42],
+      },
+    );
+
+    elements.forEach((item) => observer.observe(item.element));
+
+    return () => observer.disconnect();
+  }, []);
+
+  return [activeNode, setActiveNode] as const;
+}
+
 export function Engineering() {
+  const [architectureNode, setArchitectureNode] = useEngineeringArchitectureNode();
+
   return (
     <>
       <section id="cycle" className="story-section story-section-first">
@@ -83,6 +143,11 @@ export function Engineering() {
               note: "The long-term platform vision relies on iterative learning and data-guided redesign.",
             },
           ]}
+        />
+        <ProjectArchitectureMap
+          variant="technical"
+          activeNode={architectureNode}
+          onActiveNodeChange={setArchitectureNode}
         />
         <MetabolicControlMap />
       </section>

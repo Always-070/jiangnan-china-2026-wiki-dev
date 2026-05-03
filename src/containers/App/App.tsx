@@ -11,11 +11,34 @@ import { MolecularLoader } from "../../components/MolecularLoader";
 import { SectionNav } from "../../components/PageScaffold";
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { hash, pathname } = useLocation();
 
   useLayoutEffect(() => {
+    if (hash) {
+      const sectionId = decodeURIComponent(hash.slice(1));
+
+      window.requestAnimationFrame(() => {
+        const target = document.getElementById(sectionId);
+
+        if (!target) {
+          return;
+        }
+
+        const targetTop =
+          target.getBoundingClientRect().top + window.scrollY - 96;
+
+        window.scrollTo({
+          top: Math.max(targetTop, 0),
+          left: 0,
+          behavior: "smooth",
+        });
+      });
+
+      return;
+    }
+
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [pathname]);
+  }, [hash, pathname]);
 
   return null;
 }

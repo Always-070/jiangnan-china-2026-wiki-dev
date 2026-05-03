@@ -2,20 +2,12 @@ import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 
-const ControlMapThreeScene = lazy(() =>
-  import("./AtlasThreeScenes").then((module) => ({
-    default: module.ControlMapThreeScene,
-  })),
+const ControlMapThreeScene = lazy(() => import("./three/ControlMapThreeScene"));
+const RouteComparisonThreeScene = lazy(
+  () => import("./three/RouteComparisonThreeScene"),
 );
-const RouteComparisonThreeScene = lazy(() =>
-  import("./AtlasThreeScenes").then((module) => ({
-    default: module.RouteComparisonThreeScene,
-  })),
-);
-const EvidenceSpiralThreeScene = lazy(() =>
-  import("./AtlasThreeScenes").then((module) => ({
-    default: module.EvidenceSpiralThreeScene,
-  })),
+const EvidenceSpiralThreeScene = lazy(
+  () => import("./three/EvidenceSpiralThreeScene"),
 );
 
 interface NextStopBannerProps {

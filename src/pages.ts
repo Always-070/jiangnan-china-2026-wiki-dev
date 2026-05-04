@@ -55,6 +55,7 @@ const descriptionAnchors: PageAnchor[] = [
 
 const engineeringAnchors: PageAnchor[] = [
   { id: "cycle", label: "DBTL Cycle" },
+  { id: "matrix", label: "Evidence Matrix" },
   { id: "build", label: "Build" },
   { id: "test", label: "Test" },
   { id: "learn", label: "Learn" },

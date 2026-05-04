@@ -5,7 +5,12 @@ import {
   MetricStrip,
   ReferenceBlock,
 } from "../components/PageScaffold";
-import { MetabolicControlMap, NextStopBanner } from "../components/AtlasShowpieces";
+import {
+  DBTLEvidenceMatrix,
+  MetabolicControlMap,
+  NextStopBanner,
+  type ControlLayer,
+} from "../components/AtlasShowpieces";
 import {
   ProjectArchitectureMap,
   type ArchitectureNodeId,
@@ -106,8 +111,63 @@ function useEngineeringArchitectureNode() {
   return [activeNode, setActiveNode] as const;
 }
 
+function useEngineeringActiveColumn() {
+  const [activeColumn, setActiveColumn] = useState<ControlLayer>("catalysis");
+
+  useEffect(() => {
+    const targets = [
+      { id: "cycle", layer: "flux" },
+      { id: "build", layer: "catalysis" },
+      { id: "test", layer: "transport" },
+      { id: "learn", layer: "transport" },
+    ] as const;
+    const elements = targets
+      .map((target) => ({
+        ...target,
+        element: document.getElementById(target.id),
+      }))
+      .filter(
+        (target): target is (typeof targets)[number] & { element: HTMLElement } =>
+          Boolean(target.element),
+      );
+
+    if (!elements.length) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+
+        if (!visible) {
+          return;
+        }
+
+        const match = elements.find((item) => item.element === visible.target);
+
+        if (match) {
+          setActiveColumn(match.layer);
+        }
+      },
+      {
+        rootMargin: "-28% 0px -52% 0px",
+        threshold: [0.12, 0.24, 0.42],
+      },
+    );
+
+    elements.forEach((item) => observer.observe(item.element));
+
+    return () => observer.disconnect();
+  }, []);
+
+  return activeColumn;
+}
+
 export function Engineering() {
   const [architectureNode, setArchitectureNode] = useEngineeringArchitectureNode();
+  const activeColumn = useEngineeringActiveColumn();
 
   return (
     <>
@@ -150,6 +210,7 @@ export function Engineering() {
           onActiveNodeChange={setArchitectureNode}
         />
         <MetabolicControlMap />
+        <DBTLEvidenceMatrix activeColumn={activeColumn} />
       </section>
 
       <section id="build" className="story-section">

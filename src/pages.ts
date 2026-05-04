@@ -63,7 +63,19 @@ const engineeringAnchors: PageAnchor[] = [
 ];
 
 const resultsAnchors: PageAnchor[] = [
+  { id: "overview", label: "Overview" },
+  { id: "summary", label: "Summary" },
+  { id: "featured", label: "Featured" },
+  { id: "cards", label: "Cards" },
   { id: "milestones", label: "Helix" },
+  { id: "next-experiments", label: "Next" },
+  { id: "references", label: "References" },
+];
+
+const measurementAnchors: PageAnchor[] = [
+  { id: "protocols", label: "Protocols" },
+  { id: "figure-data-cards", label: "Cards" },
+  { id: "quality-control", label: "Quality" },
   { id: "references", label: "References" },
 ];
 
@@ -118,15 +130,28 @@ const engineeringFigure: HeroFigure = {
 };
 
 const resultsFigure: HeroFigure = {
-  label: "DNA Evidence Chain",
-  title: "Level 01 -> 04 around the central light column",
+  label: "Evidence Cards",
+  title: "Claim -> Method -> Figure -> Metric -> Limit -> Notebook",
   description:
-    "The Results page is organized as a scroll-controlled virtual helix rather than a stack of flat report sections.",
+    "The Results page turns each result into a reviewable data card while keeping the Atlas helix as pathway context.",
   items: [
-    "Level 01 reserves scaffold-supply evidence slots.",
-    "Level 02 opens catalytic conversion slots.",
-    "Level 03 frames transport compatibility data.",
-    "Level 04 closes with platform-coherence evidence.",
+    "Start with the restrained claim and measurement method.",
+    "Reserve figure slots until verified data are linked.",
+    "Show units, replicates, and controls beside the result.",
+    "Keep limitations and notebook links visible on every card.",
+  ],
+};
+
+const measurementFigure: HeroFigure = {
+  label: "Method First",
+  title: "Protocol -> Controls -> Units -> Evidence",
+  description:
+    "Measurement uses the same card system, but prioritizes repeatability, controls, standardization, and unit reporting before the claim.",
+  items: [
+    "Expose controls and standardization under each method.",
+    "Keep replicate count and units beside every metric.",
+    "Link raw records through Notebook anchors.",
+    "Treat limitations as part of the measurement, not an afterthought.",
   ],
 };
 
@@ -171,7 +196,8 @@ const homeFigure: HeroFigure = {
 
 const wikiExcellenceFigure: HeroFigure = {
   label: "Best Wiki Readiness",
-  title: "Story clarity -> Navigation -> Accessibility -> Evidence traceability",
+  title:
+    "Story clarity -> Navigation -> Accessibility -> Evidence traceability",
   description:
     "This page keeps wiki quality visible as a project deliverable, not just a final-week decoration task.",
   items: [
@@ -193,18 +219,26 @@ const engineeringCtas: CallToAction[] = [
 ];
 
 const resultsCtas: CallToAction[] = [
-  { label: "Enter evidence helix", href: "#milestones", variant: "primary" },
+  { label: "Review data cards", href: "#cards", variant: "primary" },
   { label: "Back to engineering", href: "/engineering", variant: "secondary" },
 ];
 
 const hpCtas: CallToAction[] = [
   { label: "See stakeholder map", href: "#stakeholders", variant: "primary" },
-  { label: "Open implementation", href: "#implementation", variant: "secondary" },
+  {
+    label: "Open implementation",
+    href: "#implementation",
+    variant: "secondary",
+  },
 ];
 
 const notebookCtas: CallToAction[] = [
   { label: "Jump to timeline", href: "#timeline", variant: "primary" },
-  { label: "See coordination notes", href: "#coordination", variant: "secondary" },
+  {
+    label: "See coordination notes",
+    href: "#coordination",
+    variant: "secondary",
+  },
 ];
 
 const wikiExcellenceCtas: CallToAction[] = [
@@ -287,11 +321,11 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Results",
         path: "/results",
         component: Results,
-        lead: "Move through a scroll-controlled DNA helix evidence chain for scaffold supply, catalytic conversion, transport compatibility, and platform coherence.",
+        lead: "Review scaffold supply, catalytic conversion, transport compatibility, and integrated platform evidence as structured data cards.",
         summaryBullets: [
-          "Use the central light column as the Results spine.",
-          "Open holographic data pads for Assay, Figure, and Report slots at each level.",
-          "Keep every slot honest until wet-lab data is ready.",
+          "Each result answers claim, method, figure, metric, interpretation, limitation, and notebook link.",
+          "Use filters to move between flux, scaffold, catalysis, transport, and integrated evidence.",
+          "Keep empty slots honest until wet-lab data and raw records are ready.",
         ],
         anchorSections: resultsAnchors,
         heroFigure: resultsFigure,
@@ -351,7 +385,26 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Measurement",
         path: "/measurement",
         component: Measurement,
-        lead: "Synthetic Biology needs great measurement approaches for characterizing parts, and efficient new methods for characterizing many parts at once. Describe your measurement approaches on this page.",
+        lead: "Show how each measurement is controlled, standardized, repeatable, linked to raw records, and cautious about what it can prove.",
+        summaryBullets: [
+          "Prioritize method, controls, standardization, units, and replicate count before interpretation.",
+          "Use the same card system as Results, but switch to a method-first reading order.",
+          "Make quality control visible beside the evidence instead of hiding it in prose.",
+        ],
+        anchorSections: measurementAnchors,
+        heroFigure: measurementFigure,
+        ctaLinks: [
+          {
+            label: "Open method cards",
+            href: "#figure-data-cards",
+            variant: "primary",
+          },
+          {
+            label: "Review quality controls",
+            href: "#quality-control",
+            variant: "secondary",
+          },
+        ],
       },
       {
         name: "Plant",

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 
 export interface CallToAction {
@@ -77,6 +78,94 @@ interface ReferenceBlockProps {
   items: ReferenceItem[];
 }
 
+export interface ResultMetric {
+  label: string;
+  value: string;
+  unit?: string;
+  note?: string;
+  isHighlight?: boolean;
+}
+
+export type ResultPathwayNode =
+  | "flux"
+  | "scaffold"
+  | "catalysis"
+  | "transport"
+  | "integrated";
+
+export type ResultDataCardStatus =
+  | "planned"
+  | "in-progress"
+  | "linked"
+  | "needs-validation"
+  | "validated";
+
+interface ResultFigure {
+  type: "image" | "chart" | "gel" | "table" | "placeholder";
+  src?: string;
+  alt?: string;
+  caption?: string;
+}
+
+export interface ResultDataCardData {
+  id: string;
+  title: string;
+  pathwayNode: ResultPathwayNode;
+  status: ResultDataCardStatus;
+  claim: string;
+  method: string;
+  controls?: string;
+  standardization?: string;
+  figure?: ResultFigure;
+  quantitativeResults: ResultMetric[];
+  interpretation: string;
+  limitations: string;
+  notebookHref?: string;
+  notebookLabel?: string;
+}
+
+interface ResultDataCardProps extends ResultDataCardData {
+  variant?: "result" | "measurement";
+  featured?: boolean;
+}
+
+interface ResultDataCardGridProps {
+  cards: ResultDataCardData[];
+  filterBy?: ResultPathwayNode | "all";
+}
+
+const pathwayLabels: Record<ResultPathwayNode, string> = {
+  flux: "Flux support",
+  scaffold: "Scaffold readiness",
+  catalysis: "P450 catalysis",
+  transport: "Transport compatibility",
+  integrated: "Integrated run",
+};
+
+const pathwayShortLabels: Record<ResultPathwayNode, string> = {
+  flux: "Flux",
+  scaffold: "Scaffold",
+  catalysis: "P450",
+  transport: "Transport",
+  integrated: "Integrated",
+};
+
+const pathwayOrder: ResultPathwayNode[] = [
+  "flux",
+  "scaffold",
+  "catalysis",
+  "transport",
+  "integrated",
+];
+
+const statusLabels: Record<ResultDataCardStatus, string> = {
+  planned: "Planned",
+  "in-progress": "In progress",
+  linked: "Linked",
+  "needs-validation": "Needs validation",
+  validated: "Validated",
+};
+
 export function PageIntro({
   eyebrow,
   title,
@@ -91,7 +180,9 @@ export function PageIntro({
     <section className={`page-intro page-intro-${tone} ${className}`.trim()}>
       <div className="page-intro-grid">
         <div className="page-intro-copy">
-          {eyebrow ? <span className="page-intro-eyebrow">{eyebrow}</span> : null}
+          {eyebrow ? (
+            <span className="page-intro-eyebrow">{eyebrow}</span>
+          ) : null}
           <h1 className="page-intro-title">{title}</h1>
           <p className="page-intro-summary">{summary}</p>
           {bullets.length ? (
@@ -150,7 +241,9 @@ export function SectionNav({ sections }: { sections: PageAnchor[] }) {
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
-          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+          .sort(
+            (left, right) => right.intersectionRatio - left.intersectionRatio,
+          )[0];
 
         if (visible?.target.id) {
           setActiveId(visible.target.id);
@@ -215,7 +308,11 @@ export function FlowDiagram({
       </div>
       <div className="flow-steps" role="list">
         {steps.map((step, index) => (
-          <div className="flow-step" key={`${step.label}-${step.title}`} role="listitem">
+          <div
+            className="flow-step"
+            key={`${step.label}-${step.title}`}
+            role="listitem"
+          >
             <span className="flow-step-label">
               {variant === "loop" ? `0${index + 1}` : step.label}
             </span>
@@ -226,7 +323,8 @@ export function FlowDiagram({
       </div>
       {variant === "loop" ? (
         <p className="flow-loop-note">
-          Each lesson should feed the next decision instead of being archived at the end.
+          Each lesson should feed the next decision instead of being archived at
+          the end.
         </p>
       ) : null}
     </section>
@@ -238,17 +336,397 @@ export function EvidenceGrid({ items }: EvidenceGridProps) {
     <div className="evidence-grid">
       {items.map((item) => (
         <article className="evidence-card" key={item.title}>
-          {item.status ? <span className="evidence-status">{item.status}</span> : null}
+          {item.status ? (
+            <span className="evidence-status">{item.status}</span>
+          ) : null}
           <h3>{item.title}</h3>
           <p>{item.description}</p>
           {item.metric ? <strong>{item.metric}</strong> : null}
           {item.href ? (
-            <InlineLink className="evidence-link" href={item.href} label="Open page" />
+            <InlineLink
+              className="evidence-link"
+              href={item.href}
+              label="Open page"
+            />
           ) : null}
         </article>
       ))}
     </div>
   );
+}
+
+export function ResultDataCard({
+  variant = "result",
+  featured = false,
+  id,
+  title,
+  pathwayNode,
+  status,
+  claim,
+  method,
+  controls,
+  standardization,
+  figure,
+  quantitativeResults,
+  interpretation,
+  limitations,
+  notebookHref,
+  notebookLabel,
+}: ResultDataCardProps) {
+  const [figureOpen, setFigureOpen] = useState(false);
+  const [copyLabel, setCopyLabel] = useState("Copy citation");
+  const [contextOpen, setContextOpen] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+
+    return window.matchMedia("(min-width: 768px)").matches;
+  });
+  const cardAnchor = resultAnchorFromId(id);
+  const statusLabel = statusLabels[status];
+  const citationText = `${id}: ${title} (${pathwayLabels[pathwayNode]}; status: ${statusLabel})`;
+  const methodFirst = variant === "measurement";
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px)");
+    const syncContextState = () => setContextOpen(query.matches);
+
+    syncContextState();
+    query.addEventListener("change", syncContextState);
+
+    return () => query.removeEventListener("change", syncContextState);
+  }, []);
+
+  async function copyCitation() {
+    try {
+      await navigator.clipboard.writeText(citationText);
+      setCopyLabel("Copied");
+    } catch {
+      setCopyLabel("Copy unavailable");
+    }
+
+    window.setTimeout(() => setCopyLabel("Copy citation"), 1800);
+  }
+
+  return (
+    <article
+      id={cardAnchor}
+      className={`result-data-card result-data-card-${variant} result-data-card-${status} ${
+        featured ? "is-featured" : ""
+      }`.trim()}
+    >
+      <header className="result-data-card-header">
+        <div className="result-data-card-meta">
+          <span className="result-pathway-chip">
+            {pathwayLabels[pathwayNode]}
+          </span>
+          <span>{id}</span>
+          <span className="result-status-chip">Status: {statusLabel}</span>
+        </div>
+        <PathwayIndicator activeNode={pathwayNode} />
+        <h3>{title}</h3>
+      </header>
+
+      {methodFirst ? (
+        <section
+          className="result-method-console"
+          aria-label={`${title} method`}
+        >
+          <ResultField label="Method" text={method} />
+          {controls || standardization ? (
+            <div className="result-quality-tags">
+              {controls ? (
+                <span>
+                  <strong>Controls</strong>
+                  {controls}
+                </span>
+              ) : null}
+              {standardization ? (
+                <span>
+                  <strong>Standardization</strong>
+                  {standardization}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      <div className="result-data-card-core">
+        <ResultFigurePanel
+          figure={figure}
+          title={title}
+          onOpen={() => setFigureOpen(true)}
+        />
+
+        <div className="result-claim-console">
+          <ResultField label="Claim" text={claim} prominent />
+          {!methodFirst ? <ResultField label="Method" text={method} /> : null}
+          <MetricChips metrics={quantitativeResults} />
+        </div>
+      </div>
+
+      <details
+        className="result-context-panel"
+        open={contextOpen}
+        onToggle={(event) => setContextOpen(event.currentTarget.open)}
+      >
+        <summary>Experimental context and interpretation</summary>
+        <div className="result-context-grid">
+          {methodFirst ? <ResultField label="Claim" text={claim} /> : null}
+          <ResultField label="Interpretation" text={interpretation} />
+          <ResultField label="Limitations" text={limitations} muted />
+        </div>
+      </details>
+
+      <footer className="result-data-card-footer">
+        <NotebookLink href={notebookHref} label={notebookLabel} />
+        <button
+          type="button"
+          className="result-copy-button"
+          onClick={copyCitation}
+        >
+          {copyLabel}
+        </button>
+      </footer>
+
+      {figureOpen
+        ? createPortal(
+            <FigureLightbox
+              figure={figure}
+              title={title}
+              onClose={() => setFigureOpen(false)}
+            />,
+            document.body,
+          )
+        : null}
+    </article>
+  );
+}
+
+export function ResultDataCardGrid({
+  cards,
+  filterBy = "all",
+}: ResultDataCardGridProps) {
+  const [activeFilter, setActiveFilter] = useState<ResultPathwayNode | "all">(
+    filterBy,
+  );
+  const filters: Array<{ id: ResultPathwayNode | "all"; label: string }> = [
+    { id: "all", label: "All" },
+    ...pathwayOrder.map((node) => ({
+      id: node,
+      label: pathwayShortLabels[node],
+    })),
+  ];
+  const visibleCards =
+    activeFilter === "all"
+      ? cards
+      : cards.filter((card) => card.pathwayNode === activeFilter);
+
+  useEffect(() => {
+    setActiveFilter(filterBy);
+  }, [filterBy]);
+
+  return (
+    <section
+      className="result-data-card-system"
+      aria-label="Result data card grid"
+    >
+      <div className="result-filter-bar" aria-label="Filter evidence cards">
+        {filters.map((filter) => (
+          <button
+            key={filter.id}
+            type="button"
+            className={activeFilter === filter.id ? "is-active" : ""}
+            aria-pressed={activeFilter === filter.id}
+            onClick={() => setActiveFilter(filter.id)}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
+      {visibleCards.length ? (
+        <div className="result-data-card-grid">
+          {visibleCards.map((card) => (
+            <ResultDataCard key={card.id} variant="result" {...card} />
+          ))}
+        </div>
+      ) : (
+        <p className="result-empty-state">Reserved for verified result.</p>
+      )}
+    </section>
+  );
+}
+
+function ResultField({
+  label,
+  text,
+  prominent = false,
+  muted = false,
+}: {
+  label: string;
+  text: string;
+  prominent?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <div
+      className={`result-field ${prominent ? "result-field-prominent" : ""} ${
+        muted ? "result-field-muted" : ""
+      }`.trim()}
+    >
+      <span>{label}</span>
+      <p>{text}</p>
+    </div>
+  );
+}
+
+function MetricChips({ metrics }: { metrics: ResultMetric[] }) {
+  return (
+    <section className="result-metric-strip" aria-label="Quantitative result">
+      <span>Quantitative result</span>
+      <div>
+        {metrics.map((metric) => (
+          <strong
+            className={metric.isHighlight ? "is-highlight" : ""}
+            key={`${metric.label}-${metric.value}`}
+          >
+            <span>{metric.label}</span>
+            {metric.value}
+            {metric.unit ? <em>{metric.unit}</em> : null}
+            {metric.note ? <small>{metric.note}</small> : null}
+          </strong>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PathwayIndicator({ activeNode }: { activeNode: ResultPathwayNode }) {
+  const activeIndex = pathwayOrder.indexOf(activeNode);
+
+  return (
+    <ol className="result-pathway-indicator" aria-label="Pathway context">
+      {pathwayOrder.map((node, index) => (
+        <li
+          key={node}
+          className={
+            node === activeNode
+              ? "is-active"
+              : index < activeIndex
+                ? "is-before"
+                : ""
+          }
+        >
+          <span>{pathwayShortLabels[node]}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ResultFigurePanel({
+  figure,
+  title,
+  onOpen,
+}: {
+  figure?: ResultFigure;
+  title: string;
+  onOpen: () => void;
+}) {
+  const figureType = figure?.type || "placeholder";
+  const caption = figure?.caption || "Reserved for verified result.";
+
+  return (
+    <button
+      type="button"
+      className={`result-figure-panel result-figure-${figureType}`}
+      onClick={onOpen}
+      aria-label={`Open figure for ${title}`}
+    >
+      <span className="result-figure-type">{figureType}</span>
+      {figure?.src ? (
+        <img src={figure.src} alt={figure.alt || title} />
+      ) : (
+        <span className="result-figure-placeholder">
+          <strong>Reserved for verified result</strong>
+          <small>{caption}</small>
+        </span>
+      )}
+      <span className="result-figure-caption">{caption}</span>
+    </button>
+  );
+}
+
+function FigureLightbox({
+  figure,
+  title,
+  onClose,
+}: {
+  figure?: ResultFigure;
+  title: string;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="result-lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <button
+        type="button"
+        className="result-lightbox-backdrop"
+        aria-label="Close figure preview"
+        onClick={onClose}
+      />
+      <div className="result-lightbox-panel">
+        <div className="result-lightbox-header">
+          <span>Figure preview</span>
+          <button type="button" onClick={onClose}>
+            Close
+          </button>
+        </div>
+        <ResultFigurePanel
+          figure={figure}
+          title={title}
+          onOpen={() => undefined}
+        />
+      </div>
+    </div>
+  );
+}
+
+function NotebookLink({ href, label }: { href?: string; label?: string }) {
+  const resolvedLabel = label || "Notebook record pending";
+
+  if (!href) {
+    return (
+      <span className="result-notebook-link is-disabled">{resolvedLabel}</span>
+    );
+  }
+
+  if (href.startsWith("/")) {
+    return (
+      <Link className="result-notebook-link" to={href}>
+        Notebook: {resolvedLabel}
+      </Link>
+    );
+  }
+
+  return (
+    <a className="result-notebook-link" href={href}>
+      Notebook: {resolvedLabel}
+    </a>
+  );
+}
+
+function resultAnchorFromId(id: string) {
+  return id
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 function InlineLink({
@@ -266,7 +744,11 @@ function InlineLink({
     const sectionId = href.slice(1);
 
     return (
-      <button className={className} type="button" onClick={() => scrollToSection(sectionId)}>
+      <button
+        className={className}
+        type="button"
+        onClick={() => scrollToSection(sectionId)}
+      >
         {label}
       </button>
     );
@@ -299,8 +781,8 @@ function scrollToSection(sectionId: string) {
     return;
   }
 
-  const navOffset = 96;
-  const targetTop = target.getBoundingClientRect().top + window.scrollY - navOffset;
+  const targetTop =
+    target.getBoundingClientRect().top + window.scrollY - getAnchorOffset();
 
   window.scrollTo({
     top: Math.max(targetTop, 0),
@@ -313,6 +795,14 @@ function scrollToSection(sectionId: string) {
   });
 }
 
+function getAnchorOffset() {
+  const sectionNav = document.querySelector(
+    ".section-nav",
+  ) as HTMLElement | null;
+
+  return 96 + (sectionNav ? sectionNav.offsetHeight + 16 : 0);
+}
+
 export function ReferenceBlock({
   title = "Reference shortlist",
   items,
@@ -321,7 +811,10 @@ export function ReferenceBlock({
     <section className="reference-block">
       <div className="section-heading">
         <h3>{title}</h3>
-        <p>Use these references to keep the writing grounded, visual, and judge-friendly.</p>
+        <p>
+          Use these references to keep the writing grounded, visual, and
+          judge-friendly.
+        </p>
       </div>
       <ul className="reference-list">
         {items.map((item) => (

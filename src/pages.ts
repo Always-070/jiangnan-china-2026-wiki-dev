@@ -81,10 +81,19 @@ const measurementAnchors: PageAnchor[] = [
 
 const hpAnchors: PageAnchor[] = [
   { id: "stakeholders", label: "Stakeholders" },
+  { id: "impact-map", label: "Impact Map" },
   { id: "insights", label: "Insights" },
   { id: "changes", label: "Project Changes" },
   { id: "implementation", label: "Implementation" },
   { id: "references", label: "References" },
+];
+
+const sustainabilityAnchors: PageAnchor[] = [
+  { id: "route-burden", label: "Route Burden" },
+  { id: "sustainability-impact-map", label: "Impact Map" },
+  { id: "implementation-readiness", label: "Readiness" },
+  { id: "responsible-deployment", label: "Deployment" },
+  { id: "sustainability-references", label: "References" },
 ];
 
 const notebookAnchors: PageAnchor[] = [
@@ -168,6 +177,19 @@ const hpFigure: HeroFigure = {
   ],
 };
 
+const sustainabilityFigure: HeroFigure = {
+  label: "Route Burden",
+  title: "Feedstock -> Waste -> Scale -> Evidence",
+  description:
+    "Sustainability should show how environmental and deployment concerns become project requirements, not just claims about greener production.",
+  items: [
+    "Compare the old route and platform route by burden categories.",
+    "Separate present proof-of-concept from future manufacturing readiness.",
+    "Keep LCA, TEA, and outreach evidence marked as reserved until linked.",
+    "Connect sustainability design choices back to HP and Safety evidence.",
+  ],
+};
+
 const notebookFigure: HeroFigure = {
   label: "Notebook Rhythm",
   title: "Date -> Action -> Evidence -> Decision",
@@ -228,6 +250,15 @@ const hpCtas: CallToAction[] = [
   {
     label: "Open implementation",
     href: "#implementation",
+    variant: "secondary",
+  },
+];
+
+const sustainabilityCtas: CallToAction[] = [
+  { label: "Open impact map", href: "#sustainability-impact-map", variant: "primary" },
+  {
+    label: "Review readiness",
+    href: "#implementation-readiness",
     variant: "secondary",
   },
 ];
@@ -492,7 +523,15 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Sustainability",
         path: "/sustainability",
         component: Sustainability,
-        lead: "Describe how you have evaluated your project ideas against one or more of the SDGs.",
+        lead: "Show how route burden, scale-up reality, public trust, and safety constraints reshape the sustainable steroid platform.",
+        summaryBullets: [
+          "Translate sustainability conversations into concrete route and deployment requirements.",
+          "Separate verified design responses from LCA, TEA, and outreach evidence placeholders.",
+          "Link environmental reasoning back to Description, Engineering, Safety, and Human Practices.",
+        ],
+        anchorSections: sustainabilityAnchors,
+        heroFigure: sustainabilityFigure,
+        ctaLinks: sustainabilityCtas,
       },
     ],
   },

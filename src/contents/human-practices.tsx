@@ -4,6 +4,7 @@ import {
   MetricStrip,
   ReferenceBlock,
 } from "../components/PageScaffold";
+import { StakeholderImpactMap } from "../components/StakeholderImpactMap";
 
 const hpReferences = [
   {
@@ -122,6 +123,10 @@ export function HumanPractices() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section id="impact-map" className="story-section">
+        <StakeholderImpactMap variant="human-practices" />
       </section>
 
       <section id="insights" className="story-section">

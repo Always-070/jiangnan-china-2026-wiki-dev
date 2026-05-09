@@ -11,6 +11,10 @@ import App from "./containers/App/App.tsx";
 import { BrowserRouter, HashRouter } from "react-router-dom";
 
 const useHashRouter = import.meta.env.VITE_ROUTER_MODE === "hash";
+const routerFutureFlags = {
+  v7_relativeSplatPath: true,
+  v7_startTransition: true,
+};
 
 if (useHashRouter) {
   const sectionFallbacks: Record<string, string> = {
@@ -31,11 +35,14 @@ if (useHashRouter) {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {useHashRouter ? (
-      <HashRouter>
+      <HashRouter future={routerFutureFlags}>
         <App />
       </HashRouter>
     ) : (
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <BrowserRouter
+        basename={import.meta.env.BASE_URL}
+        future={routerFutureFlags}
+      >
         <App />
       </BrowserRouter>
     )}

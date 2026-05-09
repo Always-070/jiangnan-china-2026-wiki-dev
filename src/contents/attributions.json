@@ -1,0 +1,204 @@
+{
+  "categories": [
+    {
+      "id": "all",
+      "label": "All"
+    },
+    {
+      "id": "wet-lab",
+      "label": "Wet Lab"
+    },
+    {
+      "id": "dry-lab",
+      "label": "Dry Lab"
+    },
+    {
+      "id": "wiki-design",
+      "label": "Wiki & Design"
+    },
+    {
+      "id": "human-practices",
+      "label": "Human Practices"
+    },
+    {
+      "id": "external-support",
+      "label": "External Support"
+    },
+    {
+      "id": "tools",
+      "label": "Tools"
+    }
+  ],
+  "domains": [
+    {
+      "id": "project-leadership",
+      "categoryId": "all",
+      "title": "Project Leadership",
+      "summary": "Reserved for coordination, project framing, meeting cadence, and cross-page decision ownership."
+    },
+    {
+      "id": "wet-lab",
+      "categoryId": "wet-lab",
+      "title": "Wet Lab",
+      "summary": "Reserved for strain construction, pathway assembly, protocols, controls, and experimental execution."
+    },
+    {
+      "id": "dry-lab",
+      "categoryId": "dry-lab",
+      "title": "Dry Lab / Model",
+      "summary": "Reserved for model assumptions, simulation work, data analysis, sequence design, and computational support."
+    },
+    {
+      "id": "wiki-design",
+      "categoryId": "wiki-design",
+      "title": "Wiki / Visual Design",
+      "summary": "Reserved for page architecture, graphics, copy editing, motion, accessibility, and final wiki assembly."
+    },
+    {
+      "id": "human-practices",
+      "categoryId": "human-practices",
+      "title": "Human Practices",
+      "summary": "Reserved for stakeholder interviews, public engagement, implementation research, and feedback translation."
+    },
+    {
+      "id": "safety-documentation",
+      "categoryId": "wet-lab",
+      "title": "Safety / Documentation",
+      "summary": "Reserved for safety forms, risk review, record keeping, and compliance documentation."
+    },
+    {
+      "id": "advisors-instructors",
+      "categoryId": "external-support",
+      "title": "Advisors & Instructors",
+      "summary": "Reserved for instructor, PI, advisor, and host-lab support that should be clearly distinguished from student work."
+    },
+    {
+      "id": "external-tools",
+      "categoryId": "tools",
+      "title": "External Resources & Tools",
+      "summary": "Reserved for software, databases, design tools, AI assistance, commercial support, and other external resources."
+    }
+  ],
+  "entries": [
+    {
+      "id": "project-leadership-slot",
+      "name": "Member slot",
+      "role": "Project coordination",
+      "domainId": "project-leadership",
+      "status": "pending",
+      "attributionAreas": ["Planning", "Integration"],
+      "contribution": "Replace this placeholder with the member's specific coordination work, decisions owned, and pages or deliverables supported.",
+      "evidenceLabel": "Documentation pending",
+      "evidenceLink": "",
+      "affiliation": "Team roster",
+      "startDate": "",
+      "endDate": "",
+      "notes": "Use one row per person or per clearly bounded contribution."
+    },
+    {
+      "id": "wet-lab-slot",
+      "name": "Member slot",
+      "role": "Wet-lab contributor",
+      "domainId": "wet-lab",
+      "status": "pending",
+      "attributionAreas": ["Experiment", "Protocol"],
+      "contribution": "Replace this placeholder with concrete experimental work, protocol ownership, measurements, and notebook links.",
+      "evidenceLabel": "Documentation pending",
+      "evidenceLink": "",
+      "affiliation": "Team roster",
+      "startDate": "",
+      "endDate": "",
+      "notes": "Link to notebook sections or protocol anchors once available."
+    },
+    {
+      "id": "dry-lab-slot",
+      "name": "Member slot",
+      "role": "Dry-lab contributor",
+      "domainId": "dry-lab",
+      "status": "pending",
+      "attributionAreas": ["Model", "Analysis"],
+      "contribution": "Replace this placeholder with model, sequence, simulation, analysis, or figure-generation responsibilities.",
+      "evidenceLabel": "Documentation pending",
+      "evidenceLink": "",
+      "affiliation": "Team roster",
+      "startDate": "",
+      "endDate": "",
+      "notes": "Use evidence links for scripts, model pages, or raw-analysis records."
+    },
+    {
+      "id": "wiki-design-slot",
+      "name": "Member slot",
+      "role": "Wiki and design contributor",
+      "domainId": "wiki-design",
+      "status": "pending",
+      "attributionAreas": ["Wiki", "Visual"],
+      "contribution": "Replace this placeholder with page writing, visual design, frontend implementation, accessibility, and editing contributions.",
+      "evidenceLabel": "Documentation pending",
+      "evidenceLink": "",
+      "affiliation": "Team roster",
+      "startDate": "",
+      "endDate": "",
+      "notes": "Keep AI-assisted writing or debugging support separate under External Resources & Tools."
+    },
+    {
+      "id": "human-practices-slot",
+      "name": "Member slot",
+      "role": "Human practices contributor",
+      "domainId": "human-practices",
+      "status": "pending",
+      "attributionAreas": ["Interview", "Implementation"],
+      "contribution": "Replace this placeholder with stakeholder outreach, interview preparation, synthesis, and project-change evidence.",
+      "evidenceLabel": "Documentation pending",
+      "evidenceLink": "",
+      "affiliation": "Team roster",
+      "startDate": "",
+      "endDate": "",
+      "notes": "Link to approved meeting summaries rather than private notes."
+    },
+    {
+      "id": "safety-documentation-slot",
+      "name": "Member slot",
+      "role": "Safety documentation",
+      "domainId": "safety-documentation",
+      "status": "pending",
+      "attributionAreas": ["Safety", "Records"],
+      "contribution": "Replace this placeholder with safety review, form preparation, training records, or risk-mitigation documentation.",
+      "evidenceLabel": "Documentation pending",
+      "evidenceLink": "",
+      "affiliation": "Team roster",
+      "startDate": "",
+      "endDate": "",
+      "notes": "Separate team work from institutional safety review."
+    },
+    {
+      "id": "advisor-support-slot",
+      "name": "Advisor or instructor slot",
+      "role": "External support",
+      "domainId": "advisors-instructors",
+      "status": "external",
+      "attributionAreas": ["Advice", "Training"],
+      "contribution": "Replace this placeholder with the exact support provided by instructors, advisors, host labs, or non-team contributors.",
+      "evidenceLabel": "Documentation pending",
+      "evidenceLink": "",
+      "affiliation": "External or institutional support",
+      "startDate": "",
+      "endDate": "",
+      "notes": "Keep this distinct from student-authored work for judging clarity."
+    },
+    {
+      "id": "external-tools-slot",
+      "name": "Tool or resource slot",
+      "role": "External resource",
+      "domainId": "external-tools",
+      "status": "external",
+      "attributionAreas": ["Software", "Resource"],
+      "contribution": "Replace this placeholder with software, AI assistance, databases, instruments, templates, or sponsored resources used by the team.",
+      "evidenceLabel": "Documentation pending",
+      "evidenceLink": "",
+      "affiliation": "External resource",
+      "startDate": "",
+      "endDate": "",
+      "notes": "Name the tool and describe how it was used without overstating its role."
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 import type { CSSProperties, PointerEvent, WheelEvent } from "react";
 import { Link } from "react-router-dom";
 import teamLogoUrl from "../assets/team-logo-symbol.svg";
+import { JudgePathRail } from "../components/JudgePathRail/JudgePathRail";
 import { SectionNav } from "../components/PageScaffold";
 import { ProjectArchitectureMap } from "../components/ProjectArchitectureMap";
 
@@ -10,6 +11,7 @@ const HomeAtlasThreeScene = lazy(
 );
 
 const homeSections = [
+  { id: "judge-path-rail", label: "Judge Path" },
   { id: "project-architecture-map", label: "Control Room" },
   { id: "atlas-story", label: "Story Mode" },
   { id: "atlas-modules", label: "Modules" },
@@ -715,6 +717,13 @@ export function Home() {
         <div className="container atlas-sticky-nav">
           <SectionNav sections={homeSections} />
         </div>
+
+        <section
+          id="judge-path-rail"
+          className="container atlas-section home-judge-path-wrap"
+        >
+          <JudgePathRail className="judge-path-rail-shell" />
+        </section>
 
         <section id="project-architecture-map" className="container atlas-section atlas-control-room-section">
           <ProjectArchitectureMap variant="compact" />

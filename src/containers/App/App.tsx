@@ -9,6 +9,8 @@ import { NotFound } from "../../components/NotFound";
 import { Footer } from "../../components/Footer";
 import { MolecularLoader } from "../../components/MolecularLoader";
 import { SectionNav } from "../../components/PageScaffold";
+import { JudgePathRail } from "../../components/JudgePathRail/JudgePathRail";
+import { isJudgePathRoute } from "../../components/JudgePathRail/judgePathRailData";
 
 function ScrollToTop() {
   const { hash, pathname } = useLocation();
@@ -107,6 +109,9 @@ const App = () => {
                     <div
                       className={`container page-shell ${path === "/results" ? "page-shell-results" : ""}`.trim()}
                     >
+                      {path !== "/" && isJudgePathRoute(path) ? (
+                        <JudgePathRail className="page-judge-path-rail" />
+                      ) : null}
                       {path !== "/results" && anchorSections?.length ? (
                         <SectionNav sections={anchorSections} />
                       ) : null}

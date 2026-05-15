@@ -11393,3 +11393,417 @@ footer a:focus {
   color: var(--brand-deep);
   background: rgba(231, 247, 255, 0.82);
 }
+
+.story-band .story-band-title,
+.next-stop-banner h2 {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.story-band .story-band-text,
+.next-stop-banner p {
+  color: var(--ink-soft);
+  text-shadow: none;
+}
+
+.story-band .story-band-label,
+.next-stop-banner span {
+  color: var(--brand-deep);
+}
+
+.next-stop-banner {
+  border-color: rgba(7, 89, 133, 0.2);
+  background:
+    linear-gradient(90deg, rgba(7, 89, 133, 0.06) 1px, transparent 1px),
+    radial-gradient(
+      circle at 72% 14%,
+      rgba(255, 228, 92, 0.16),
+      transparent 18rem
+    ),
+    linear-gradient(135deg, rgba(239, 250, 255, 0.9), rgba(177, 224, 245, 0.76));
+  background-size:
+    72px 72px,
+    auto,
+    auto;
+  box-shadow: 0 24px 56px rgba(7, 89, 133, 0.16);
+}
+
+/* Bright Atlas broad module correction pass */
+main.attributions-page {
+  --attr-blue: #0ea5e9;
+  --attr-blue-deep: #075985;
+  --attr-blue-ink: var(--ink);
+  --attr-paper: rgba(239, 250, 255, 0.82);
+  --attr-paper-strong: rgba(239, 250, 255, 0.9);
+  --attr-line: rgba(7, 89, 133, 0.16);
+  --attr-line-strong: rgba(7, 89, 133, 0.28);
+  --attr-muted: var(--ink-soft);
+  --attr-ice: var(--brand-deep);
+  --attr-silver: #52738b;
+  --attr-yellow: #ffe45c;
+  --attr-green: #15803d;
+  --attr-deep: #d8f0fb;
+  --attr-mid: #9ed3ec;
+  --attr-shadow: 0 26px 70px rgba(7, 89, 133, 0.18);
+  --attr-shadow-soft: 0 18px 42px rgba(7, 89, 133, 0.13);
+  background:
+    linear-gradient(90deg, rgba(7, 89, 133, 0.055) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(7, 89, 133, 0.04) 1px, transparent 1px),
+    radial-gradient(
+      ellipse at 18% 8%,
+      rgba(56, 189, 248, 0.18),
+      transparent 28rem
+    ),
+    linear-gradient(180deg, #dff4ff 0%, #c4e9f8 48%, #a4d8ef 100%);
+  background-size:
+    76px 76px,
+    76px 76px,
+    auto,
+    auto;
+  color: var(--ink);
+}
+
+main.attributions-page::before {
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+}
+
+.attribution-hero-shell,
+.attribution-ledger,
+.ledger-snapshot,
+.attributions-page .attributions-frame {
+  border-color: rgba(7, 89, 133, 0.18);
+  background:
+    linear-gradient(90deg, rgba(7, 89, 133, 0.055) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(7, 89, 133, 0.04) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(239, 250, 255, 0.9), rgba(187, 226, 244, 0.72));
+  background-size:
+    48px 48px,
+    48px 48px,
+    auto;
+  box-shadow: 0 24px 56px rgba(7, 89, 133, 0.16);
+}
+
+.attribution-hero h1,
+.attribution-hero p,
+.attribution-hero-proof strong,
+.attribution-hero-step,
+.attribution-hero-step strong,
+.ledger-snapshot-header strong,
+.ledger-snapshot-item strong,
+.attribution-section-heading h2,
+.attribution-toggle summary strong,
+.attribution-name-cell strong,
+.attribution-role-cell strong,
+.attribution-contribution-cell p,
+.attribution-form-placeholder,
+.attribution-form-placeholder h3 {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.attribution-hero p,
+.attribution-hero-proof span,
+.attribution-hero-step small,
+.ledger-snapshot-header small,
+.ledger-snapshot-item span,
+.attribution-section-heading p,
+.attribution-toggle summary small,
+.attribution-name-cell span,
+.attribution-role-cell span,
+.attribution-contribution-cell small,
+.attribution-form-placeholder p {
+  color: var(--ink-soft);
+}
+
+.attribution-eyebrow,
+.attribution-section-heading span,
+.ledger-snapshot-header span,
+.attribution-filter-bar button,
+.attribution-toggle summary em,
+.attribution-area-list span {
+  color: var(--brand-deep);
+}
+
+.attribution-hero-proof span,
+.attribution-hero-step,
+.ledger-snapshot-item,
+.attribution-toggle,
+.attribution-row,
+.attribution-form-loader,
+.attribution-form-placeholder > div {
+  border-color: rgba(7, 89, 133, 0.16);
+  background: rgba(239, 250, 255, 0.74);
+}
+
+.attribution-form-loader,
+.attribution-form-loader strong {
+  color: var(--ink);
+}
+
+.attribution-form-loader span {
+  color: var(--ink-soft);
+}
+
+.attribution-filter-bar {
+  border-color: rgba(7, 89, 133, 0.16);
+  background: rgba(224, 246, 255, 0.96);
+}
+
+.attribution-filter-bar button:hover,
+.attribution-filter-bar button:focus {
+  color: var(--brand-deep);
+  background: rgba(186, 230, 253, 0.54);
+}
+
+.attribution-filter-bar button.is-active,
+main.attributions-page a.attribution-action-primary,
+.attribution-form-placeholder button {
+  color: #f8fcff;
+  background: linear-gradient(135deg, #0ea5e9, #075985);
+}
+
+main.attributions-page a.attribution-action-secondary,
+.attribution-evidence-cell a {
+  color: var(--brand-deep);
+  background: rgba(232, 247, 255, 0.82);
+}
+
+.attribution-row-header,
+.attribution-row:not(.attribution-row-header):hover {
+  background: rgba(218, 242, 253, 0.7);
+}
+
+.attribution-row-header,
+.attribution-row-header span,
+.attribution-status-pending {
+  color: var(--ink-soft);
+}
+
+.attribution-evidence-disabled {
+  color: #5b748a;
+  background: rgba(233, 244, 250, 0.82);
+}
+
+.results-data-hero,
+.results-data-terminal,
+.result-filter-bar,
+.result-data-card,
+.result-figure-panel,
+.result-claim-console,
+.result-method-console,
+.result-context-panel,
+.result-metric-strip strong,
+.result-quality-tags span,
+.result-notebook-link,
+.result-empty-state {
+  border-color: rgba(7, 89, 133, 0.18);
+  background:
+    linear-gradient(90deg, rgba(7, 89, 133, 0.045) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(7, 89, 133, 0.035) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(239, 250, 255, 0.9), rgba(191, 230, 247, 0.7));
+  background-size:
+    42px 42px,
+    42px 42px,
+    auto;
+  color: var(--ink);
+  box-shadow: 0 22px 54px rgba(7, 89, 133, 0.14);
+}
+
+.results-data-hero-copy h1,
+.results-summary-strip strong,
+.result-data-card h3,
+.result-field-prominent p,
+.result-metric-strip strong,
+.result-figure-placeholder strong,
+.result-context-panel summary,
+.result-lightbox-header span {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.results-data-hero-copy p,
+.results-data-terminal span,
+.result-data-card-meta,
+.result-pathway-indicator li,
+.result-pathway-indicator li.is-before,
+.result-field p,
+.result-field-muted p,
+.result-figure-placeholder small,
+.result-figure-caption,
+.result-metric-strip small,
+.result-metric-strip em,
+.result-quality-tags span,
+.result-empty-state {
+  color: var(--ink-soft);
+}
+
+.results-data-hero-copy span,
+.results-summary-strip span,
+.result-field span,
+.result-metric-strip > span,
+.result-figure-type,
+.result-status-chip,
+.result-notebook-link,
+.result-quality-tags strong {
+  color: var(--brand-deep);
+}
+
+.results-summary-strip a,
+.result-filter-bar button,
+.result-copy-button {
+  border-color: rgba(7, 89, 133, 0.2);
+  background: rgba(239, 250, 255, 0.76);
+  color: var(--ink);
+}
+
+.results-summary-strip a:hover,
+.results-summary-strip a:focus,
+.result-filter-bar button:hover,
+.result-filter-bar button:focus,
+.result-filter-bar button.is-active,
+.result-copy-button:hover,
+.result-copy-button:focus {
+  border-color: rgba(7, 89, 133, 0.34);
+  background: rgba(14, 165, 233, 0.14);
+  color: var(--brand-deep);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.13);
+}
+
+.result-pathway-chip,
+.result-status-chip,
+.result-metric-strip strong.is-highlight {
+  border-color: rgba(7, 89, 133, 0.2);
+  background: rgba(224, 246, 255, 0.82);
+  color: var(--brand-deep);
+}
+
+.result-pathway-indicator li.is-active {
+  color: var(--brand-deep);
+  text-shadow: none;
+}
+
+.result-figure-type {
+  background: rgba(224, 246, 255, 0.94);
+}
+
+.result-lightbox-panel {
+  border-color: rgba(7, 89, 133, 0.2);
+  background: #dff4ff;
+}
+
+.stakeholder-impact-map {
+  --impact-deep: #d8f0fb;
+  --impact-deep-2: #9ed3ec;
+  --impact-ice: #075985;
+  --impact-green: #15803d;
+  --impact-amber: #b77900;
+  --impact-white: var(--ink);
+  --impact-muted: var(--ink-soft);
+  --impact-panel: rgba(239, 250, 255, 0.76);
+  --impact-border: rgba(7, 89, 133, 0.2);
+  color: var(--ink);
+}
+
+.impact-map-desktop,
+.impact-map-mobile {
+  border-color: rgba(7, 89, 133, 0.18);
+  background:
+    linear-gradient(90deg, rgba(7, 89, 133, 0.055) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(7, 89, 133, 0.04) 1px, transparent 1px),
+    radial-gradient(
+      ellipse at 24% 18%,
+      rgba(22, 163, 74, 0.13),
+      transparent 24rem
+    ),
+    linear-gradient(145deg, #dff4ff, #9ed3ec);
+  background-size:
+    48px 48px,
+    48px 48px,
+    auto,
+    auto;
+  box-shadow: 0 24px 58px rgba(7, 89, 133, 0.16);
+}
+
+.impact-map-header,
+.impact-orbit,
+.impact-chain-panel,
+.impact-drawer,
+.impact-chain-row,
+.impact-row-stakeholder,
+.impact-chain-cell,
+.impact-drawer-record div,
+.impact-mobile-card,
+.impact-mobile-step > div {
+  border-color: rgba(7, 89, 133, 0.18);
+  background: rgba(239, 250, 255, 0.74);
+}
+
+.impact-map-header span,
+.impact-map-header strong,
+.impact-map-header p,
+.impact-map-statement,
+.impact-panel-title strong,
+.impact-chain-heading,
+.impact-orbit-node,
+.impact-orbit-copy strong,
+.impact-row-stakeholder strong,
+.impact-chain-cell p,
+.impact-drawer-identity h3,
+.impact-drawer-identity p,
+.impact-drawer-record dd,
+.impact-evidence-chip,
+.impact-mobile-card button,
+.impact-mobile-card button strong,
+.impact-mobile-card button small,
+.impact-mobile-step p {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.impact-map-header p,
+.impact-orbit-copy small,
+.impact-drawer-identity p,
+.impact-chain-cell p,
+.impact-drawer-record dd,
+.impact-evidence-chip.is-reserved {
+  color: var(--ink-soft);
+}
+
+.impact-panel-title span,
+.impact-row-stakeholder span,
+.impact-chain-cell span,
+.impact-drawer-record dt,
+.impact-status-chip,
+.impact-mobile-step strong {
+  color: var(--impact-category);
+}
+
+.impact-filter-bar button,
+.impact-evidence-chip,
+.impact-status-chip {
+  border-color: rgba(7, 89, 133, 0.2);
+  background: rgba(224, 246, 255, 0.76);
+  color: var(--brand-deep);
+}
+
+.impact-filter-bar button:hover,
+.impact-filter-bar button:focus-visible,
+.impact-filter-bar button.is-active,
+.impact-chain-row:hover,
+.impact-chain-row:focus-visible,
+.impact-chain-row.is-active,
+.impact-orbit-node:hover,
+.impact-orbit-node:focus-visible,
+.impact-orbit-node.is-active {
+  background: rgba(232, 247, 255, 0.94);
+  color: var(--brand-deep);
+}
+
+.impact-category-education {
+  --impact-category: #4f46e5;
+}
+
+.impact-flow-line {
+  background: rgba(7, 89, 133, 0.18);
+}

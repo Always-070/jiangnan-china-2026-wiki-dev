@@ -11807,3 +11807,121 @@ main.attributions-page a.attribution-action-secondary,
 .impact-flow-line {
   background: rgba(7, 89, 133, 0.18);
 }
+
+/* Engineering hologram contrast correction */
+.metabolic-control-map {
+  border-color: rgba(7, 89, 133, 0.24);
+  background:
+    linear-gradient(90deg, rgba(190, 230, 247, 0.075) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(190, 230, 247, 0.055) 1px, transparent 1px),
+    radial-gradient(
+      ellipse at 34% 38%,
+      rgba(158, 219, 255, 0.26),
+      transparent 24rem
+    ),
+    radial-gradient(
+      ellipse at 78% 52%,
+      rgba(255, 228, 92, 0.12),
+      transparent 22rem
+    ),
+    linear-gradient(145deg, #6aa8cd 0%, #3d78b3 48%, #143d7c 100%);
+  background-size:
+    54px 54px,
+    54px 54px,
+    auto,
+    auto,
+    auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 72px rgba(6, 27, 104, 0.2),
+    0 24px 58px rgba(7, 89, 133, 0.2);
+  color: #f6faff;
+}
+
+.control-map-header h2,
+.control-map-readout h3,
+.control-module-rail button strong {
+  color: #f8fcff;
+  text-shadow: 0 10px 26px rgba(5, 26, 68, 0.32);
+}
+
+.control-map-header span,
+.control-map-readout span,
+.control-module-rail button span {
+  background: rgba(226, 246, 255, 0.16);
+  color: #dff4ff;
+}
+
+.control-map-header button,
+.control-map-label,
+.control-map-orbit li {
+  border-color: rgba(226, 246, 255, 0.28);
+  background: rgba(18, 42, 84, 0.72);
+  color: #f8fcff;
+  box-shadow: 0 12px 28px rgba(5, 26, 68, 0.22);
+}
+
+.control-map-stage {
+  border-color: rgba(226, 246, 255, 0.24);
+  background:
+    linear-gradient(90deg, rgba(226, 246, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(226, 246, 255, 0.055) 1px, transparent 1px),
+    radial-gradient(
+      ellipse at 54% 44%,
+      rgba(216, 240, 251, 0.3),
+      transparent 18rem
+    ),
+    linear-gradient(145deg, rgba(44, 98, 151, 0.82), rgba(21, 61, 124, 0.78));
+  background-size:
+    34px 34px,
+    34px 34px,
+    auto,
+    auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 64px rgba(5, 26, 68, 0.22);
+}
+
+.control-map-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse at 52% 45%,
+      transparent 0 22rem,
+      rgba(5, 26, 68, 0.18) 34rem
+    ),
+    linear-gradient(180deg, rgba(5, 26, 68, 0.1), rgba(5, 26, 68, 0.2));
+  mix-blend-mode: multiply;
+}
+
+.control-map-cell {
+  border-color: rgba(226, 246, 255, 0.32);
+}
+
+.control-map-orbit {
+  z-index: 4;
+}
+
+.control-module-rail button,
+.control-map-readout {
+  border-color: rgba(226, 246, 255, 0.22);
+  background: rgba(18, 42, 84, 0.46);
+  color: #f6faff;
+}
+
+.control-module-rail button.is-active {
+  border-color: rgba(255, 228, 92, 0.68);
+  background: rgba(255, 228, 92, 0.16);
+}
+
+.control-map-readout {
+  box-shadow: inset 0 0 28px rgba(226, 246, 255, 0.06);
+}
+
+.control-map-readout p {
+  color: rgba(238, 250, 255, 0.78);
+}

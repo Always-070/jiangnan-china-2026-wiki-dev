@@ -11808,6 +11808,83 @@ main.attributions-page a.attribution-action-secondary,
   background: rgba(7, 89, 133, 0.18);
 }
 
+/* Bright Atlas legacy Bootstrap page correction */
+.page-shell > .row {
+  color: var(--ink);
+}
+
+.page-shell > :is(.col, .col-lg-4, .col-lg-8) {
+  color: var(--ink);
+}
+
+.page-shell .col-lg-4 {
+  color: var(--ink);
+}
+
+.page-shell > .row h2,
+.page-shell > .row h3,
+.page-shell > .row h4,
+.page-shell > .row h5,
+.page-shell > .row h6,
+.page-shell > :is(.col, .col-lg-4, .col-lg-8) h2,
+.page-shell > :is(.col, .col-lg-4, .col-lg-8) h3,
+.page-shell > :is(.col, .col-lg-4, .col-lg-8) h4,
+.page-shell > :is(.col, .col-lg-4, .col-lg-8) h5,
+.page-shell > :is(.col, .col-lg-4, .col-lg-8) h6,
+.page-shell .col-lg-4 h2,
+.page-shell .col-lg-4 h3,
+.page-shell .col-lg-4 h4,
+.page-shell .col-lg-4 h5,
+.page-shell .col-lg-4 h6 {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.page-shell > .row p,
+.page-shell > .row li,
+.page-shell > :is(.col, .col-lg-4, .col-lg-8) p,
+.page-shell > :is(.col, .col-lg-4, .col-lg-8) li,
+.page-shell .col-lg-4 p,
+.page-shell .col-lg-4 li {
+  color: var(--ink-soft);
+  text-shadow: none;
+}
+
+.page-shell > .row hr {
+  border-color: rgba(7, 89, 133, 0.2);
+  opacity: 1;
+}
+
+.page-shell > .row .bd-callout {
+  border-color: rgba(7, 89, 133, 0.18);
+  border-top-color: var(--brand);
+  background: linear-gradient(
+    180deg,
+    rgba(238, 250, 255, 0.82),
+    rgba(199, 233, 248, 0.68)
+  );
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+}
+
+.page-shell > .row .bd-callout h4 {
+  color: var(--ink);
+}
+
+.page-shell > .row .bd-callout p,
+.page-shell > .row .bd-callout li {
+  color: var(--ink-soft);
+}
+
+.page-shell > .row .bd-callout a {
+  color: var(--brand-deep);
+}
+
+.impact-row-stakeholder small {
+  color: var(--ink-soft);
+  text-shadow: none;
+}
+
 /* Engineering hologram contrast correction */
 .metabolic-control-map {
   border-color: rgba(7, 89, 133, 0.24);

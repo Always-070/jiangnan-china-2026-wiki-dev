@@ -99,13 +99,16 @@ export function Attributions() {
             <span className="attribution-eyebrow">Contribution ledger</span>
             <h1>Attributions</h1>
             <p>
-              A transparent, filterable record of team work, external support,
-              and pending documentation for the steroid platform wiki.
+              A transparent, filterable record of imported HP, design, dry-lab,
+              and external-resource contributions for the steroid platform wiki.
             </p>
             <div className="attribution-hero-proof" aria-label="Ledger summary">
               <HeroMetric label="Domains" value={String(totalDomains)} />
               <HeroMetric label="Rows" value={String(totalEntries)} />
-              <HeroMetric label="Evidence links" value={String(totalEvidenceLinks)} />
+              <HeroMetric
+                label="Evidence links"
+                value={String(totalEvidenceLinks)}
+              />
             </div>
             <div
               className="attribution-hero-actions"
@@ -131,14 +134,20 @@ export function Attributions() {
           >
             <HeroWorkflowStep label="Source" value="JSON schema" />
             <HeroWorkflowStep label="Ledger" value={`${totalEntries} rows`} />
-            <HeroWorkflowStep label="Evidence" value={`${totalPending} pending`} />
+            <HeroWorkflowStep
+              label="Evidence"
+              value={`${totalPending} pending`}
+            />
             <HeroWorkflowStep label="Submit" value="iGEM form" />
           </div>
           <aside className="ledger-snapshot" aria-label="Ledger snapshot">
             <div className="ledger-snapshot-header">
               <span>Schema preview</span>
               <strong>{totalDomains} domains mapped</strong>
-              <small>Every row below is rendered from the attribution JSON.</small>
+              <small>
+                Rows below are rendered from the current attribution source
+                batch.
+              </small>
             </div>
             <div className="ledger-snapshot-lane" aria-hidden="true">
               <span />
@@ -153,7 +162,7 @@ export function Attributions() {
                 label="Open entries"
                 value={`${totalPending} pending`}
               />
-              <SnapshotItem label="Evidence" value="Links pending" />
+              <SnapshotItem label="Evidence" value="Source archived" />
               <SnapshotItem label="Official form" value="Embedded below" />
             </div>
           </aside>
@@ -165,9 +174,10 @@ export function Attributions() {
           <span>Notion-style view</span>
           <h2>Contribution database</h2>
           <p>
-            Use this section as the readable layer for judges. Replace the
-            placeholders in <code>src/contents/attributions.json</code> with
-            final member data, evidence links, dates, and support notes.
+            This preview imports the May 10 HP sheets, May 6 design table, April
+            28 logo/IP document, and Dry_collection interpretation notes into a
+            judge-readable ledger. Source files remain archived locally for
+            audit.
           </p>
         </div>
 

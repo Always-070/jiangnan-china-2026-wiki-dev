@@ -79,6 +79,15 @@ const measurementAnchors: PageAnchor[] = [
   { id: "references", label: "References" },
 ];
 
+const modelAnchors: PageAnchor[] = [
+  { id: "catapro-iteration", label: "Iteration" },
+  { id: "diagnosis", label: "Diagnosis" },
+  { id: "evidence", label: "Evidence" },
+  { id: "next-step", label: "Next" },
+  { id: "archive-boundary", label: "Archive" },
+  { id: "references", label: "References" },
+];
+
 const hpAnchors: PageAnchor[] = [
   { id: "stakeholders", label: "Stakeholders" },
   { id: "impact-map", label: "Impact Map" },
@@ -164,6 +173,19 @@ const measurementFigure: HeroFigure = {
   ],
 };
 
+const modelFigure: HeroFigure = {
+  label: "Model Iteration",
+  title: "Failure diagnosis -> staged screening",
+  description:
+    "The current model page treats the April 28 dry-lab batch as a failed but useful screening round, so the next modeling route is grounded in what went wrong.",
+  items: [
+    "Record why the Catapro fine-tuning round did not become a final result.",
+    "Separate stable training behavior from weak quantitative prediction.",
+    "Use selected figures as iteration evidence rather than success proof.",
+    "Move toward homology analysis and MD simulation before wet-lab selection.",
+  ],
+};
+
 const hpFigure: HeroFigure = {
   label: "Implementation Loop",
   title: "Medical Need -> Manufacturing Reality -> Responsible Platform",
@@ -245,6 +267,15 @@ const resultsCtas: CallToAction[] = [
   { label: "Back to engineering", href: "/engineering", variant: "secondary" },
 ];
 
+const modelCtas: CallToAction[] = [
+  {
+    label: "Review failed round",
+    href: "#catapro-iteration",
+    variant: "primary",
+  },
+  { label: "Open evidence figures", href: "#evidence", variant: "secondary" },
+];
+
 const hpCtas: CallToAction[] = [
   { label: "See stakeholder map", href: "#stakeholders", variant: "primary" },
   {
@@ -255,7 +286,11 @@ const hpCtas: CallToAction[] = [
 ];
 
 const sustainabilityCtas: CallToAction[] = [
-  { label: "Open impact map", href: "#sustainability-impact-map", variant: "primary" },
+  {
+    label: "Open impact map",
+    href: "#sustainability-impact-map",
+    variant: "primary",
+  },
   {
     label: "Review readiness",
     href: "#implementation-readiness",
@@ -461,7 +496,15 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Model",
         path: "/model",
         component: Model,
-        lead: "Explain your model's assumptions, data, parameters, and results in a way that anyone could understand.",
+        lead: "Document the Catapro fine-tuning failure, the dry-lab diagnosis behind it, and the next screening route that combines activity prediction, homology analysis, and MD simulation.",
+        summaryBullets: [
+          "Use the April 28 Dry_collection batch as problem-discovery evidence, not final proof.",
+          "Explain why low R2 and data imbalance limited quantitative prediction.",
+          "Show how the failed round reshaped the next dry-lab workflow before wet-lab testing.",
+        ],
+        anchorSections: modelAnchors,
+        heroFigure: modelFigure,
+        ctaLinks: modelCtas,
       },
       {
         name: "Software",

@@ -11885,6 +11885,60 @@ main.attributions-page a.attribution-action-secondary,
   text-shadow: none;
 }
 
+/* Dry-lab model preview evidence */
+.dry-model-overview {
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.72fr);
+  align-items: stretch;
+  margin-top: 1.25rem;
+}
+
+.dry-figure-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.15rem;
+}
+
+.dry-figure-card {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.dry-figure-card img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(7, 89, 133, 0.12);
+}
+
+.dry-figure-card figcaption {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.dry-figure-card figcaption strong {
+  color: var(--ink);
+}
+
+.dry-figure-card figcaption span {
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+@media (max-width: 991.98px) {
+  .dry-model-overview,
+  .dry-figure-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Engineering hologram contrast correction */
 .metabolic-control-map {
   border-color: rgba(7, 89, 133, 0.24);

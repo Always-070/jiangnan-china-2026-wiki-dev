@@ -52,18 +52,32 @@ export function Attributions() {
   const [officialFormRequested, setOfficialFormRequested] = useState(false);
   const [officialFormLoaded, setOfficialFormLoaded] = useState(false);
 
+  const domainEntryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    ledgerData.entries.forEach((entry) => {
+      counts.set(entry.domainId, (counts.get(entry.domainId) ?? 0) + 1);
+    });
+
+    return counts;
+  }, []);
+
   const visibleDomains = useMemo(() => {
     return ledgerData.domains.filter(
       (domain) =>
-        activeCategory === "all" || domain.categoryId === activeCategory,
+        (activeCategory === "all" || domain.categoryId === activeCategory) &&
+        (domainEntryCounts.get(domain.id) ?? 0) > 0,
     );
-  }, [activeCategory]);
+  }, [activeCategory, domainEntryCounts]);
 
   const totalPending = ledgerData.entries.filter(
     (entry) => entry.status === "pending",
   ).length;
   const totalEntries = ledgerData.entries.length;
   const totalDomains = ledgerData.domains.length;
+  const activeDomainCount = ledgerData.domains.filter(
+    (domain) => (domainEntryCounts.get(domain.id) ?? 0) > 0,
+  ).length;
   const totalEvidenceLinks = ledgerData.entries.filter(
     (entry) => entry.evidenceLink,
   ).length;
@@ -103,7 +117,10 @@ export function Attributions() {
               and external-resource contributions for the steroid platform wiki.
             </p>
             <div className="attribution-hero-proof" aria-label="Ledger summary">
-              <HeroMetric label="Domains" value={String(totalDomains)} />
+              <HeroMetric
+                label="Active domains"
+                value={String(activeDomainCount)}
+              />
               <HeroMetric label="Rows" value={String(totalEntries)} />
               <HeroMetric
                 label="Evidence links"
@@ -143,10 +160,10 @@ export function Attributions() {
           <aside className="ledger-snapshot" aria-label="Ledger snapshot">
             <div className="ledger-snapshot-header">
               <span>Schema preview</span>
-              <strong>{totalDomains} domains mapped</strong>
+              <strong>{activeDomainCount} active domains</strong>
               <small>
-                Rows below are rendered from the current attribution source
-                batch.
+                {totalDomains} schema domains are mapped; empty domains stay
+                hidden until source rows are ready.
               </small>
             </div>
             <div className="ledger-snapshot-lane" aria-hidden="true">
@@ -305,40 +322,53 @@ function AttributionLedger({
         ))}
       </div>
 
-      <div className="attribution-toggle-stack">
-        {domains.map((domain) => {
-          const domainEntries = entries.filter(
-            (entry) => entry.domainId === domain.id,
-          );
+      {domains.length === 0 ? (
+        <div className="attribution-empty-state">
+          <strong>No imported rows in this category yet.</strong>
+          <span>
+            Source files are still archived locally, and this view will fill in
+            once that category has judge-ready rows.
+          </span>
+        </div>
+      ) : (
+        <div className="attribution-toggle-stack">
+          {domains.map((domain) => {
+            const domainEntries = entries.filter(
+              (entry) => entry.domainId === domain.id,
+            );
 
-          return (
-            <details className="attribution-toggle" key={domain.id} open>
-              <summary>
-                <span className="attribution-toggle-icon" aria-hidden="true" />
-                <span>
-                  <strong>{domain.title}</strong>
-                  <small>{domain.summary}</small>
-                </span>
-                <em>{domainEntries.length} rows</em>
-              </summary>
-              <div className="attribution-toggle-panel">
-                <div>
-                  <div className="attribution-row attribution-row-header">
-                    <span>Name</span>
-                    <span>Role</span>
-                    <span>Status</span>
-                    <span>Contribution</span>
-                    <span>Evidence</span>
+            return (
+              <details className="attribution-toggle" key={domain.id} open>
+                <summary>
+                  <span
+                    className="attribution-toggle-icon"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <strong>{domain.title}</strong>
+                    <small>{domain.summary}</small>
+                  </span>
+                  <em>{domainEntries.length} rows</em>
+                </summary>
+                <div className="attribution-toggle-panel">
+                  <div>
+                    <div className="attribution-row attribution-row-header">
+                      <span>Name</span>
+                      <span>Role</span>
+                      <span>Status</span>
+                      <span>Contribution</span>
+                      <span>Evidence</span>
+                    </div>
+                    {domainEntries.map((entry) => (
+                      <AttributionRow entry={entry} key={entry.id} />
+                    ))}
                   </div>
-                  {domainEntries.map((entry) => (
-                    <AttributionRow entry={entry} key={entry.id} />
-                  ))}
                 </div>
-              </div>
-            </details>
-          );
-        })}
-      </div>
+              </details>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

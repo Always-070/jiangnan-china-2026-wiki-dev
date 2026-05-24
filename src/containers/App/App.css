@@ -9199,6 +9199,26 @@ main.attributions-page a.attribution-action-secondary:focus {
   gap: 0.68rem;
 }
 
+.attribution-empty-state {
+  display: grid;
+  gap: 0.32rem;
+  border: 1px solid var(--attr-line);
+  border-radius: 8px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--attr-muted);
+}
+
+.attribution-empty-state strong {
+  color: var(--attr-blue-ink);
+  font-size: 1rem;
+}
+
+.attribution-empty-state span {
+  max-width: 42rem;
+  line-height: 1.6;
+}
+
 .attribution-toggle {
   overflow: hidden;
   border: 1px solid var(--attr-line);
@@ -11567,6 +11587,17 @@ main.attributions-page a.attribution-action-secondary,
 .attribution-evidence-cell a {
   color: var(--brand-deep);
   background: rgba(232, 247, 255, 0.82);
+}
+
+.attributions-page .attribution-empty-state {
+  border-color: rgba(7, 89, 133, 0.18);
+  background: rgba(248, 252, 255, 0.82);
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.attributions-page .attribution-empty-state strong {
+  color: var(--ink);
 }
 
 .attribution-row-header,

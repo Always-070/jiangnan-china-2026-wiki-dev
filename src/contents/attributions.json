@@ -82,7 +82,7 @@
   "entries": [
     {
       "id": "hp-zhou-sitong-20260510",
-      "name": "周思彤",
+      "name": "Zhou Sitong",
       "role": "Human practices and education contributor",
       "domainId": "human-practices",
       "status": "ready",
@@ -93,11 +93,11 @@
       "affiliation": "Jiangnan-China 2026 team",
       "startDate": "2026-04-05",
       "endDate": "2026-04-30",
-      "notes": "Source file archived locally as 2026-05-10_周思彤_attribution.xlsx."
+      "notes": "Source file archived locally in the May 10 HP attribution batch."
     },
     {
       "id": "hp-fang-yutong-20260510",
-      "name": "房昱彤",
+      "name": "Fang Yutong",
       "role": "Human practices media contributor",
       "domainId": "human-practices",
       "status": "ready",
@@ -108,11 +108,11 @@
       "affiliation": "Jiangnan-China 2026 team",
       "startDate": "2026-04-29",
       "endDate": "2026-04-29",
-      "notes": "Source file archived locally as 2026-05-10_房昱彤_attribution.xlsx."
+      "notes": "Source file archived locally in the May 10 HP attribution batch."
     },
     {
       "id": "hp-chen-guo-20260510",
-      "name": "陈果",
+      "name": "Chen Guo",
       "role": "Education coordination contributor",
       "domainId": "human-practices",
       "status": "ready",
@@ -123,11 +123,11 @@
       "affiliation": "Jiangnan-China 2026 team",
       "startDate": "2026-04-26",
       "endDate": "2026-04-26",
-      "notes": "Source file archived locally as 2026-05-10_陈果_attribution.xlsx; Excel serial date 46138 was converted to 2026-04-26."
+      "notes": "Source file archived locally in the May 10 HP attribution batch; Excel serial date 46138 was converted to 2026-04-26."
     },
     {
       "id": "hp-chen-haoran-20260510",
-      "name": "陈灏然",
+      "name": "Chen Haoran",
       "role": "Human practices and logistics contributor",
       "domainId": "human-practices",
       "status": "ready",
@@ -138,11 +138,11 @@
       "affiliation": "Jiangnan-China 2026 team",
       "startDate": "2026-04-29",
       "endDate": "2026-04-29",
-      "notes": "Source file archived locally as 2026-05-10_陈灏然_attribution.xlsx."
+      "notes": "Source file archived locally in the May 10 HP attribution batch."
     },
     {
       "id": "design-fan-yiting-logo-20260428",
-      "name": "范依婷",
+      "name": "Fan Yiting",
       "role": "Design group lead",
       "domainId": "wiki-design",
       "status": "ready",
@@ -157,7 +157,7 @@
     },
     {
       "id": "design-fan-yiting-ip-20260428",
-      "name": "范依婷",
+      "name": "Fan Yiting",
       "role": "Design group lead",
       "domainId": "wiki-design",
       "status": "ready",
@@ -172,7 +172,7 @@
     },
     {
       "id": "design-ren-junhao-logo-20260428",
-      "name": "任俊豪",
+      "name": "Ren Junhao",
       "role": "Design group contributor",
       "domainId": "wiki-design",
       "status": "ready",
@@ -187,7 +187,7 @@
     },
     {
       "id": "design-ren-junhao-ip-20260428",
-      "name": "任俊豪",
+      "name": "Ren Junhao",
       "role": "Design group contributor",
       "domainId": "wiki-design",
       "status": "ready",
@@ -202,7 +202,7 @@
     },
     {
       "id": "design-wu-yushan-logo-20260428",
-      "name": "吴雨姗",
+      "name": "Wu Yushan",
       "role": "Design group contributor",
       "domainId": "wiki-design",
       "status": "ready",
@@ -213,11 +213,11 @@
       "affiliation": "Jiangnan-China 2026 team",
       "startDate": "2026-04-12",
       "endDate": "2026-04-18",
-      "notes": "Name spelling follows the May 6 table; the April 28 document used the alternate spelling 吴雨珊."
+      "notes": "Name spelling follows the May 6 table; the April 28 document used an alternate Chinese-character spelling."
     },
     {
       "id": "design-wu-yushan-ip-20260428",
-      "name": "吴雨姗",
+      "name": "Wu Yushan",
       "role": "Design group contributor",
       "domainId": "wiki-design",
       "status": "ready",
@@ -228,11 +228,11 @@
       "affiliation": "Jiangnan-China 2026 team",
       "startDate": "2026-04-19",
       "endDate": "2026-04-25",
-      "notes": "Name spelling follows the May 6 table; the April 28 document used the alternate spelling 吴雨珊."
+      "notes": "Name spelling follows the May 6 table; the April 28 document used an alternate Chinese-character spelling."
     },
     {
       "id": "design-zuo-jiajie-logo-20260428",
-      "name": "左佳捷",
+      "name": "Zuo Jiajie",
       "role": "Design group contributor",
       "domainId": "wiki-design",
       "status": "ready",
@@ -243,11 +243,11 @@
       "affiliation": "Jiangnan-China 2026 team",
       "startDate": "2026-04-12",
       "endDate": "2026-04-18",
-      "notes": "Name spelling follows the May 6 table; the April 28 document used the alternate spelling 左佳杰."
+      "notes": "Name spelling follows the May 6 table; the April 28 document used an alternate Chinese-character spelling."
     },
     {
       "id": "design-zuo-jiajie-ip-20260428",
-      "name": "左佳捷",
+      "name": "Zuo Jiajie",
       "role": "Design group contributor",
       "domainId": "wiki-design",
       "status": "ready",
@@ -258,11 +258,11 @@
       "affiliation": "Jiangnan-China 2026 team",
       "startDate": "2026-04-19",
       "endDate": "2026-04-25",
-      "notes": "Name spelling follows the May 6 table; the April 28 document used the alternate spelling 左佳杰."
+      "notes": "Name spelling follows the May 6 table; the April 28 document used an alternate Chinese-character spelling."
     },
     {
       "id": "design-fan-yiting-merch-20260506",
-      "name": "范依婷",
+      "name": "Fan Yiting",
       "role": "Design group lead and merchandise designer",
       "domainId": "wiki-design",
       "status": "ready",
@@ -277,7 +277,7 @@
     },
     {
       "id": "design-wu-yushan-vector-20260506",
-      "name": "吴雨姗",
+      "name": "Wu Yushan",
       "role": "Design group contributor",
       "domainId": "wiki-design",
       "status": "ready",
@@ -292,7 +292,7 @@
     },
     {
       "id": "design-zuo-jiajie-merch-20260506",
-      "name": "左佳捷",
+      "name": "Zuo Jiajie",
       "role": "Design group contributor",
       "domainId": "wiki-design",
       "status": "ready",
@@ -307,7 +307,7 @@
     },
     {
       "id": "dry-li-ruijie-catapro-20260428",
-      "name": "李瑞杰",
+      "name": "Li Ruijie",
       "role": "Dry-lab model contributor",
       "domainId": "dry-lab",
       "status": "ready",
@@ -382,7 +382,7 @@
       "affiliation": "External software resource",
       "startDate": "2026-04-28",
       "endDate": "2026-05-10",
-      "notes": "Original source files are archived locally in C:/Users/LX/Desktop/素材处理/attribution."
+      "notes": "Original source files are archived in the local attribution folder."
     },
     {
       "id": "tool-catapro-dry-model-20260428",

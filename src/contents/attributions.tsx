@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import attributionData from "./attributions.json";
 
 interface AttributionCategory {
@@ -406,7 +407,7 @@ function AttributionRow({ entry }: { entry: AttributionEntry }) {
       </div>
       <div className="attribution-evidence-cell">
         {hasEvidence ? (
-          <a href={entry.evidenceLink}>{entry.evidenceLabel}</a>
+          <EvidenceLink href={entry.evidenceLink} label={entry.evidenceLabel} />
         ) : (
           <span
             className="attribution-evidence-disabled"
@@ -418,6 +419,18 @@ function AttributionRow({ entry }: { entry: AttributionEntry }) {
         )}
       </div>
     </article>
+  );
+}
+
+function EvidenceLink({ href, label }: { href: string; label: string }) {
+  if (href.startsWith("/")) {
+    return <Link to={href}>{label}</Link>;
+  }
+
+  return (
+    <a href={href} target="_blank" rel="noreferrer">
+      {label}
+    </a>
   );
 }
 

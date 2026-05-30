@@ -97,6 +97,14 @@ const hpAnchors: PageAnchor[] = [
   { id: "references", label: "References" },
 ];
 
+const educationAnchors: PageAnchor[] = [
+  { id: "overview", label: "Overview" },
+  { id: "primary-school", label: "Primary School" },
+  { id: "english-corner", label: "English Corner" },
+  { id: "iteration", label: "Iteration" },
+  { id: "references", label: "References" },
+];
+
 const sustainabilityAnchors: PageAnchor[] = [
   { id: "route-burden", label: "Route Burden" },
   { id: "sustainability-impact-map", label: "Impact Map" },
@@ -199,6 +207,19 @@ const hpFigure: HeroFigure = {
   ],
 };
 
+const educationFigure: HeroFigure = {
+  label: "Outreach Loop",
+  title: "Questionnaire -> activity -> feedback -> next audience",
+  description:
+    "Education turns steroid-related health science into a two-way learning process across age groups and language contexts.",
+  items: [
+    "Start from the audience's existing habits and questions.",
+    "Use experiments, stories, and bilingual practice before technical terms.",
+    "Record what was understood, misunderstood, and asked next.",
+    "Turn feedback into clearer vocabulary, activities, and follow-up media.",
+  ],
+};
+
 const sustainabilityFigure: HeroFigure = {
   label: "Route Burden",
   title: "Feedstock -> Waste -> Scale -> Evidence",
@@ -281,6 +302,19 @@ const hpCtas: CallToAction[] = [
   {
     label: "Open implementation",
     href: "#implementation",
+    variant: "secondary",
+  },
+];
+
+const educationCtas: CallToAction[] = [
+  {
+    label: "Open activity record",
+    href: "#primary-school",
+    variant: "primary",
+  },
+  {
+    label: "Review iteration plan",
+    href: "#iteration",
     variant: "secondary",
   },
 ];
@@ -552,7 +586,15 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Education",
         path: "/education",
         component: Education,
-        lead: "Innovative educational tools and outreach activities have the ability to establish a two-way dialogue with new communities by discussing public values and the science behind synthetic biology.",
+        lead: "Show how primary-school outreach and a bilingual university English Corner turned steroid-related health science into two-way learning.",
+        summaryBullets: [
+          "Use pre/post questionnaires and classroom interaction to locate what each audience understands.",
+          "Translate vitamin D, sunlight, and endocrine rhythms into daily-life examples before pathway detail.",
+          "Carry feedback into clearer vocabulary, more hands-on activities, and reusable outreach materials.",
+        ],
+        anchorSections: educationAnchors,
+        heroFigure: educationFigure,
+        ctaLinks: educationCtas,
       },
       {
         name: "Inclusivity",

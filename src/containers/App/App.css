@@ -11889,9 +11889,68 @@ main.attributions-page a.attribution-action-secondary,
   line-height: 1.55;
 }
 
+.section-kicker {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 0.55rem;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid rgba(7, 89, 133, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--brand-deep);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.education-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.education-gallery-card {
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.education-gallery-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid rgba(7, 89, 133, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.education-gallery-card figcaption {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.education-gallery-card figcaption strong {
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.education-gallery-card figcaption span {
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
 @media (max-width: 991.98px) {
   .dry-model-overview,
-  .dry-figure-grid {
+  .dry-figure-grid,
+  .education-gallery {
     grid-template-columns: 1fr;
   }
 }

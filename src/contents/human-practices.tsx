@@ -64,6 +64,14 @@ const changeCards = [
       "Explain how green manufacturing, host robustness, export toxicity, regulation, or containment concerns shape pathway and deployment decisions.",
     metric: "Responsible scaling",
   },
+  {
+    status: "Education evidence",
+    title: "Primary-school and English Corner audiences",
+    description:
+      "Record outreach as a communication feedback loop: what audiences understood, where language failed, and how the next Education materials changed.",
+    metric: "Public learning loop",
+    href: "/education",
+  },
 ];
 
 export function HumanPractices() {
@@ -71,11 +79,15 @@ export function HumanPractices() {
     <>
       <section id="stakeholders" className="story-section story-section-first">
         <div className="section-heading">
-          <h2>Human Practices should define what a responsible steroid platform looks like</h2>
+          <h2>
+            Human Practices should define what a responsible steroid platform
+            looks like
+          </h2>
           <p>
-            This page is strongest when it shows how medical relevance, industrial feasibility,
-            and sustainability expectations actively shaped the project instead of appearing as
-            separate commentary after the science was planned.
+            This page is strongest when it shows how medical relevance,
+            industrial feasibility, and sustainability expectations actively
+            shaped the project instead of appearing as separate commentary after
+            the science was planned.
           </p>
         </div>
         <MetricStrip
@@ -106,11 +118,16 @@ export function HumanPractices() {
         <div className="story-band">
           <div>
             <span className="story-band-label">Page intention</span>
-            <h2 className="story-band-title">This page should show how the platform becomes medically meaningful, industrially realistic, and environmentally defensible.</h2>
+            <h2 className="story-band-title">
+              This page should show how the platform becomes medically
+              meaningful, industrially realistic, and environmentally
+              defensible.
+            </h2>
           </div>
           <p className="story-band-text">
-            For this project, Human Practices is inseparable from the question of whether
-            steroid hormone biosynthesis can become a truly sustainable manufacturing route.
+            For this project, Human Practices is inseparable from the question
+            of whether steroid hormone biosynthesis can become a truly
+            sustainable manufacturing route.
           </p>
         </div>
 
@@ -138,7 +155,8 @@ export function HumanPractices() {
             steps={[
               {
                 label: "Listen",
-                title: "Start with those closest to use, manufacture, and regulation",
+                title:
+                  "Start with those closest to use, manufacture, and regulation",
                 text: "Choose stakeholders who can clarify therapeutic need, production reality, sustainability pressure, or biosafety constraints.",
               },
               {
@@ -165,18 +183,23 @@ export function HumanPractices() {
         <div className="section-heading">
           <h2>Recommended stakeholder-change blocks</h2>
           <p>
-            These are the most meaningful categories for a project that aims to become a
-            sustainable steroid biomanufacturing platform.
+            These are the most meaningful categories for a project that aims to
+            become a sustainable steroid biomanufacturing platform.
           </p>
         </div>
         <div className="split-layout">
           <EvidenceGrid items={changeCards} />
           <aside className="quote-card">
             <span className="quote-mark">Integration test</span>
-            <h3>If outside input did not change which bottleneck layer mattered most, then Human Practices is probably still too far from the science.</h3>
+            <h3>
+              If outside input did not change which bottleneck layer mattered
+              most, then Human Practices is probably still too far from the
+              science.
+            </h3>
             <p>
-              For this project, meaningful feedback should influence flux goals, catalytic
-              priorities, transport concerns, or platform deployment logic.
+              For this project, meaningful feedback should influence flux goals,
+              catalytic priorities, transport concerns, or platform deployment
+              logic.
             </p>
           </aside>
         </div>
@@ -185,38 +208,74 @@ export function HumanPractices() {
       <section id="implementation" className="story-section">
         <div className="story-band">
           <div>
-            <span className="story-band-label">What readers should conclude</span>
-            <h2 className="story-band-title">The project is not only about making steroid hormones. It is about making them in a better way.</h2>
+            <span className="story-band-label">
+              What readers should conclude
+            </span>
+            <h2 className="story-band-title">
+              The project is not only about making steroid hormones. It is about
+              making them in a better way.
+            </h2>
           </div>
           <p className="story-band-text">
-            A strong Human Practices page makes it easy to say how the platform became more
-            relevant, scalable, sustainable, and socially defensible because of stakeholder input.
+            A strong Human Practices page makes it easy to say how the platform
+            became more relevant, scalable, sustainable, and socially defensible
+            because of stakeholder input.
           </p>
         </div>
         <div className="split-layout">
           <article className="content-card narrative-card">
             <span className="track-tag">Good signals</span>
             <ul className="card-list">
-              <li>Stakeholders clarify what “better manufacturing” actually means in practice.</li>
-              <li>Industrial and sustainability constraints reshape engineering priorities.</li>
-              <li>The page links platform goals to access, green chemistry, and biosafety.</li>
-              <li>Each major interaction changes how the science is framed or executed.</li>
+              <li>
+                Stakeholders clarify what “better manufacturing” actually means
+                in practice.
+              </li>
+              <li>
+                Industrial and sustainability constraints reshape engineering
+                priorities.
+              </li>
+              <li>
+                The page links platform goals to access, green chemistry, and
+                biosafety.
+              </li>
+              <li>
+                Education activities explain what public audiences understood
+                and how communication materials improved.
+              </li>
+              <li>
+                Each major interaction changes how the science is framed or
+                executed.
+              </li>
             </ul>
           </article>
           <article className="content-card narrative-card">
             <span className="track-tag">Weak signals</span>
             <ul className="card-list">
-              <li>Generic outreach events with no effect on platform design.</li>
-              <li>Claims about sustainability with no linked engineering consequence.</li>
-              <li>Industrial feasibility discussed only as a future dream, not a current design pressure.</li>
-              <li>No evidence that stakeholder input influenced which bottlenecks mattered most.</li>
+              <li>
+                Generic outreach events with no effect on platform design.
+              </li>
+              <li>
+                Claims about sustainability with no linked engineering
+                consequence.
+              </li>
+              <li>
+                Industrial feasibility discussed only as a future dream, not a
+                current design pressure.
+              </li>
+              <li>
+                No evidence that stakeholder input influenced which bottlenecks
+                mattered most.
+              </li>
             </ul>
           </article>
         </div>
       </section>
 
       <section id="references" className="story-section story-section-last">
-        <ReferenceBlock title="References and Human Practices framing" items={hpReferences} />
+        <ReferenceBlock
+          title="References and Human Practices framing"
+          items={hpReferences}
+        />
       </section>
     </>
   );

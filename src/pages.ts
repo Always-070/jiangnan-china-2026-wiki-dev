@@ -92,6 +92,7 @@ const hpAnchors: PageAnchor[] = [
   { id: "stakeholders", label: "Stakeholders" },
   { id: "impact-map", label: "Impact Map" },
   { id: "insights", label: "Insights" },
+  { id: "feedback-routes", label: "Feedback Routes" },
   { id: "changes", label: "Project Changes" },
   { id: "implementation", label: "Implementation" },
   { id: "references", label: "References" },
@@ -101,6 +102,7 @@ const educationAnchors: PageAnchor[] = [
   { id: "overview", label: "Overview" },
   { id: "primary-school", label: "Primary School" },
   { id: "english-corner", label: "English Corner" },
+  { id: "education-flow", label: "Loop" },
   { id: "iteration", label: "Iteration" },
   { id: "references", label: "References" },
 ];
@@ -298,7 +300,11 @@ const modelCtas: CallToAction[] = [
 ];
 
 const hpCtas: CallToAction[] = [
-  { label: "See stakeholder map", href: "#stakeholders", variant: "primary" },
+  {
+    label: "Open feedback routes",
+    href: "#feedback-routes",
+    variant: "primary",
+  },
   {
     label: "Open implementation",
     href: "#implementation",
@@ -308,7 +314,7 @@ const hpCtas: CallToAction[] = [
 
 const educationCtas: CallToAction[] = [
   {
-    label: "Open activity record",
+    label: "Open loop dossier",
     href: "#primary-school",
     variant: "primary",
   },

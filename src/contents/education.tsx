@@ -39,16 +39,16 @@ const educationEvents = [
     status: "May 12",
     title: "Sunshine Health Code at Helie Primary School",
     description:
-      "A 45-minute class for fifth-grade students connected sunlight, vitamin D, steroid precursors, and the idea of a microbial factory through stories, experiments, drawing, and pre/post questionnaires.",
-    metric: "Plan-Do-Check-Improve",
+      "A fifth-grade class connected sunlight, vitamin D, steroid precursors, and microbial factories through experiments, drawing, and questionnaires.",
+    metric: "Loop dossier 01",
     href: "#primary-school",
   },
   {
     status: "May 15",
     title: "English Corner: From Online Tips to Daily Habits",
     description:
-      "A bilingual workshop for university students used sleep, cortisol, melatonin, insulin, ghrelin, and leptin to turn online health advice into science-based routines.",
-    metric: "Bilingual dialogue",
+      "A bilingual workshop used sleep, cortisol, melatonin, insulin, ghrelin, and leptin to turn online health advice into science-based routines.",
+    metric: "Loop dossier 02",
     href: "#english-corner",
   },
   {
@@ -109,6 +109,120 @@ const englishGallery = [
   },
 ];
 
+const activityDossiers = [
+  {
+    id: "primary-school",
+    index: "01",
+    date: "May 12",
+    title: "Sunshine Health Code at Helie Primary School",
+    subtitle:
+      "A 45-minute health science class for fifth-grade students in Wuxi.",
+    cover: primarySynbioClassroomUrl,
+    coverAlt:
+      "A team member explaining synthetic biology during the Helie Primary School outreach class.",
+    audience: "Grade-five students at Wuxi Helie Central Primary School.",
+    purpose:
+      "We wanted to test whether young students could connect sunlight, vitamin D, steroid precursors, and microbial factories through familiar daily-health examples.",
+    summary:
+      "The activity started with a pre-class questionnaire, moved into UVB beads and glass-barrier experiments, and ended with post-class feedback and drawing tasks.",
+    tags: [
+      "Primary school",
+      "Questionnaire",
+      "UVB experiment",
+      "Drawing feedback",
+    ],
+    loop: [
+      {
+        label: "Who we contacted",
+        text: "Grade-five students, because they are old enough to discuss health habits but still need concrete, visible examples before abstract pathway language.",
+      },
+      {
+        label: "Why we contacted them",
+        text: "The team needed to know whether steroid-related health science could be translated responsibly for a young public audience instead of staying inside expert language.",
+      },
+      {
+        label: "Feedback we heard",
+        text: "Many students first associated vitamin D with food rather than sunlight-driven synthesis. Microbial production was also unfamiliar, while the UVB experiment drew the clearest participation.",
+      },
+      {
+        label: "What changed",
+        text: "The next version will keep more time for student-operated experiments, split the same topic into age-specific scripts, and explain sunlight plus body conversion before introducing pathway terms.",
+      },
+      {
+        label: "Result / next plan",
+        text: "The primary-school script now becomes the simplest layer of a reusable outreach kit, with later community talks and short social-media explanations planned around the same daily-health doorway.",
+      },
+      {
+        label: "Evidence materials",
+        text: "Pre-class questionnaire, post-class questionnaire, activity slides, classroom photos, and student interaction records from the HP collection.",
+      },
+    ],
+    notes: [
+      "The lesson followed the journey from sunlight to skin, liver, kidney, active vitamin D, and calcium absorption.",
+      "UVB beads and a glass barrier made the message about glass-filtered sunlight visible instead of only verbal.",
+      "The microbial factory section helped students imagine engineered microorganisms as practical producers of useful nutritional building blocks.",
+    ],
+    galleryTitle: "Primary-school evidence photos",
+    gallery: primaryGallery,
+  },
+  {
+    id: "english-corner",
+    index: "02",
+    date: "May 15",
+    title: "English Corner: From Online Tips to Daily Habits",
+    subtitle:
+      "A bilingual university workshop linking everyday routines to endocrine signals.",
+    cover: englishCornerWorkshopUrl,
+    coverAlt:
+      "University students working together during the English Corner health workshop.",
+    audience:
+      "Jiangnan University students and international participants in a small English Corner setting.",
+    purpose:
+      "We used bilingual discussion to learn whether students could connect online health advice with steroid-related hormones and then translate the science into realistic routines.",
+    summary:
+      "Participants voted on daily habits, learned key hormones through English practice, discussed barriers to change, and built personal rest-day schedules.",
+    tags: [
+      "University",
+      "Bilingual dialogue",
+      "Hormone vocabulary",
+      "Habit design",
+    ],
+    loop: [
+      {
+        label: "Who we contacted",
+        text: "University students with mixed language backgrounds, because they frequently receive health advice online and can test whether our explanation works across both science and English vocabulary.",
+      },
+      {
+        label: "Why we contacted them",
+        text: "The project needs public communication that is accurate without becoming intimidating. English Corner let us test endocrine language in a relaxed conversation format.",
+      },
+      {
+        label: "Feedback we heard",
+        text: "Participants were most active when comparing their own routines. Some asked specific questions such as why cortisol peaks around waking, while several technical English terms still needed support.",
+      },
+      {
+        label: "What changed",
+        text: "Future workshops will add matching games or animations before vocabulary-heavy slides, provide a zero-background preview post, and prepare a bilingual glossary for recurring terms.",
+      },
+      {
+        label: "Result / next plan",
+        text: "The team will turn scattered group suggestions into a short activity handbook and adapt the same health-rhythm story for more university and community audiences.",
+      },
+      {
+        label: "Evidence materials",
+        text: "English questionnaire, workshop slides, voting photos, presenter photos, group activity photos, and the health schedule design task.",
+      },
+    ],
+    notes: [
+      "The workshop began with questions about late nights, caffeine, saved online tips, meals, outdoor time, and exercise.",
+      "Melatonin, cortisol, insulin, ghrelin, leptin, and serotonin were introduced through the daily choices participants already recognized.",
+      "Small-group discussion produced practical suggestions, but the next version needs a better capture method so useful ideas are not lost.",
+    ],
+    galleryTitle: "English Corner evidence photos",
+    gallery: englishGallery,
+  },
+];
+
 const educationReferences = [
   {
     label: "iGEM Special Prizes: Education",
@@ -149,6 +263,73 @@ function EducationGallery({
   );
 }
 
+function ActivityDossier({
+  activity,
+}: {
+  activity: (typeof activityDossiers)[number];
+}) {
+  return (
+    <section id={activity.id} className="story-section activity-dossier">
+      <div className="activity-dossier-header">
+        <div className="activity-dossier-copy">
+          <div className="activity-dossier-meta">
+            <span>{activity.index}</span>
+            <strong>{activity.date}</strong>
+          </div>
+          <span className="section-kicker">Activity dossier</span>
+          <h2>{activity.title}</h2>
+          <p>{activity.subtitle}</p>
+          <p>{activity.summary}</p>
+          <div className="activity-dossier-chips" aria-label="Evidence tags">
+            {activity.tags.map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+        </div>
+        <figure className="activity-dossier-cover">
+          <img src={activity.cover} alt={activity.coverAlt} loading="lazy" />
+          <figcaption>{activity.audience}</figcaption>
+        </figure>
+      </div>
+
+      <details className="loop-dossier">
+        <summary>
+          <span>Loop dossier</span>
+          <strong>Open detailed activity introduction</strong>
+        </summary>
+        <div className="loop-dossier-body">
+          {activity.loop.map((item) => (
+            <article className="loop-dossier-field" key={item.label}>
+              <span>{item.label}</span>
+              <p>{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </details>
+
+      <div className="activity-notes">
+        <article className="content-card narrative-card">
+          <span className="track-tag">What happened</span>
+          <ul className="card-list">
+            {activity.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </article>
+        <article className="content-card narrative-card">
+          <span className="track-tag">Why it matters</span>
+          <p>{activity.purpose}</p>
+        </article>
+      </div>
+
+      <EducationGallery
+        title={activity.galleryTitle}
+        items={activity.gallery}
+      />
+    </section>
+  );
+}
+
 export function Education() {
   return (
     <>
@@ -180,136 +361,42 @@ export function Education() {
         <EvidenceGrid items={educationEvents} />
       </section>
 
-      <section id="primary-school" className="story-section">
-        <div className="section-heading">
-          <span className="section-kicker">Primary-school outreach</span>
-          <h2>Sunshine Health Code turned vitamin D into a hands-on story</h2>
-          <p>
-            Before the class, the team used a short questionnaire to learn what
-            students already knew about sunlight, vitamin D, outdoor habits, and
-            microbes. The lesson then focused on two gaps from that survey: many
-            students thought vitamin D mainly came from food, and many had not
-            seen how microbes could help make medicines or nutrients.
-          </p>
-        </div>
-        <div className="split-layout">
-          <article className="content-card narrative-card">
-            <span className="track-tag">What happened</span>
-            <ul className="card-list">
-              <li>
-                Students followed the journey from sunlight to skin, liver,
-                kidney, active vitamin D, and calcium absorption.
-              </li>
-              <li>
-                UVB beads and a glass barrier experiment made the “do not
-                sunbathe through glass” point visible.
-              </li>
-              <li>
-                The microbial factory section invited students to imagine how
-                engineered microorganisms could make useful steroid precursors.
-              </li>
-              <li>
-                Post-class questionnaires and drawings captured what concepts
-                remained memorable and where wording still needed work.
-              </li>
-            </ul>
-          </article>
-          <article className="content-card narrative-card">
-            <span className="track-tag">What changed</span>
-            <ul className="card-list">
-              <li>
-                Future versions will reserve more time for student-operated
-                experiments because the UVB activity drew the strongest
-                participation.
-              </li>
-              <li>
-                The same topic will be split into primary-school, middle-school,
-                and high-school versions instead of one universal script.
-              </li>
-              <li>
-                Follow-up outreach will explain “vitamin D needs help from
-                sunlight and biology” before introducing abstract pathway
-                language.
-              </li>
-            </ul>
-          </article>
-        </div>
-        <EducationGallery
-          title="Primary-school evidence photos"
-          items={primaryGallery}
-        />
-      </section>
+      <div className="activity-dossier-stack">
+        {activityDossiers.map((activity) => (
+          <ActivityDossier activity={activity} key={activity.id} />
+        ))}
+      </div>
 
-      <section id="english-corner" className="story-section">
+      <section id="education-flow" className="story-section">
         <div className="section-shell section-shell-amber">
           <FlowDiagram
-            title="English Corner linked online health advice to steroid-related hormones"
-            lead="The university workshop used English practice as the interface: students first diagnosed daily habits, then connected those habits to endocrine signals, then designed a small personal action plan."
+            title="Each activity now follows the same education loop"
+            lead="The page keeps the event narrative short, then opens the detailed record only when readers want to inspect the evidence chain."
             variant="linear"
             steps={[
               {
-                label: "Warm-up",
-                title: "Start from real habits",
-                text: "Participants voted on late nights, caffeine, saved online tips, regular meals, outdoor time, and exercise.",
+                label: "Contact",
+                title: "Choose an audience with a real question",
+                text: "Primary-school students tested age-appropriate language; university students tested bilingual health communication.",
               },
               {
-                label: "Science",
-                title: "Explain body signals",
-                text: "Melatonin, cortisol, insulin, ghrelin, leptin, and serotonin were matched with sleep, stress, appetite, and metabolism.",
+                label: "Listen",
+                title: "Collect feedback during the activity",
+                text: "Questionnaires, voting, discussion, drawings, and workshop outputs recorded what each audience understood or struggled with.",
               },
               {
-                label: "Dialogue",
-                title: "Discuss what is hard to change",
-                text: "Participants shared routines that worked for them and asked follow-up questions, including why cortisol peaks around waking.",
+                label: "Change",
+                title: "Turn feedback into design decisions",
+                text: "The team adjusted interaction time, vocabulary support, age layers, and post-activity material capture.",
               },
               {
-                label: "Action",
-                title: "Build a realistic schedule",
-                text: "The session ended with personal rest-day schedules and practical advice on screen use, meals, low-threshold exercise, and stress management.",
+                label: "Reuse",
+                title: "Prepare the next audience",
+                text: "The next outreach kit will reuse the same loop instead of treating each event as an isolated record.",
               },
             ]}
           />
         </div>
-        <div className="split-layout">
-          <article className="content-card narrative-card">
-            <span className="track-tag">Feedback signal</span>
-            <ul className="card-list">
-              <li>
-                The discussion was active and relaxed, especially when students
-                compared personal routines rather than only listening to slides.
-              </li>
-              <li>
-                Some technical English terms were still difficult, which made
-                vocabulary support a real design need rather than decoration.
-              </li>
-              <li>
-                Good practical tips stayed inside small-group conversations, so
-                the next version should capture and redistribute them.
-              </li>
-            </ul>
-          </article>
-          <article className="content-card narrative-card">
-            <span className="track-tag">Iteration plan</span>
-            <ul className="card-list">
-              <li>
-                Use simpler animations, games, or matching tasks before
-                introducing endocrine vocabulary.
-              </li>
-              <li>
-                Publish a zero-background preview post before the activity so
-                participants arrive with shared terms.
-              </li>
-              <li>
-                Prepare a bilingual glossary and turn the fragmented discussion
-                output into a short activity handbook.
-              </li>
-            </ul>
-          </article>
-        </div>
-        <EducationGallery
-          title="English Corner evidence photos"
-          items={englishGallery}
-        />
       </section>
 
       <section id="iteration" className="story-section">

@@ -125,13 +125,50 @@ const activityDossiers = [
       "We wanted to test whether young students could connect sunlight, vitamin D, steroid precursors, and microbial factories through familiar daily-health examples.",
     summary:
       "The activity started with a pre-class questionnaire, moved into UVB beads and glass-barrier experiments, and ended with post-class feedback and drawing tasks.",
+    question:
+      "Could fifth-grade students move from “sunshine is good” to an evidence-based explanation of vitamin D and microbial production?",
     tags: [
       "Primary school",
       "Questionnaire",
       "UVB experiment",
       "Drawing feedback",
     ],
-    loop: [
+    narrative: [
+      "This activity was not planned as a general science lecture. Before entering the classroom, the team used a short questionnaire to ask how students understood sunlight, vitamin D, outdoor habits, microbes, and synthetic biology. The answers exposed two concrete gaps: many students did not know the body can make vitamin D with help from sunlight, and many had not seen microbes as possible producers of medicines or nutrients.",
+      "On May 12, the team turned those gaps into a three-part class for a fifth-grade class at Wuxi Helie Central Primary School. The first part followed the “journey” of vitamin D from sunlight exposure to skin synthesis, liver and kidney activation, calcium absorption, and stronger bones. The second part used UVB beads, a small ultraviolet flashlight, and a glass barrier to make the “glass blocks useful ultraviolet light” point visible. The third part introduced synthetic biology through the image of a microbial factory and asked students to draw their own vitamin D producer.",
+      "The feedback collection was built into the activity rather than added afterward. Post-class questions checked whether students could explain vitamin D’s role, safe sun exposure, the UVB experiment, and the microbial factory idea; drawings and classroom interaction showed which metaphors became memorable. That evidence now shapes the next version of the outreach kit.",
+    ],
+    loopChain: [
+      {
+        stage: "Survey gap",
+        trigger:
+          "The pre-class questionnaire showed that vitamin D was often understood as something obtained from food, while microbial manufacturing was unfamiliar.",
+        response:
+          "The lesson stopped treating “vitamin D” as a single health tip and centered two ideas instead: the body can manufacture it with sunlight, and biology can be engineered as a production tool.",
+      },
+      {
+        stage: "Classroom signal",
+        trigger:
+          "The UVB bead experiment drew the strongest attention because students could see the result change in real time.",
+        response:
+          "Future activities will reserve more time for student-operated experiments instead of compressing hands-on work into a short demonstration.",
+      },
+      {
+        stage: "Creative feedback",
+        trigger:
+          "Student drawings turned the abstract “microbial factory” into concrete images, such as imagined production lines and vitamin D makers.",
+        response:
+          "The next scripts will use more visual prompts and age-specific metaphors before introducing pathway language.",
+      },
+      {
+        stage: "Next audience",
+        trigger:
+          "Some concepts still need reinforcement, especially the relationship between calcium, vitamin D, sunlight, and safe outdoor habits.",
+        response:
+          "The team will split the same topic into primary-school, middle-school, and high-school versions, then reuse it in community talks and social-media explainers.",
+      },
+    ],
+    fieldNotes: [
       {
         label: "Who we contacted",
         text: "Grade-five students, because they are old enough to discuss health habits but still need concrete, visible examples before abstract pathway language.",
@@ -157,11 +194,6 @@ const activityDossiers = [
         text: "Pre-class questionnaire, post-class questionnaire, activity slides, classroom photos, and student interaction records from the HP collection.",
       },
     ],
-    notes: [
-      "The lesson followed the journey from sunlight to skin, liver, kidney, active vitamin D, and calcium absorption.",
-      "UVB beads and a glass barrier made the message about glass-filtered sunlight visible instead of only verbal.",
-      "The microbial factory section helped students imagine engineered microorganisms as practical producers of useful nutritional building blocks.",
-    ],
     galleryTitle: "Primary-school evidence photos",
     gallery: primaryGallery,
   },
@@ -181,13 +213,50 @@ const activityDossiers = [
       "We used bilingual discussion to learn whether students could connect online health advice with steroid-related hormones and then translate the science into realistic routines.",
     summary:
       "Participants voted on daily habits, learned key hormones through English practice, discussed barriers to change, and built personal rest-day schedules.",
+    question:
+      "Could a bilingual health workshop turn online lifestyle advice into a conversation about steroid-related hormones and realistic habits?",
     tags: [
       "University",
       "Bilingual dialogue",
       "Hormone vocabulary",
       "Habit design",
     ],
-    loop: [
+    narrative: [
+      "English Corner was designed around a different communication problem from the primary-school class. University students already encounter health advice every day, but that advice is often fragmented: sleep earlier, drink less caffeine, exercise more, manage stress. The team used English practice as a bridge, asking whether steroid-related hormones could make these familiar suggestions feel more scientific and more actionable.",
+      "The workshop began from the participants’ own routines. A self-assessment asked about bedtime, screen use before sleep, sleep quality, waking state, caffeine, emotional stress, meal rhythm, sunlight exposure, and exercise. The science section then linked those habits to melatonin, cortisol, insulin, ghrelin, leptin, and serotonin, before free talk and a personal health schedule turned the discussion back into daily decisions.",
+      "The most useful feedback came from the live conversation. The atmosphere was relaxed and active; one international student asked why cortisol reaches a peak around waking, which showed that the audience was ready for deeper mechanism when the entry point was concrete. At the same time, some professional English terms were still difficult, and many practical tips remained scattered inside small-group discussion. Those two signals directly changed the next activity design.",
+    ],
+    loopChain: [
+      {
+        stage: "Audience habit",
+        trigger:
+          "Participants arrived with real routines and online health tips, not with a blank slate.",
+        response:
+          "The activity opened with voting and a risk self-assessment so the science started from lived experience.",
+      },
+      {
+        stage: "Live question",
+        trigger:
+          "A participant asked why cortisol peaks around waking, moving the discussion from advice to mechanism.",
+        response:
+          "Future materials will keep a deeper explanation path for students who want to connect endocrine rhythms to daily schedules.",
+      },
+      {
+        stage: "Vocabulary friction",
+        trigger:
+          "Some steroid and endocrine terms were still hard to follow in English.",
+        response:
+          "The next version will add a zero-background preview post, high-frequency bilingual glossary, and simple matching games before dense explanation.",
+      },
+      {
+        stage: "Lost output",
+        trigger:
+          "Useful tips shared in small groups were not systematically captured after the workshop.",
+        response:
+          "The team will collect group outputs into a short activity handbook and adapt it for broader university and community audiences.",
+      },
+    ],
+    fieldNotes: [
       {
         label: "Who we contacted",
         text: "University students with mixed language backgrounds, because they frequently receive health advice online and can test whether our explanation works across both science and English vocabulary.",
@@ -212,11 +281,6 @@ const activityDossiers = [
         label: "Evidence materials",
         text: "English questionnaire, workshop slides, voting photos, presenter photos, group activity photos, and the health schedule design task.",
       },
-    ],
-    notes: [
-      "The workshop began with questions about late nights, caffeine, saved online tips, meals, outdoor time, and exercise.",
-      "Melatonin, cortisol, insulin, ghrelin, leptin, and serotonin were introduced through the daily choices participants already recognized.",
-      "Small-group discussion produced practical suggestions, but the next version needs a better capture method so useful ideas are not lost.",
     ],
     galleryTitle: "English Corner evidence photos",
     gallery: englishGallery,
@@ -292,35 +356,49 @@ function ActivityDossier({
         </figure>
       </div>
 
-      <details className="loop-dossier">
+      <article className="activity-case-narrative">
+        <span className="track-tag">Case narrative</span>
+        <h3>{activity.question}</h3>
+        {activity.narrative.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+      </article>
+
+      <div
+        className="activity-loop-chain"
+        aria-label="Feedback-to-response chain"
+      >
+        <div className="activity-loop-heading">
+          <span>Feedback-to-response chain</span>
+          <h3>How the activity changed the next design</h3>
+          <p>{activity.purpose}</p>
+        </div>
+        <div className="activity-loop-steps">
+          {activity.loopChain.map((item) => (
+            <article className="activity-loop-step" key={item.stage}>
+              <span>{item.stage}</span>
+              <p>{item.trigger}</p>
+              <strong>Design response</strong>
+              <p>{item.response}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <details className="activity-field-notes">
         <summary>
           <span>Loop dossier</span>
-          <strong>Open detailed activity introduction</strong>
+          <strong>Open detailed field notes and evidence</strong>
         </summary>
-        <div className="loop-dossier-body">
-          {activity.loop.map((item) => (
-            <article className="loop-dossier-field" key={item.label}>
+        <div className="activity-field-note-grid">
+          {activity.fieldNotes.map((item) => (
+            <article className="activity-field-note" key={item.label}>
               <span>{item.label}</span>
               <p>{item.text}</p>
             </article>
           ))}
         </div>
       </details>
-
-      <div className="activity-notes">
-        <article className="content-card narrative-card">
-          <span className="track-tag">What happened</span>
-          <ul className="card-list">
-            {activity.notes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-        </article>
-        <article className="content-card narrative-card">
-          <span className="track-tag">Why it matters</span>
-          <p>{activity.purpose}</p>
-        </article>
-      </div>
 
       <EducationGallery
         title={activity.galleryTitle}

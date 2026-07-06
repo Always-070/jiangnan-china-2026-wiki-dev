@@ -34,6 +34,7 @@ const teamPath: NavigationItem[] = [
 ];
 
 const morePath: NavigationItem[] = [
+  { name: "Steroid Game", path: "/steroid-tile-atlas" },
   { name: "Hardware", path: "/hardware" },
   { name: "Plant", path: "/plant" },
   { name: "Entrepreneurship", path: "/entrepreneurship" },

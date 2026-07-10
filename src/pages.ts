@@ -24,6 +24,7 @@ import {
   Results,
   SafetyAndSecurity,
   Software,
+  SteroidTileAtlas,
   Sustainability,
   WikiExcellence,
 } from "./contents";
@@ -369,6 +370,13 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
       { label: "Open project story", href: "/description", variant: "primary" },
       { label: "Jump to roadmap", href: "#home-roadmap", variant: "secondary" },
     ],
+  },
+  {
+    name: "Steroid Game",
+    title: "Steroid Tile Atlas",
+    path: "/steroid-tile-atlas",
+    component: SteroidTileAtlas,
+    lead: "A dense interactive tile-elimination game for learning steroid biomanufacturing concepts.",
   },
   {
     name: "Team",

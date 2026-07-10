@@ -13,6 +13,7 @@ const projectPath: NavigationItem[] = [
   { name: "Description", path: "/description" },
   { name: "Engineering", path: "/engineering" },
   { name: "Results", path: "/results" },
+  { name: "Steroid Game", path: "/steroid-tile-atlas" },
   { name: "Contribution", path: "/contribution" },
   { name: "Wiki Excellence", path: "/wiki-excellence" },
 ];

@@ -250,24 +250,24 @@ export function SteroidTileAtlas() {
             <span>Tools</span>
             <div className="steroid-tool-grid">
               <button type="button" disabled={!canPutAside} onClick={handlePutAside}>
-                移出
+                Put aside
               </button>
               <button
                 type="button"
                 disabled={!lastSnapshot}
                 onClick={handleUndo}
               >
-                撤销
+                Undo
               </button>
               <button
                 type="button"
                 disabled={game.status !== "playing"}
                 onClick={handleShuffle}
               >
-                洗牌
+                Shuffle
               </button>
               <button type="button" onClick={handleReset}>
-                重开
+                New game
               </button>
             </div>
           </section>
@@ -297,10 +297,11 @@ export function SteroidTileAtlas() {
 
           <section className="steroid-panel-block steroid-knowledge-panel">
             <span>Knowledge feedback</span>
-            <h2>待湿实验组补充</h2>
+            <h2>Wet-lab note pending</h2>
             <p>{game.lastFact}</p>
             <small>
-              消除三张相同牌后会刷新这里；后续只需要替换知识数组。
+              This panel refreshes after each triple match; wet-lab teammates can
+              update the knowledge array later.
             </small>
           </section>
         </aside>

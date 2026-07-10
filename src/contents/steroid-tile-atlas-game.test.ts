@@ -72,7 +72,7 @@ describe("steroid tile atlas game rules", () => {
       ["P450", "Ring"],
     );
     assert.equal(next.eliminatedSets, 1);
-    assert.match(next.lastFact, /待湿实验组补充/);
+    assert.match(next.lastFact, /Wet-lab note pending/);
   });
 
   it("only allows uncovered board tiles and top reserve tiles to enter the tray", () => {

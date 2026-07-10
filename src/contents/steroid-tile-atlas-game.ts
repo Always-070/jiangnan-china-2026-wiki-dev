@@ -53,10 +53,10 @@ export const TILE_PATTERNS: TilePattern[] = [
 ];
 
 export const KNOWLEDGE_PLACEHOLDERS = [
-  "待湿实验组补充：甾体骨架相关知识。",
-  "待湿实验组补充：P450 催化相关知识。",
-  "待湿实验组补充：前体流量相关知识。",
-  "待湿实验组补充：辅因子与电子传递相关知识。",
+  "Wet-lab note pending: steroid scaffold knowledge.",
+  "Wet-lab note pending: P450 catalysis knowledge.",
+  "Wet-lab note pending: precursor flux knowledge.",
+  "Wet-lab note pending: cofactor and electron-transfer knowledge.",
 ];
 
 export const BOARD_LAYOUT = [
@@ -113,7 +113,8 @@ export function createInitialGameState(): GameState {
     aside: [],
     status: "playing",
     knowledgeIndex: 0,
-    lastFact: "消除三张相同牌后，这里会显示湿实验组补充的生物小知识。",
+    lastFact:
+      "After matching three identical tiles, this panel will show a wet-lab science note.",
     moves: 0,
     eliminatedSets: 0,
   };

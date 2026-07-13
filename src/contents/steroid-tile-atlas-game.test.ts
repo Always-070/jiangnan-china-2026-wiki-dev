@@ -249,14 +249,14 @@ describe("steroid tile atlas game rules", () => {
   });
 
   it("keeps a tile covered until every rendered blocker is removed", () => {
-    const base = {
+    const baseCandidate = {
       id: "base",
       pattern: "Ring" as const,
       layer: 0,
       x: 2,
       y: 2,
       removed: false,
-      blockerIds: ["blocker-a", "blocker-b"],
+      blockerIds: [],
     };
     const blockerA = {
       id: "blocker-a",
@@ -276,6 +276,14 @@ describe("steroid tile atlas game rules", () => {
       removed: false,
       blockerIds: [],
     };
+    const blockerIds = buildBlockerIds(baseCandidate, [
+      baseCandidate,
+      blockerA,
+      blockerB,
+    ]);
+    const base = { ...baseCandidate, blockerIds };
+
+    assert.deepEqual(blockerIds, ["blocker-a", "blocker-b"]);
 
     assert.equal(isBoardTileCovered(base, [base, blockerA, blockerB]), true);
     assert.equal(

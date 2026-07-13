@@ -404,7 +404,7 @@ describe("steroid tile atlas game rules", () => {
     );
   });
 
-  it("builds blockers from every overlapping tile on a strictly higher layer", () => {
+  it("builds blockers from every overlapping tile that renders above", () => {
     const base = {
       id: "base",
       pattern: "Ring" as const,
@@ -432,7 +432,12 @@ describe("steroid tile atlas game rules", () => {
 
     assert.deepEqual(
       buildBlockerIds(base, [base, higher, sameLayer, lower, touching]),
-      ["higher"],
+      ["higher", "same-layer"],
+    );
+
+    assert.deepEqual(
+      buildBlockerIds(sameLayer, [base, higher, sameLayer, lower, touching]),
+      ["higher", "touching"],
     );
   });
 

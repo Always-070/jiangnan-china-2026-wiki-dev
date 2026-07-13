@@ -198,10 +198,19 @@ function buildBlockerIdsFromCandidates(
   tile: BlockerCandidate,
   tiles: readonly BlockerCandidate[],
 ): readonly string[] {
+  const tileIndex = tiles.findIndex((candidate) => candidate.id === tile.id);
+
+  if (tileIndex === -1) {
+    return [];
+  }
+
   return tiles
     .filter(
-      (otherTile) =>
-        otherTile.layer > tile.layer && rectanglesOverlap(tile, otherTile),
+      (otherTile, otherIndex) =>
+        otherTile.id !== tile.id &&
+        (otherTile.layer > tile.layer ||
+          (otherTile.layer === tile.layer && otherIndex > tileIndex)) &&
+        rectanglesOverlap(tile, otherTile),
     )
     .map((otherTile) => otherTile.id);
 }

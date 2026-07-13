@@ -2,15 +2,476 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build an independent playable steroid-themed "羊了个羊"-style tile elimination page at `/steroid-tile-atlas`.
+**Goal:** Upgrade the steroid tile game into a randomized five-level campaign with exact geometric coverage, stable difficulty profiles, limited tools, and a polished responsive game interface.
 
-**Architecture:** Keep the game self-contained in one React content module plus one CSS file. Use pure helper functions inside the module for deck generation, coverage checks, elimination, snapshots, aside, undo, and shuffle, then render those states through a dense game-board UI. Register the page through the existing `pages.ts`, `contents/index.tsx`, `Navbar.tsx`, and a small `App.tsx` immersive-route exception.
+**Architecture:** Keep level generation and game rules as pure TypeScript functions in `steroid-tile-atlas-game.ts`, including injectable randomness and a generated solution witness. Keep campaign persistence and interaction composition in `steroid-tile-atlas.tsx`, and keep all visual states in the existing CSS file. No new runtime dependency or backend is required.
 
 **Tech Stack:** React 18, TypeScript, Vite, existing Bootstrap shell, plain CSS.
 
 ---
 
-## File Structure
+## Active Campaign Enhancement File Structure
+
+- Modify `src/contents/steroid-tile-atlas-game.ts`: level profiles, geometry, randomized generation, blocker IDs, solution witness, tool allowances, and progress helpers.
+- Modify `src/contents/steroid-tile-atlas-game.test.ts`: deterministic generation, coverage regression, solution witness, level progression, and tool-limit tests.
+- Modify `src/contents/steroid-tile-atlas.tsx`: level track, unlock persistence, level transitions, tool counters, richer tile faces, and result actions.
+- Modify `src/contents/steroid-tile-atlas.css`: campaign layout, board depth, blocked/selectable states, pattern pictograms, tray warnings, transitions, and responsive behavior.
+
+### Task 1: Define Difficulty Profiles and Deterministic Random Generation
+
+**Files:**
+- Modify: `src/contents/steroid-tile-atlas-game.test.ts`
+- Modify: `src/contents/steroid-tile-atlas-game.ts`
+
+- [ ] **Step 1: Write failing profile and variation tests**
+
+Add imports for `LEVEL_PROFILES`, `createSeededRandom`, and `generateLevel`, then add:
+
+```ts
+it("defines five stable difficulty profiles with triple-safe totals", () => {
+  assert.deepEqual(
+    LEVEL_PROFILES.map(({ level, totalTiles, layers, patternCount }) => ({
+      level,
+      totalTiles,
+      layers,
+      patternCount,
+    })),
+    [
+      { level: 1, totalTiles: 45, layers: 2, patternCount: 5 },
+      { level: 2, totalTiles: 84, layers: 3, patternCount: 7 },
+      { level: 3, totalTiles: 126, layers: 4, patternCount: 9 },
+      { level: 4, totalTiles: 168, layers: 5, patternCount: 9 },
+      { level: 5, totalTiles: 210, layers: 6, patternCount: 9 },
+    ],
+  );
+
+  LEVEL_PROFILES.forEach((profile) => {
+    assert.equal(profile.totalTiles % 3, 0);
+    assert.equal(
+      profile.boardCount + profile.reserveSizes.reduce((sum, size) => sum + size, 0),
+      profile.totalTiles,
+    );
+  });
+});
+
+it("repeats a level for the same seed and varies it for a different seed", () => {
+  const first = generateLevel(3, createSeededRandom(301));
+  const repeated = generateLevel(3, createSeededRandom(301));
+  const different = generateLevel(3, createSeededRandom(302));
+  const signature = (game: GameState) =>
+    game.boardTiles.map(({ x, y, layer, pattern }) => `${x}:${y}:${layer}:${pattern}`);
+
+  assert.deepEqual(signature(first.game), signature(repeated.game));
+  assert.notDeepEqual(signature(first.game), signature(different.game));
+});
+```
+
+- [ ] **Step 2: Run the tests and verify RED**
+
+Run:
+
+```bash
+node --test --experimental-strip-types src/contents/steroid-tile-atlas-game.test.ts
+```
+
+Expected: FAIL because `LEVEL_PROFILES`, `createSeededRandom`, and `generateLevel` do not exist.
+
+- [ ] **Step 3: Implement profiles and position generation**
+
+Add these public types and constants:
+
+```ts
+export type LevelNumber = 1 | 2 | 3 | 4 | 5;
+export type RandomSource = () => number;
+
+export interface LevelProfile {
+  level: LevelNumber;
+  totalTiles: number;
+  boardCount: number;
+  layers: number;
+  patternCount: number;
+  reserveSizes: number[];
+  toolUses: number;
+}
+
+export const LEVEL_PROFILES: LevelProfile[] = [
+  { level: 1, totalTiles: 45, boardCount: 33, layers: 2, patternCount: 5, reserveSizes: [3, 3, 3, 3], toolUses: 2 },
+  { level: 2, totalTiles: 84, boardCount: 60, layers: 3, patternCount: 7, reserveSizes: [6, 6, 6, 6], toolUses: 1 },
+  { level: 3, totalTiles: 126, boardCount: 90, layers: 4, patternCount: 9, reserveSizes: [9, 9, 9, 9], toolUses: 1 },
+  { level: 4, totalTiles: 168, boardCount: 120, layers: 5, patternCount: 9, reserveSizes: [12, 12, 12, 12], toolUses: 1 },
+  { level: 5, totalTiles: 210, boardCount: 150, layers: 6, patternCount: 9, reserveSizes: [15, 15, 15, 15], toolUses: 1 },
+];
+
+export function createSeededRandom(seed: number): RandomSource {
+  let state = seed >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+```
+
+Change `shuffleList` to accept `random: RandomSource = Math.random`. Implement `generateBoardPositions(profile, random)` by building staggered candidate coordinates for every layer, shuffling candidates per layer, selecting exactly `boardCount` positions, and sorting by layer. Use half-step offsets and randomized reflection so different seeds change both topology and pattern placement.
+
+- [ ] **Step 4: Implement level generation entry points**
+
+Expose:
+
+```ts
+export interface GeneratedLevel {
+  game: GameState;
+  solutionOrder: string[];
+}
+
+export function generateLevel(
+  level: LevelNumber,
+  random: RandomSource = Math.random,
+): GeneratedLevel;
+
+export function createInitialGameState(
+  level: LevelNumber = 1,
+  random: RandomSource = Math.random,
+): GameState {
+  return generateLevel(level, random).game;
+}
+```
+
+Create board and reserve IDs before assigning patterns. Build a legal source-removal order by repeatedly collecting uncovered board IDs plus each non-empty reserve top, selecting one with `random`, and removing it from the simulation. Assign one pattern to every consecutive group of three IDs, cycling through a shuffled subset of `TILE_PATTERNS`. Return that legal order as `solutionOrder`.
+
+- [ ] **Step 5: Run tests and verify GREEN**
+
+Run the Node test command. Expected: all profile and existing rule tests PASS.
+
+- [ ] **Step 6: Commit generator work**
+
+```bash
+git add src/contents/steroid-tile-atlas-game.ts src/contents/steroid-tile-atlas-game.test.ts
+git commit -m "feat: add randomized level profiles"
+```
+
+### Task 2: Make Coverage Geometry Exact
+
+**Files:**
+- Modify: `src/contents/steroid-tile-atlas-game.test.ts`
+- Modify: `src/contents/steroid-tile-atlas-game.ts`
+
+- [ ] **Step 1: Write the multi-blocker regression test**
+
+```ts
+it("keeps a lower tile blocked until every overlapping higher tile is removed", () => {
+  const base: BoardTile = { id: "base", pattern: "Ring", layer: 0, x: 2, y: 2, removed: false, blockerIds: ["a", "b"] };
+  const a: BoardTile = { id: "a", pattern: "P450", layer: 1, x: 3, y: 2, removed: false, blockerIds: [] };
+  const b: BoardTile = { id: "b", pattern: "C27", layer: 2, x: 2, y: 3, removed: false, blockerIds: [] };
+
+  assert.equal(isBoardTileCovered(base, [base, a, b]), true);
+  assert.equal(isBoardTileCovered(base, [base, { ...a, removed: true }, b]), true);
+  assert.equal(isBoardTileCovered(base, [base, { ...a, removed: true }, { ...b, removed: true }]), false);
+});
+```
+
+These coordinates deliberately fail the old `< 0.9` center-distance rule while their rendered rectangles overlap.
+
+- [ ] **Step 2: Run the test and verify RED**
+
+Expected: the first assertion fails because the old coverage threshold misses `a` and `b`.
+
+- [ ] **Step 3: Implement shared geometry and blocker IDs**
+
+```ts
+export const BOARD_GEOMETRY = {
+  tileWidth: 1,
+  tileHeight: 1,
+  xStep: 0.78,
+  yStep: 0.7,
+} as const;
+
+export function tilesOverlap(a: BoardTile, b: BoardTile): boolean {
+  return (
+    Math.abs(a.x - b.x) * BOARD_GEOMETRY.xStep < BOARD_GEOMETRY.tileWidth &&
+    Math.abs(a.y - b.y) * BOARD_GEOMETRY.yStep < BOARD_GEOMETRY.tileHeight
+  );
+}
+
+export function buildBlockerIds(tile: BoardTile, tiles: BoardTile[]): string[] {
+  return tiles
+    .filter((other) => other.layer > tile.layer && tilesOverlap(tile, other))
+    .map((other) => other.id);
+}
+
+export function isBoardTileCovered(tile: BoardTile, boardTiles: BoardTile[]): boolean {
+  const remainingIds = new Set(
+    boardTiles.filter((candidate) => !candidate.removed).map((candidate) => candidate.id),
+  );
+  return tile.blockerIds.some((id) => remainingIds.has(id));
+}
+```
+
+Add `blockerIds: string[]` to `BoardTile`, populate it after generating all board positions, and clone the array in snapshots.
+
+- [ ] **Step 4: Run the full rule suite and verify GREEN**
+
+Expected: all coverage and selection tests PASS.
+
+- [ ] **Step 5: Commit the fix**
+
+```bash
+git add src/contents/steroid-tile-atlas-game.ts src/contents/steroid-tile-atlas-game.test.ts
+git commit -m "fix: require every covering tile to clear"
+```
+
+### Task 3: Add Tool Limits, Solution Verification, and Campaign Progress Helpers
+
+**Files:**
+- Modify: `src/contents/steroid-tile-atlas-game.test.ts`
+- Modify: `src/contents/steroid-tile-atlas-game.ts`
+
+- [ ] **Step 1: Write failing behavior tests**
+
+Add tests that assert:
+
+```ts
+it("generates a witness that clears every level", () => {
+  LEVEL_PROFILES.forEach(({ level }) => {
+    const { game, solutionOrder } = generateLevel(level, createSeededRandom(900 + level));
+    const cleared = playSolution(game, solutionOrder);
+    assert.equal(cleared.status, "won");
+  });
+});
+
+it("consumes each tool allowance without replenishing undo", () => {
+  const game = createInitialGameState(2, createSeededRandom(42));
+  const shuffled = shuffleRemainingTiles(game, createSeededRandom(8));
+  assert.equal(shuffled.toolsRemaining.shuffle, 0);
+  assert.equal(shuffleRemainingTiles(shuffled), shuffled);
+
+  const snapshot = createSnapshot(game);
+  const moved = selectFirstAvailableTile(game);
+  const undone = undoToSnapshot(moved, snapshot);
+  assert.equal(undone.toolsRemaining.undo, 0);
+});
+
+it("unlocks only the next campaign level", () => {
+  assert.equal(getNextUnlockedLevel(1, 1), 2);
+  assert.equal(getNextUnlockedLevel(4, 2), 4);
+  assert.equal(getNextUnlockedLevel(5, 5), 5);
+});
+```
+
+Implement `playSolution` and `selectFirstAvailableTile` as test helpers using public selection functions.
+
+- [ ] **Step 2: Run tests and verify RED**
+
+Expected: FAIL because tool counters and progress helpers are missing.
+
+- [ ] **Step 3: Implement counters and pure progress helpers**
+
+Add to `GameState`:
+
+```ts
+level: LevelNumber;
+toolsRemaining: {
+  putAside: number;
+  undo: number;
+  shuffle: number;
+};
+```
+
+Initialize all counters from `profile.toolUses`. Make `putAside` and `shuffleRemainingTiles` return the same object when their counter is zero, and decrement the matching counter after a successful use. Make `undoToSnapshot(current, snapshot)` restore the snapshot while setting `undo` to `current.toolsRemaining.undo - 1`, never the snapshot's earlier allowance.
+
+Add:
+
+```ts
+export function getNextUnlockedLevel(
+  highestUnlocked: LevelNumber,
+  completedLevel: LevelNumber,
+): LevelNumber {
+  return Math.min(5, Math.max(highestUnlocked, completedLevel + 1)) as LevelNumber;
+}
+```
+
+Allow `shuffleRemainingTiles` to receive an injected random source for deterministic tests.
+
+- [ ] **Step 4: Run tests and verify GREEN**
+
+Expected: every level witness reaches `won`, tool counters stop at zero, and all rule tests PASS.
+
+- [ ] **Step 5: Commit state-machine work**
+
+```bash
+git add src/contents/steroid-tile-atlas-game.ts src/contents/steroid-tile-atlas-game.test.ts
+git commit -m "feat: add campaign progress and tool limits"
+```
+
+### Task 4: Build the Five-Level Campaign Interface
+
+**Files:**
+- Modify: `src/contents/steroid-tile-atlas.tsx`
+
+- [ ] **Step 1: Add level and persistence state**
+
+Use browser-safe helpers and state initialization:
+
+```tsx
+const CAMPAIGN_STORAGE_KEY = "steroid-tile-atlas-highest-level";
+
+function readHighestUnlocked(): LevelNumber {
+  const stored = Number(window.localStorage.getItem(CAMPAIGN_STORAGE_KEY));
+  return stored >= 1 && stored <= 5 ? (stored as LevelNumber) : 1;
+}
+
+const [highestUnlocked, setHighestUnlocked] = useState<LevelNumber>(readHighestUnlocked);
+const [game, setGame] = useState<GameState>(() => createInitialGameState(1));
+```
+
+Guard local storage access with `typeof window !== "undefined"` so build-time evaluation remains safe.
+
+- [ ] **Step 2: Add campaign transitions**
+
+Add `startLevel(level)`, `handleReset()`, and `handleNextLevel()`. `startLevel` must reject locked levels, create a newly randomized state, and clear undo history. Add an effect that detects `won`, computes `getNextUnlockedLevel`, updates state, and writes the highest value to local storage.
+
+- [ ] **Step 3: Render the compact level track**
+
+Create a `LevelTrack` component that maps `LEVEL_PROFILES` to five stable-size buttons. Use `aria-current="step"` on the active level, disable locked levels, display completed/active/locked state visually, and label nodes `01` through `05`.
+
+- [ ] **Step 4: Upgrade controls and results**
+
+Show each tool's remaining count inside its button, disable it at zero, change `New game` to `New board`, and show `Next level` after wins before Level 5. Keep `Retry level` available after failure. Update the run-status panel to include current level and total tiles.
+
+- [ ] **Step 5: Add scientific pattern pictograms without a dependency**
+
+Extend `PATTERN_META` with `tone` and `iconParts`. Render a semantic text label plus a decorative CSS-based `PatternIcon` using nested spans. Keep the text label visible so tiles remain understandable without color or decoration.
+
+- [ ] **Step 6: Run lint and build**
+
+```bash
+corepack yarn lint
+corepack yarn build
+```
+
+Expected: both commands exit 0.
+
+- [ ] **Step 7: Commit the campaign UI**
+
+```bash
+git add src/contents/steroid-tile-atlas.tsx
+git commit -m "feat: add five-level campaign interface"
+```
+
+### Task 5: Redesign the Visual System and Responsive Board
+
+**Files:**
+- Modify: `src/contents/steroid-tile-atlas.css`
+- Modify: `src/contents/steroid-tile-atlas.tsx`
+
+- [ ] **Step 1: Replace page and campaign-header styling**
+
+Define a functional palette with CSS custom properties for field green, ink, off-white, cyan, amber, coral, and neutral gray. Remove oversized title treatment and render the level track as the first compact row. Keep all card radii at `8px` or less.
+
+- [ ] **Step 2: Bind visual geometry to rule geometry**
+
+Keep these values synchronized with `BOARD_GEOMETRY`:
+
+```css
+.steroid-board {
+  --tile-step-x: calc(var(--tile-width) * 0.78);
+  --tile-step-y: calc(var(--tile-height) * 0.7);
+}
+```
+
+Use level modifier classes to adjust only `--tile-width` and bounded board dimensions. Level 5 must fit without horizontal overflow at desktop and mobile viewports.
+
+- [ ] **Step 3: Make covered and free states unmistakable**
+
+```css
+.steroid-tile.is-covered {
+  cursor: not-allowed;
+  filter: grayscale(1) brightness(0.68);
+  opacity: 0.78;
+  box-shadow: 0 2px 5px rgba(28, 43, 36, 0.16);
+}
+
+.steroid-tile.is-covered::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(25, 38, 31, 0.08) 6px 8px);
+  pointer-events: none;
+}
+```
+
+Keep free tiles at full opacity and add visible keyboard focus. Ensure disabled global styles do not reduce legibility further.
+
+- [ ] **Step 4: Add pattern, tray, and transition states**
+
+Give all nine tile patterns distinct cross-palette treatments. Add pictogram shapes, level-node states, tool-count badges, sixth-slot warning, seventh-slot danger, elimination/knowledge pulse hooks, and a reduced-motion media query that disables transforms and animation.
+
+- [ ] **Step 5: Verify responsive constraints**
+
+At `1180px`, move controls below the board in two columns. At `760px`, use one compact column, scale the board to the viewport, keep the seven slots in one row, and prevent button text from overflowing. At `390px`, hide tile detail text but retain pictograms and short labels.
+
+- [ ] **Step 6: Run lint and build, then commit**
+
+```bash
+corepack yarn lint
+corepack yarn build
+git add src/contents/steroid-tile-atlas.tsx src/contents/steroid-tile-atlas.css
+git commit -m "style: refine steroid campaign game board"
+```
+
+Expected: lint and build exit 0; Vite may emit only its existing chunk-size advisory.
+
+### Task 6: Browser Verification, Regression Passes, and Deployment
+
+**Files:**
+- Verify: `src/contents/steroid-tile-atlas-game.test.ts`
+- Verify: `src/contents/steroid-tile-atlas.tsx`
+- Verify: `src/contents/steroid-tile-atlas.css`
+
+- [ ] **Step 1: Run automated verification round one**
+
+```bash
+node --test --experimental-strip-types src/contents/steroid-tile-atlas-game.test.ts
+corepack yarn lint
+corepack yarn build
+git diff --check
+```
+
+Expected: all tests PASS, lint/build exit 0, and `git diff --check` prints no errors.
+
+- [ ] **Step 2: Start the development server**
+
+```bash
+corepack yarn dev --host 0.0.0.0
+```
+
+Use the first available port and keep the process running until browser checks finish.
+
+- [ ] **Step 3: Browser verification round two**
+
+At `1440x1000`, verify Level 1 load, locked level buttons, selectable-versus-gray tiles, a triple elimination, each tool counter, failure recovery, win unlock, `Next level`, revisit, and random board reset. Inspect the console for errors.
+
+- [ ] **Step 4: Browser verification round three**
+
+At `390x844`, verify Level 5 through a temporary local progress value, confirm 210 tiles render without blank output or incoherent overlap, confirm the tray and controls fit, and capture desktop/mobile screenshots for visual review. Remove the temporary local progress value after the check.
+
+- [ ] **Step 5: Push and verify GitHub Pages**
+
+Push `codex/steroid-platform-wiki`, wait for the Pages workflow to succeed, then open:
+
+```text
+https://always-070.github.io/jiangnan-china-2026-wiki-dev/#/steroid-tile-atlas
+```
+
+Verify the published page returns successfully and the campaign UI loads in a real browser.
+
+---
+
+## Historical Baseline Plan
+
+The remaining sections document the completed 2026-07-06 first-version implementation and are retained only for project history. Do not execute them as part of the campaign enhancement.
+
+## Historical Baseline File Structure
 
 - Create `src/contents/steroid-tile-atlas.tsx`: React page component, tile data, helper functions, state machine, and rendered game UI.
 - Create `src/contents/steroid-tile-atlas.css`: dense board layout, tiles, tray, reserve stacks, tool buttons, status panels, responsive rules.

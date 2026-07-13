@@ -12,11 +12,13 @@ import {
   createSeededRandom,
   createSnapshot,
   generateLevel,
+  getNextUnlockedLevel,
   isBoardTileCovered,
   putAside,
   returnAsideTile,
   selectBoardTile,
   selectReserveTile,
+  shuffleList,
   shuffleRemainingTiles,
   tilesOverlap,
   undoToSnapshot,
@@ -90,6 +92,29 @@ describe("steroid tile atlas level generation", () => {
           profile.reserveSizes.reduce((sum, size) => sum + size, 0),
         profile.totalTiles,
       );
+    });
+  });
+
+  it("initializes every level with its exact campaign and tool allowances", () => {
+    LEVEL_PROFILES.forEach((profile) => {
+      const generated = generateLevel(
+        profile.level,
+        createSeededRandom(1000 + profile.level),
+      ).game;
+      const initial = createInitialGameState(
+        profile.level,
+        createSeededRandom(1000 + profile.level),
+      );
+      const expectedTools = {
+        putAside: profile.toolUses,
+        undo: profile.toolUses,
+        shuffle: profile.toolUses,
+      };
+
+      assert.equal(generated.level, profile.level);
+      assert.deepEqual(generated.toolsRemaining, expectedTools);
+      assert.equal(initial.level, profile.level);
+      assert.deepEqual(initial.toolsRemaining, expectedTools);
     });
   });
 
@@ -491,6 +516,76 @@ describe("steroid tile atlas game rules", () => {
     ]);
   });
 
+  it("spends one put-aside use and leaves the other tool counters unchanged", () => {
+    const game = {
+      ...createInitialGameState(),
+      slot: [
+        { id: "a", pattern: "Ring" as const },
+        { id: "b", pattern: "P450" as const },
+        { id: "c", pattern: "C27" as const },
+        { id: "d", pattern: "OH" as const },
+      ],
+    };
+
+    const next = putAside(game);
+
+    assert.deepEqual(next.slot.map((tile) => tile.id), ["d"]);
+    assert.deepEqual(next.aside.map((tile) => tile.id), ["a", "b", "c"]);
+    assert.deepEqual(next.toolsRemaining, {
+      putAside: 1,
+      undo: 2,
+      shuffle: 2,
+    });
+    assert.notStrictEqual(next.toolsRemaining, game.toolsRemaining);
+  });
+
+  it("does not spend put-aside uses on rejected attempts", () => {
+    const game = createInitialGameState();
+    const tooShortGame = {
+      ...game,
+      slot: [
+        { id: "a", pattern: "Ring" as const },
+        { id: "b", pattern: "P450" as const },
+      ],
+    };
+    const occupiedGame = {
+      ...game,
+      slot: [
+        { id: "a", pattern: "Ring" as const },
+        { id: "b", pattern: "P450" as const },
+        { id: "c", pattern: "C27" as const },
+      ],
+      aside: [{ id: "aside", pattern: "OH" as const }],
+    };
+    const notPlayingGame = {
+      ...game,
+      status: "won" as const,
+      slot: [
+        { id: "a", pattern: "Ring" as const },
+        { id: "b", pattern: "P450" as const },
+        { id: "c", pattern: "C27" as const },
+      ],
+    };
+
+    assert.strictEqual(putAside(tooShortGame), tooShortGame);
+    assert.strictEqual(putAside(occupiedGame), occupiedGame);
+    assert.strictEqual(putAside(notPlayingGame), notPlayingGame);
+  });
+
+  it("returns the same game when no put-aside uses remain", () => {
+    const game = {
+      ...createInitialGameState(),
+      slot: [
+        { id: "a", pattern: "Ring" as const },
+        { id: "b", pattern: "P450" as const },
+        { id: "c", pattern: "C27" as const },
+      ],
+      toolsRemaining: { putAside: 0, undo: 2, shuffle: 2 },
+    };
+
+    assert.strictEqual(putAside(game), game);
+  });
+
   it("shuffles remaining board and reserve patterns without changing tray or aside patterns", () => {
     const game = {
       ...createInitialGameState(),
@@ -510,5 +605,161 @@ describe("steroid tile atlas game rules", () => {
     assert.deepEqual(afterPool, beforePool);
     assert.deepEqual(shuffled.slot, game.slot);
     assert.deepEqual(shuffled.aside, game.aside);
+  });
+
+  it("uses seeded randomness once while preserving shuffle geometry and tile identity", () => {
+    const game = {
+      ...createInitialGameState(2, createSeededRandom(44)),
+      slot: [{ id: "slot", pattern: "Ring" as const }],
+      aside: [{ id: "aside", pattern: "P450" as const }],
+    };
+    const boardIdentity = game.boardTiles.map(
+      ({ id, layer, x, y, removed, blockerIds }) => ({
+        id,
+        layer,
+        x,
+        y,
+        removed,
+        blockerIds,
+      }),
+    );
+    const reserveIds = game.reserveStacks.map((stack) =>
+      stack.map((tile) => tile.id),
+    );
+    const beforePool = [
+      ...game.boardTiles
+        .filter((tile) => !tile.removed)
+        .map((tile) => tile.pattern),
+      ...game.reserveStacks.flat().map((tile) => tile.pattern),
+    ];
+    const expectedPatterns = shuffleList(
+      beforePool,
+      createSeededRandom(91),
+    );
+
+    const shuffled = shuffleRemainingTiles(game, createSeededRandom(91));
+    const repeated = shuffleRemainingTiles(game, createSeededRandom(91));
+    const afterPool = [
+      ...shuffled.boardTiles
+        .filter((tile) => !tile.removed)
+        .map((tile) => tile.pattern),
+      ...shuffled.reserveStacks.flat().map((tile) => tile.pattern),
+    ];
+
+    assert.deepEqual(shuffled, repeated);
+    assert.deepEqual(afterPool, expectedPatterns);
+    assert.deepEqual([...afterPool].sort(), [...beforePool].sort());
+    assert.deepEqual(
+      shuffled.boardTiles.map(
+        ({ id, layer, x, y, removed, blockerIds }) => ({
+          id,
+          layer,
+          x,
+          y,
+          removed,
+          blockerIds,
+        }),
+      ),
+      boardIdentity,
+    );
+    assert.deepEqual(
+      shuffled.reserveStacks.map((stack) => stack.map((tile) => tile.id)),
+      reserveIds,
+    );
+    assert.deepEqual(shuffled.slot, game.slot);
+    assert.deepEqual(shuffled.aside, game.aside);
+    assert.deepEqual(shuffled.toolsRemaining, {
+      putAside: 1,
+      undo: 1,
+      shuffle: 0,
+    });
+  });
+
+  it("returns the same game when no shuffle uses remain", () => {
+    const game = {
+      ...createInitialGameState(),
+      toolsRemaining: { putAside: 2, undo: 2, shuffle: 0 },
+    };
+
+    assert.strictEqual(shuffleRemainingTiles(game, createSeededRandom(5)), game);
+  });
+
+  it("clones snapshot tool counters into a separate object", () => {
+    const game = createInitialGameState();
+    const snapshot = createSnapshot(game);
+
+    assert.deepEqual(snapshot.toolsRemaining, game.toolsRemaining);
+    assert.notStrictEqual(snapshot.toolsRemaining, game.toolsRemaining);
+  });
+
+  it("undoes a failed move using the current allowance without replenishing undo", () => {
+    const original = {
+      ...createInitialGameState(),
+      slot: [{ id: "before-slot", pattern: "Ring" as const }],
+      aside: [{ id: "before-aside", pattern: "P450" as const }],
+    };
+    const snapshot = createSnapshot(original);
+    const current = {
+      ...original,
+      boardTiles: original.boardTiles.map((tile, index) =>
+        index === 0 ? { ...tile, removed: true } : tile,
+      ),
+      reserveStacks: original.reserveStacks.map((stack, index) =>
+        index === 0 ? stack.slice(0, -1) : stack,
+      ),
+      slot: Array.from({ length: 8 }, (_, index) => ({
+        id: `overflow-${index}`,
+        pattern: "C27" as const,
+      })),
+      aside: [],
+      status: "failed" as const,
+      toolsRemaining: { putAside: 0, undo: 1, shuffle: 0 },
+    };
+    const currentBefore = structuredClone(current);
+    const snapshotBefore = structuredClone(snapshot);
+
+    const restored = undoToSnapshot(current, snapshot);
+
+    assert.deepEqual(restored.boardTiles, snapshot.boardTiles);
+    assert.deepEqual(restored.reserveStacks, snapshot.reserveStacks);
+    assert.deepEqual(restored.slot, snapshot.slot);
+    assert.deepEqual(restored.aside, snapshot.aside);
+    assert.equal(restored.status, "playing");
+    assert.deepEqual(restored.toolsRemaining, {
+      putAside: 2,
+      undo: 0,
+      shuffle: 2,
+    });
+    assert.deepEqual(current, currentBefore);
+    assert.deepEqual(snapshot, snapshotBefore);
+    assert.notStrictEqual(restored, snapshot);
+    assert.notStrictEqual(restored.toolsRemaining, snapshot.toolsRemaining);
+  });
+
+  it("returns the same failed game when no undo uses remain", () => {
+    const snapshot = createSnapshot(createInitialGameState());
+    const current = {
+      ...snapshot,
+      status: "failed" as const,
+      toolsRemaining: { putAside: 2, undo: 0, shuffle: 2 },
+    };
+
+    assert.strictEqual(undoToSnapshot(current, snapshot), current);
+  });
+});
+
+describe("steroid tile atlas campaign progress", () => {
+  it("unlocks only the level immediately after a completed frontier", () => {
+    assert.equal(getNextUnlockedLevel(1, 1), 2);
+  });
+
+  it("never lowers progress when replaying an earlier level", () => {
+    assert.equal(getNextUnlockedLevel(4, 2), 4);
+    assert.equal(getNextUnlockedLevel(5, 1), 5);
+  });
+
+  it("caps campaign progress at level five", () => {
+    assert.equal(getNextUnlockedLevel(5, 5), 5);
+    assert.equal(getNextUnlockedLevel(4, 5), 5);
   });
 });

@@ -11,6 +11,13 @@ export type TilePattern =
 
 export type LevelNumber = 1 | 2 | 3 | 4 | 5;
 export type RandomSource = () => number;
+export type ToolName = "putAside" | "undo" | "shuffle";
+
+export interface ToolsRemaining {
+  readonly putAside: number;
+  readonly undo: number;
+  readonly shuffle: number;
+}
 
 export interface LevelProfile {
   readonly level: LevelNumber;
@@ -44,6 +51,8 @@ export type ReserveStacks = ReserveTile[][];
 export type GameStatus = "playing" | "won" | "failed";
 
 export interface GameState {
+  readonly level: LevelNumber;
+  readonly toolsRemaining: ToolsRemaining;
   boardTiles: BoardTile[];
   reserveStacks: ReserveStacks;
   slot: ReserveTile[];
@@ -266,6 +275,12 @@ export function generateLevel(
 
   return {
     game: {
+      level: profile.level,
+      toolsRemaining: {
+        putAside: profile.toolUses,
+        undo: profile.toolUses,
+        shuffle: profile.toolUses,
+      },
       boardTiles,
       reserveStacks,
       slot: [],
@@ -572,7 +587,12 @@ export function selectReserveTile(
 }
 
 export function putAside(game: GameState): GameState {
-  if (game.status !== "playing" || game.slot.length < 3 || game.aside.length > 0) {
+  if (
+    game.status !== "playing" ||
+    game.slot.length < 3 ||
+    game.aside.length > 0 ||
+    game.toolsRemaining.putAside <= 0
+  ) {
     return game;
   }
 
@@ -580,6 +600,10 @@ export function putAside(game: GameState): GameState {
     ...game,
     slot: game.slot.slice(3),
     aside: game.slot.slice(0, 3),
+    toolsRemaining: {
+      ...game.toolsRemaining,
+      putAside: game.toolsRemaining.putAside - 1,
+    },
   };
 }
 
@@ -607,23 +631,41 @@ export function returnAsideTile(game: GameState, tileId: string): GameState {
 }
 
 export function undoToSnapshot(
-  _currentGame: GameState,
+  currentGame: GameState,
   snapshot: MoveSnapshot,
 ): GameState {
-  return cloneGameState(snapshot);
+  if (currentGame.toolsRemaining.undo <= 0) {
+    return currentGame;
+  }
+
+  const restored = cloneGameState(snapshot);
+
+  return {
+    ...restored,
+    toolsRemaining: {
+      ...restored.toolsRemaining,
+      undo: currentGame.toolsRemaining.undo - 1,
+    },
+  };
 }
 
-export function shuffleRemainingTiles(game: GameState): GameState {
-  if (game.status !== "playing") {
+export function shuffleRemainingTiles(
+  game: GameState,
+  random: RandomSource = Math.random,
+): GameState {
+  if (game.status !== "playing" || game.toolsRemaining.shuffle <= 0) {
     return game;
   }
 
   const remainingBoardTiles = game.boardTiles.filter((tile) => !tile.removed);
   const reserveTiles = game.reserveStacks.flat();
-  const shuffledPatterns = shuffleList([
-    ...remainingBoardTiles.map((tile) => tile.pattern),
-    ...reserveTiles.map((tile) => tile.pattern),
-  ]);
+  const shuffledPatterns = shuffleList(
+    [
+      ...remainingBoardTiles.map((tile) => tile.pattern),
+      ...reserveTiles.map((tile) => tile.pattern),
+    ],
+    random,
+  );
   let patternIndex = 0;
 
   const boardTiles = game.boardTiles.map((tile) => {
@@ -647,11 +689,17 @@ export function shuffleRemainingTiles(game: GameState): GameState {
     ...game,
     boardTiles,
     reserveStacks,
+    toolsRemaining: {
+      ...game.toolsRemaining,
+      shuffle: game.toolsRemaining.shuffle - 1,
+    },
   };
 }
 
 function cloneGameState(game: GameState): GameState {
   return {
+    level: game.level,
+    toolsRemaining: { ...game.toolsRemaining },
     boardTiles: game.boardTiles.map((tile) => ({
       ...tile,
       blockerIds: [...tile.blockerIds],
@@ -667,4 +715,14 @@ function cloneGameState(game: GameState): GameState {
     moves: game.moves,
     eliminatedSets: game.eliminatedSets,
   };
+}
+
+export function getNextUnlockedLevel(
+  highestUnlocked: LevelNumber,
+  completedLevel: LevelNumber,
+): LevelNumber {
+  return Math.min(
+    5,
+    Math.max(highestUnlocked, completedLevel + 1),
+  ) as LevelNumber;
 }

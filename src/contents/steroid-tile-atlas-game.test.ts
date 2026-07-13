@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  BOARD_FOOTPRINT,
   LEVEL_PROFILES,
   addTileToSlot,
   createInitialGameState,
@@ -78,14 +79,63 @@ describe("steroid tile atlas level generation", () => {
     });
   });
 
-  it("repeats a board for the same seed and varies it for a different seed", () => {
-    const signature = (seed: number) =>
-      generateLevel(3, createSeededRandom(seed)).game.boardTiles.map(
-        ({ x, y, layer, pattern }) => `${x}:${y}:${layer}:${pattern}`,
+  it("generates the exact bounded structure for every profile", () => {
+    LEVEL_PROFILES.forEach((profile) => {
+      const { game } = generateLevel(
+        profile.level,
+        createSeededRandom(700 + profile.level),
       );
+      const ids = [
+        ...game.boardTiles.map((tile) => tile.id),
+        ...game.reserveStacks.flat().map((tile) => tile.id),
+      ];
 
-    assert.deepEqual(signature(301), signature(301));
-    assert.notDeepEqual(signature(301), signature(302));
+      assert.equal(game.boardTiles.length, profile.boardCount);
+      assert.deepEqual(
+        game.reserveStacks.map((stack) => stack.length),
+        profile.reserveSizes,
+      );
+      assert.equal(ids.length, profile.totalTiles);
+      assert.equal(new Set(ids).size, ids.length);
+
+      game.boardTiles.forEach((tile) => {
+        assert.equal(Number.isInteger(tile.layer), true);
+        assert.ok(tile.layer >= 0 && tile.layer < profile.layers);
+        assert.equal(Number.isFinite(tile.x), true);
+        assert.equal(Number.isFinite(tile.y), true);
+        assert.ok(
+          tile.x >= BOARD_FOOTPRINT.minX &&
+            tile.x <= BOARD_FOOTPRINT.maxX,
+        );
+        assert.ok(
+          tile.y >= BOARD_FOOTPRINT.minY &&
+            tile.y <= BOARD_FOOTPRINT.maxY,
+        );
+      });
+    });
+  });
+
+  it("repeats entire generated levels and varies combined signatures", () => {
+    LEVEL_PROFILES.forEach((profile) => {
+      const seed = 300 + profile.level;
+      const first = generateLevel(profile.level, createSeededRandom(seed));
+      const repeated = generateLevel(profile.level, createSeededRandom(seed));
+      const different = generateLevel(
+        profile.level,
+        createSeededRandom(seed + 100),
+      );
+      const combinedSignature = ({ game, solutionOrder }: typeof first) => ({
+        board: game.boardTiles,
+        reserves: game.reserveStacks,
+        solutionOrder,
+      });
+
+      assert.deepEqual(first, repeated);
+      assert.notDeepEqual(
+        combinedSignature(first),
+        combinedSignature(different),
+      );
+    });
   });
 
   it("uses exactly the configured pattern count in triple-safe quantities", () => {

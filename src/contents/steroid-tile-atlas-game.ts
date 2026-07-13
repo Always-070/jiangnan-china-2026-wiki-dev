@@ -13,13 +13,13 @@ export type LevelNumber = 1 | 2 | 3 | 4 | 5;
 export type RandomSource = () => number;
 
 export interface LevelProfile {
-  level: LevelNumber;
-  totalTiles: number;
-  boardCount: number;
-  layers: number;
-  patternCount: number;
-  reserveSizes: number[];
-  toolUses: number;
+  readonly level: LevelNumber;
+  readonly totalTiles: number;
+  readonly boardCount: number;
+  readonly layers: number;
+  readonly patternCount: number;
+  readonly reserveSizes: readonly number[];
+  readonly toolUses: number;
 }
 
 export interface BoardTile {
@@ -65,7 +65,7 @@ export const TILE_PATTERNS: TilePattern[] = [
   "SCO",
 ];
 
-export const LEVEL_PROFILES: LevelProfile[] = [
+export const LEVEL_PROFILES: readonly LevelProfile[] = [
   {
     level: 1,
     totalTiles: 45,
@@ -153,6 +153,13 @@ export interface GeneratedLevel {
 }
 
 const BOARD_COLUMNS = 10;
+
+export const BOARD_FOOTPRINT = {
+  minX: 0,
+  maxX: BOARD_COLUMNS - 0.5,
+  minY: 0,
+  maxY: 3.5,
+} as const;
 
 export function createSeededRandom(seed: number): RandomSource {
   let state = seed >>> 0;
@@ -262,6 +269,11 @@ function generateBoardPositions(
   const extraLayerCount = profile.boardCount % profile.layers;
   const maxLayerCount = baseLayerCount + (extraLayerCount > 0 ? 1 : 0);
   const rows = Math.ceil(maxLayerCount / BOARD_COLUMNS) + 1;
+
+  if (rows - 0.5 > BOARD_FOOTPRINT.maxY) {
+    throw new RangeError(`Level ${profile.level} exceeds the board footprint`);
+  }
+
   const reflectX = random() < 0.5;
   const reflectY = random() < 0.5;
   const positions: BoardPosition[] = [];
@@ -277,7 +289,7 @@ function generateBoardPositions(
 
         candidates.push({
           layer,
-          x: reflectX ? BOARD_COLUMNS - 0.5 - rawX : rawX,
+          x: reflectX ? BOARD_FOOTPRINT.maxX - rawX : rawX,
           y: reflectY ? rows - 0.5 - rawY : rawY,
         });
       }
@@ -290,8 +302,8 @@ function generateBoardPositions(
 }
 
 function createSolutionOrder(
-  boardTiles: BoardIdentity[],
-  reserveStacks: string[][],
+  boardTiles: readonly BoardIdentity[],
+  reserveStacks: readonly (readonly string[])[],
   random: RandomSource,
 ): string[] {
   const remainingBoardIds = new Set(boardTiles.map((tile) => tile.id));
@@ -306,7 +318,9 @@ function createSolutionOrder(
       .filter(
         (tile) =>
           remainingBoardIds.has(tile.id) &&
-          !isGeneratedTileCovered(tile, boardTiles, remainingBoardIds),
+          !hasActiveBlocker(tile, boardTiles, (otherTile) =>
+            remainingBoardIds.has(otherTile.id),
+          ),
       )
       .map((tile) => tile.id);
 
@@ -339,14 +353,14 @@ function createSolutionOrder(
   return solutionOrder;
 }
 
-function isGeneratedTileCovered(
+function hasActiveBlocker<T extends BoardIdentity>(
   tile: BoardIdentity,
-  boardTiles: BoardIdentity[],
-  remainingBoardIds: Set<string>,
+  boardTiles: readonly T[],
+  isActive: (tile: T) => boolean,
 ): boolean {
   return boardTiles.some(
     (otherTile) =>
-      remainingBoardIds.has(otherTile.id) &&
+      isActive(otherTile) &&
       otherTile.layer > tile.layer &&
       Math.abs(otherTile.x - tile.x) < 0.9 &&
       Math.abs(otherTile.y - tile.y) < 0.9,
@@ -403,14 +417,11 @@ function requirePattern(
   return pattern;
 }
 
-export function isBoardTileCovered(tile: BoardTile, boardTiles: BoardTile[]) {
-  return boardTiles.some((otherTile) => {
-    if (otherTile.removed || otherTile.layer <= tile.layer) {
-      return false;
-    }
-
-    return Math.abs(otherTile.x - tile.x) < 0.9 && Math.abs(otherTile.y - tile.y) < 0.9;
-  });
+export function isBoardTileCovered(
+  tile: BoardTile,
+  boardTiles: readonly BoardTile[],
+) {
+  return hasActiveBlocker(tile, boardTiles, (otherTile) => !otherTile.removed);
 }
 
 export function createSnapshot(game: GameState): MoveSnapshot {

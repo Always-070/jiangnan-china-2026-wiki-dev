@@ -1,6 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
+  type BoardTile,
   BOARD_FOOTPRINT,
   BOARD_GEOMETRY,
   LEVEL_PROFILES,
@@ -19,6 +21,15 @@ import {
   tilesOverlap,
   undoToSnapshot,
 } from "./steroid-tile-atlas-game.ts";
+
+const rendererSource = readFileSync(
+  new URL("./steroid-tile-atlas.tsx", import.meta.url),
+  "utf8",
+);
+const rendererStyles = readFileSync(
+  new URL("./steroid-tile-atlas.css", import.meta.url),
+  "utf8",
+);
 
 describe("steroid tile atlas level generation", () => {
   it("defines five exact difficulty profiles", () => {
@@ -208,6 +219,43 @@ describe("steroid tile atlas level generation", () => {
 });
 
 describe("steroid tile atlas game rules", () => {
+  it("shares board geometry factors with the renderer", () => {
+    assert.match(rendererSource, /BOARD_GEOMETRY\.xStep/);
+    assert.match(rendererSource, /BOARD_GEOMETRY\.yStep/);
+    assert.match(rendererSource, /--tile-step-x/);
+    assert.match(rendererSource, /--tile-step-y/);
+    assert.match(rendererStyles, /var\(--tile-step-x\)/);
+    assert.match(rendererStyles, /var\(--tile-step-y\)/);
+    assert.doesNotMatch(
+      rendererStyles,
+      new RegExp(`--tile-step-x\\s*:[^;]+${BOARD_GEOMETRY.xStep}`),
+    );
+    assert.doesNotMatch(
+      rendererStyles,
+      new RegExp(`--tile-step-y\\s*:[^;]+${BOARD_GEOMETRY.yStep}`),
+    );
+  });
+
+  it("exposes blocker IDs as an immutable graph", () => {
+    const tile: BoardTile = {
+      id: "readonly",
+      pattern: "Ring",
+      layer: 0,
+      x: 0,
+      y: 0,
+      removed: false,
+      blockerIds: [],
+    };
+
+    const mutateBlockers = () => {
+      // @ts-expect-error BoardTile blocker graphs are immutable.
+      tile.blockerIds.push("other");
+    };
+
+    assert.equal(typeof mutateBlockers, "function");
+    assert.deepEqual(tile.blockerIds, []);
+  });
+
   it("creates a dense deck whose patterns can theoretically be eliminated in triples", () => {
     const game = createInitialGameState();
     const patterns = [

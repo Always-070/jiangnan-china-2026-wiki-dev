@@ -113,8 +113,6 @@
 .steroid-board {
   --tile-width: min(7vw, 4.95rem);
   --tile-height: calc(var(--tile-width) * 1.16);
-  --tile-step-x: calc(var(--tile-width) * 0.78);
-  --tile-step-y: calc(var(--tile-height) * 0.7);
   position: relative;
   width: calc(2rem + var(--tile-width) + 8 * var(--tile-step-x));
   height: calc(2rem + var(--tile-height) + 3.55 * var(--tile-step-y));

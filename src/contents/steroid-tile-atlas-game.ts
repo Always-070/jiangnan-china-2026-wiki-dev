@@ -32,7 +32,7 @@ interface BlockerCandidate {
 export interface BoardTile extends BlockerCandidate {
   pattern: TilePattern;
   removed: boolean;
-  blockerIds: string[];
+  readonly blockerIds: readonly string[];
 }
 
 export interface ReserveTile {
@@ -148,7 +148,7 @@ interface BoardPosition {
 }
 
 interface BoardIdentity extends BlockerCandidate {
-  blockerIds: string[];
+  readonly blockerIds: readonly string[];
 }
 
 export interface GeneratedLevel {
@@ -188,7 +188,7 @@ function rectanglesOverlap(
 function buildBlockerIdsFromCandidates(
   tile: BlockerCandidate,
   tiles: readonly BlockerCandidate[],
-): string[] {
+): readonly string[] {
   return tiles
     .filter(
       (otherTile) =>
@@ -203,8 +203,8 @@ export function tilesOverlap(a: BoardTile, b: BoardTile): boolean {
 
 export function buildBlockerIds(
   tile: BoardTile,
-  tiles: BoardTile[],
-): string[] {
+  tiles: readonly BoardTile[],
+): readonly string[] {
   return buildBlockerIdsFromCandidates(tile, tiles);
 }
 

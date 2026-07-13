@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { type CSSProperties, useMemo, useState } from "react";
 import {
   type BoardTile,
   type GameState,
   type MoveSnapshot,
   type ReserveTile,
   type TilePattern,
+  BOARD_GEOMETRY,
   createInitialGameState,
   createSnapshot,
   isBoardTileCovered,
@@ -72,6 +73,16 @@ const PATTERN_META: Record<TilePattern, PatternMeta> = {
 };
 
 const RESERVE_LABELS = ["Left stack", "Right stack", "Lower left", "Lower right"];
+
+type BoardGeometryStyle = CSSProperties & {
+  "--tile-step-x": string;
+  "--tile-step-y": string;
+};
+
+const BOARD_GEOMETRY_STYLE: BoardGeometryStyle = {
+  "--tile-step-x": `calc(var(--tile-width) * ${BOARD_GEOMETRY.xStep})`,
+  "--tile-step-y": `calc(var(--tile-height) * ${BOARD_GEOMETRY.yStep})`,
+};
 
 export function SteroidTileAtlas() {
   const [game, setGame] = useState<GameState>(() => createInitialGameState());
@@ -181,7 +192,11 @@ export function SteroidTileAtlas() {
               onSelect={() => handleReserveClick(3)}
             />
 
-            <div className="steroid-board" aria-label="Layered main board">
+            <div
+              className="steroid-board"
+              style={BOARD_GEOMETRY_STYLE}
+              aria-label="Layered main board"
+            >
               {visibleBoardTiles.map((tile, index) => {
                 const covered = isBoardTileCovered(tile, game.boardTiles);
 

@@ -1,9 +1,12 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  LEVEL_PROFILES,
   addTileToSlot,
   createInitialGameState,
+  createSeededRandom,
   createSnapshot,
+  generateLevel,
   isBoardTileCovered,
   putAside,
   returnAsideTile,
@@ -12,6 +15,135 @@ import {
   shuffleRemainingTiles,
   undoToSnapshot,
 } from "./steroid-tile-atlas-game.ts";
+
+describe("steroid tile atlas level generation", () => {
+  it("defines five exact difficulty profiles", () => {
+    assert.deepEqual(LEVEL_PROFILES, [
+      {
+        level: 1,
+        totalTiles: 45,
+        boardCount: 33,
+        layers: 2,
+        patternCount: 5,
+        reserveSizes: [3, 3, 3, 3],
+        toolUses: 2,
+      },
+      {
+        level: 2,
+        totalTiles: 84,
+        boardCount: 60,
+        layers: 3,
+        patternCount: 7,
+        reserveSizes: [6, 6, 6, 6],
+        toolUses: 1,
+      },
+      {
+        level: 3,
+        totalTiles: 126,
+        boardCount: 90,
+        layers: 4,
+        patternCount: 9,
+        reserveSizes: [9, 9, 9, 9],
+        toolUses: 1,
+      },
+      {
+        level: 4,
+        totalTiles: 168,
+        boardCount: 120,
+        layers: 5,
+        patternCount: 9,
+        reserveSizes: [12, 12, 12, 12],
+        toolUses: 1,
+      },
+      {
+        level: 5,
+        totalTiles: 210,
+        boardCount: 150,
+        layers: 6,
+        patternCount: 9,
+        reserveSizes: [15, 15, 15, 15],
+        toolUses: 1,
+      },
+    ]);
+  });
+
+  it("keeps every profile total triple-safe and exact", () => {
+    LEVEL_PROFILES.forEach((profile) => {
+      assert.equal(profile.totalTiles % 3, 0);
+      assert.equal(
+        profile.boardCount +
+          profile.reserveSizes.reduce((sum, size) => sum + size, 0),
+        profile.totalTiles,
+      );
+    });
+  });
+
+  it("repeats a board for the same seed and varies it for a different seed", () => {
+    const signature = (seed: number) =>
+      generateLevel(3, createSeededRandom(seed)).game.boardTiles.map(
+        ({ x, y, layer, pattern }) => `${x}:${y}:${layer}:${pattern}`,
+      );
+
+    assert.deepEqual(signature(301), signature(301));
+    assert.notDeepEqual(signature(301), signature(302));
+  });
+
+  it("uses exactly the configured pattern count in triple-safe quantities", () => {
+    LEVEL_PROFILES.forEach((profile) => {
+      const { game } = generateLevel(
+        profile.level,
+        createSeededRandom(900 + profile.level),
+      );
+      const patterns = [
+        ...game.boardTiles.map((tile) => tile.pattern),
+        ...game.reserveStacks.flat().map((tile) => tile.pattern),
+      ];
+      const counts = new Map<string, number>();
+
+      patterns.forEach((pattern) => {
+        counts.set(pattern, (counts.get(pattern) || 0) + 1);
+      });
+
+      assert.equal(patterns.length, profile.totalTiles);
+      assert.equal(counts.size, profile.patternCount);
+      counts.forEach((count) => assert.equal(count % 3, 0));
+    });
+  });
+
+  it("returns a legal removal order covering every generated ID", () => {
+    const { game, solutionOrder } = generateLevel(5, createSeededRandom(505));
+    const remainingBoardIds = new Set(game.boardTiles.map((tile) => tile.id));
+    const reserveStacks = game.reserveStacks.map((stack) => [...stack]);
+
+    solutionOrder.forEach((tileId) => {
+      const boardTile = game.boardTiles.find((tile) => tile.id === tileId);
+
+      if (boardTile) {
+        const simulatedBoard = game.boardTiles.map((tile) => ({
+          ...tile,
+          removed: !remainingBoardIds.has(tile.id),
+        }));
+        const simulatedTile = simulatedBoard.find((tile) => tile.id === tileId);
+
+        assert.ok(simulatedTile);
+        assert.equal(remainingBoardIds.has(tileId), true);
+        assert.equal(isBoardTileCovered(simulatedTile, simulatedBoard), false);
+        remainingBoardIds.delete(tileId);
+        return;
+      }
+
+      const stackIndex = reserveStacks.findIndex(
+        (stack) => stack.at(-1)?.id === tileId,
+      );
+      assert.notEqual(stackIndex, -1);
+      reserveStacks[stackIndex].pop();
+    });
+
+    assert.equal(solutionOrder.length, LEVEL_PROFILES[4].totalTiles);
+    assert.equal(remainingBoardIds.size, 0);
+    assert.equal(reserveStacks.every((stack) => stack.length === 0), true);
+  });
+});
 
 describe("steroid tile atlas game rules", () => {
   it("creates a dense deck whose patterns can theoretically be eliminated in triples", () => {

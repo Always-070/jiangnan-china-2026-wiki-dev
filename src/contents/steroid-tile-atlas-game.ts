@@ -9,6 +9,19 @@ export type TilePattern =
   | "ERG"
   | "SCO";
 
+export type LevelNumber = 1 | 2 | 3 | 4 | 5;
+export type RandomSource = () => number;
+
+export interface LevelProfile {
+  level: LevelNumber;
+  totalTiles: number;
+  boardCount: number;
+  layers: number;
+  patternCount: number;
+  reserveSizes: number[];
+  toolUses: number;
+}
+
 export interface BoardTile {
   id: string;
   pattern: TilePattern;
@@ -52,6 +65,54 @@ export const TILE_PATTERNS: TilePattern[] = [
   "SCO",
 ];
 
+export const LEVEL_PROFILES: LevelProfile[] = [
+  {
+    level: 1,
+    totalTiles: 45,
+    boardCount: 33,
+    layers: 2,
+    patternCount: 5,
+    reserveSizes: [3, 3, 3, 3],
+    toolUses: 2,
+  },
+  {
+    level: 2,
+    totalTiles: 84,
+    boardCount: 60,
+    layers: 3,
+    patternCount: 7,
+    reserveSizes: [6, 6, 6, 6],
+    toolUses: 1,
+  },
+  {
+    level: 3,
+    totalTiles: 126,
+    boardCount: 90,
+    layers: 4,
+    patternCount: 9,
+    reserveSizes: [9, 9, 9, 9],
+    toolUses: 1,
+  },
+  {
+    level: 4,
+    totalTiles: 168,
+    boardCount: 120,
+    layers: 5,
+    patternCount: 9,
+    reserveSizes: [12, 12, 12, 12],
+    toolUses: 1,
+  },
+  {
+    level: 5,
+    totalTiles: 210,
+    boardCount: 150,
+    layers: 6,
+    patternCount: 9,
+    reserveSizes: [15, 15, 15, 15],
+    toolUses: 1,
+  },
+];
+
 export const KNOWLEDGE_PLACEHOLDERS = [
   "Wet-lab note pending: steroid scaffold knowledge.",
   "Wet-lab note pending: P450 catalysis knowledge.",
@@ -76,48 +137,95 @@ const TOTAL_TILE_COUNT =
   BOARD_LAYOUT.length +
   RESERVE_STACK_SIZES.reduce((sum, stackSize) => sum + stackSize, 0);
 
-export function createInitialGameState(): GameState {
-  const deck = createDeckPatterns();
-  let deckIndex = 0;
+interface BoardPosition {
+  layer: number;
+  x: number;
+  y: number;
+}
 
-  const boardTiles = BOARD_LAYOUT.map((position, index): BoardTile => {
-    const pattern = deck[deckIndex];
-    deckIndex += 1;
+interface BoardIdentity extends BoardPosition {
+  id: string;
+}
 
-    return {
+export interface GeneratedLevel {
+  game: GameState;
+  solutionOrder: string[];
+}
+
+const BOARD_COLUMNS = 10;
+
+export function createSeededRandom(seed: number): RandomSource {
+  let state = seed >>> 0;
+
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
+export function generateLevel(
+  level: LevelNumber,
+  random: RandomSource = Math.random,
+): GeneratedLevel {
+  const profile = LEVEL_PROFILES.find((candidate) => candidate.level === level);
+
+  if (!profile) {
+    throw new RangeError(`Unknown level: ${level}`);
+  }
+
+  const boardIdentities = generateBoardPositions(profile, random).map(
+    (position, index): BoardIdentity => ({
       id: `board-${index}`,
-      pattern,
-      layer: position.layer,
-      x: position.x,
-      y: position.y,
-      removed: false,
-    };
-  });
-
-  const reserveStacks = RESERVE_STACK_SIZES.map((stackSize, stackIndex) =>
-    Array.from({ length: stackSize }, (_, tileIndex): ReserveTile => {
-      const pattern = deck[deckIndex];
-      deckIndex += 1;
-
-      return {
-        id: `reserve-${stackIndex}-${tileIndex}`,
-        pattern,
-      };
+      ...position,
     }),
+  );
+  const reserveIdentities = profile.reserveSizes.map((stackSize, stackIndex) =>
+    Array.from(
+      { length: stackSize },
+      (_, tileIndex) => `reserve-${stackIndex}-${tileIndex}`,
+    ),
+  );
+  const solutionOrder = createSolutionOrder(
+    boardIdentities,
+    reserveIdentities,
+    random,
+  );
+  const patternById = assignPatternsToSolution(solutionOrder, profile, random);
+  const boardTiles = boardIdentities.map(
+    (tile): BoardTile => ({
+      ...tile,
+      pattern: requirePattern(patternById, tile.id),
+      removed: false,
+    }),
+  );
+  const reserveStacks = reserveIdentities.map((stack) =>
+    stack.map(
+      (id): ReserveTile => ({ id, pattern: requirePattern(patternById, id) }),
+    ),
   );
 
   return {
-    boardTiles,
-    reserveStacks,
-    slot: [],
-    aside: [],
-    status: "playing",
-    knowledgeIndex: 0,
-    lastFact:
-      "After matching three identical tiles, this panel will show a wet-lab science note.",
-    moves: 0,
-    eliminatedSets: 0,
+    game: {
+      boardTiles,
+      reserveStacks,
+      slot: [],
+      aside: [],
+      status: "playing",
+      knowledgeIndex: 0,
+      lastFact:
+        "After matching three identical tiles, this panel will show a wet-lab science note.",
+      moves: 0,
+      eliminatedSets: 0,
+    },
+    solutionOrder,
   };
+}
+
+export function createInitialGameState(
+  level: LevelNumber = 1,
+  random: RandomSource = Math.random,
+): GameState {
+  return generateLevel(level, random).game;
 }
 
 export function createDeckPatterns(): TilePattern[] {
@@ -132,15 +240,167 @@ export function createDeckPatterns(): TilePattern[] {
   return shuffleList(deck);
 }
 
-export function shuffleList<T>(items: T[]): T[] {
+export function shuffleList<T>(
+  items: T[],
+  random: RandomSource = Math.random,
+): T[] {
   const next = [...items];
 
   for (let index = next.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const swapIndex = Math.floor(random() * (index + 1));
     [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
   }
 
   return next;
+}
+
+function generateBoardPositions(
+  profile: LevelProfile,
+  random: RandomSource,
+): BoardPosition[] {
+  const baseLayerCount = Math.floor(profile.boardCount / profile.layers);
+  const extraLayerCount = profile.boardCount % profile.layers;
+  const maxLayerCount = baseLayerCount + (extraLayerCount > 0 ? 1 : 0);
+  const rows = Math.ceil(maxLayerCount / BOARD_COLUMNS) + 1;
+  const reflectX = random() < 0.5;
+  const reflectY = random() < 0.5;
+  const positions: BoardPosition[] = [];
+
+  for (let layer = 0; layer < profile.layers; layer += 1) {
+    const layerCount = baseLayerCount + (layer < extraLayerCount ? 1 : 0);
+    const candidates: BoardPosition[] = [];
+
+    for (let row = 0; row < rows; row += 1) {
+      for (let column = 0; column < BOARD_COLUMNS; column += 1) {
+        const rawX = column + ((row + layer) % 2 === 0 ? 0 : 0.5);
+        const rawY = row + (layer % 2 === 0 ? 0 : 0.5);
+
+        candidates.push({
+          layer,
+          x: reflectX ? BOARD_COLUMNS - 0.5 - rawX : rawX,
+          y: reflectY ? rows - 0.5 - rawY : rawY,
+        });
+      }
+    }
+
+    positions.push(...shuffleList(candidates, random).slice(0, layerCount));
+  }
+
+  return positions.sort((a, b) => a.layer - b.layer);
+}
+
+function createSolutionOrder(
+  boardTiles: BoardIdentity[],
+  reserveStacks: string[][],
+  random: RandomSource,
+): string[] {
+  const remainingBoardIds = new Set(boardTiles.map((tile) => tile.id));
+  const remainingReserveStacks = reserveStacks.map((stack) => [...stack]);
+  const solutionOrder: string[] = [];
+
+  while (
+    remainingBoardIds.size > 0 ||
+    remainingReserveStacks.some((stack) => stack.length > 0)
+  ) {
+    const availableIds = boardTiles
+      .filter(
+        (tile) =>
+          remainingBoardIds.has(tile.id) &&
+          !isGeneratedTileCovered(tile, boardTiles, remainingBoardIds),
+      )
+      .map((tile) => tile.id);
+
+    remainingReserveStacks.forEach((stack) => {
+      const topId = stack.at(-1);
+
+      if (topId) {
+        availableIds.push(topId);
+      }
+    });
+
+    const selectedId = chooseRandomItem(availableIds, random);
+    solutionOrder.push(selectedId);
+
+    if (remainingBoardIds.delete(selectedId)) {
+      continue;
+    }
+
+    const reserveStack = remainingReserveStacks.find(
+      (stack) => stack.at(-1) === selectedId,
+    );
+
+    if (!reserveStack) {
+      throw new Error(`Generated tile is not removable: ${selectedId}`);
+    }
+
+    reserveStack.pop();
+  }
+
+  return solutionOrder;
+}
+
+function isGeneratedTileCovered(
+  tile: BoardIdentity,
+  boardTiles: BoardIdentity[],
+  remainingBoardIds: Set<string>,
+): boolean {
+  return boardTiles.some(
+    (otherTile) =>
+      remainingBoardIds.has(otherTile.id) &&
+      otherTile.layer > tile.layer &&
+      Math.abs(otherTile.x - tile.x) < 0.9 &&
+      Math.abs(otherTile.y - tile.y) < 0.9,
+  );
+}
+
+function assignPatternsToSolution(
+  solutionOrder: string[],
+  profile: LevelProfile,
+  random: RandomSource,
+): Map<string, TilePattern> {
+  const activePatterns = shuffleList(TILE_PATTERNS, random).slice(
+    0,
+    profile.patternCount,
+  );
+  const patternById = new Map<string, TilePattern>();
+
+  for (let start = 0; start < solutionOrder.length; start += 3) {
+    const pattern = activePatterns[(start / 3) % activePatterns.length];
+
+    if (!pattern) {
+      throw new Error(`No pattern available for level ${profile.level}`);
+    }
+
+    solutionOrder.slice(start, start + 3).forEach((id) => {
+      patternById.set(id, pattern);
+    });
+  }
+
+  return patternById;
+}
+
+function chooseRandomItem<T>(items: T[], random: RandomSource): T {
+  const index = Math.floor(random() * items.length);
+  const item = items[index];
+
+  if (item === undefined) {
+    throw new Error("Cannot choose from an empty generated tile pool");
+  }
+
+  return item;
+}
+
+function requirePattern(
+  patternById: Map<string, TilePattern>,
+  id: string,
+): TilePattern {
+  const pattern = patternById.get(id);
+
+  if (!pattern) {
+    throw new Error(`Missing generated pattern for tile: ${id}`);
+  }
+
+  return pattern;
 }
 
 export function isBoardTileCovered(tile: BoardTile, boardTiles: BoardTile[]) {

@@ -1,13 +1,16 @@
-import { type CSSProperties, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import {
   type BoardTile,
   type GameState,
+  type LevelNumber,
   type MoveSnapshot,
   type ReserveTile,
   type TilePattern,
   BOARD_GEOMETRY,
+  LEVEL_PROFILES,
   createInitialGameState,
   createSnapshot,
+  getNextUnlockedLevel,
   isBoardTileCovered,
   putAside,
   returnAsideTile,
@@ -84,8 +87,49 @@ const BOARD_GEOMETRY_STYLE: BoardGeometryStyle = {
   "--tile-step-y": `calc(var(--tile-height) * ${BOARD_GEOMETRY.yStep})`,
 };
 
+const CAMPAIGN_STORAGE_KEY = "steroid-tile-atlas-highest-level";
+
+function readHighestUnlockedLevel(): LevelNumber {
+  if (typeof window === "undefined") {
+    return 1;
+  }
+
+  try {
+    const storedValue = window.localStorage.getItem(CAMPAIGN_STORAGE_KEY);
+
+    if (storedValue === null) {
+      return 1;
+    }
+
+    const parsedValue = Number(storedValue);
+
+    if (!Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 5) {
+      return 1;
+    }
+
+    return parsedValue as LevelNumber;
+  } catch {
+    return 1;
+  }
+}
+
+function writeHighestUnlockedLevel(level: LevelNumber) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(CAMPAIGN_STORAGE_KEY, String(level));
+  } catch {
+    // Campaign progress persistence must never interrupt play.
+  }
+}
+
 export function SteroidTileAtlas() {
-  const [game, setGame] = useState<GameState>(() => createInitialGameState());
+  const [highestUnlocked, setHighestUnlocked] = useState<LevelNumber>(
+    readHighestUnlockedLevel,
+  );
+  const [game, setGame] = useState<GameState>(() => createInitialGameState(1));
   const [lastSnapshot, setLastSnapshot] = useState<MoveSnapshot | null>(null);
   const visibleBoardTiles = useMemo(
     () => game.boardTiles.filter((tile) => !tile.removed),
@@ -97,7 +141,37 @@ export function SteroidTileAtlas() {
   );
   const remainingTotal = visibleBoardTiles.length + remainingReserveCount;
   const canPutAside =
-    game.status === "playing" && game.slot.length >= 3 && game.aside.length === 0;
+    game.status === "playing" &&
+    game.slot.length >= 3 &&
+    game.aside.length === 0 &&
+    game.toolsRemaining.putAside > 0;
+  const canUndo = lastSnapshot !== null && game.toolsRemaining.undo > 0;
+  const canShuffle =
+    game.status === "playing" && game.toolsRemaining.shuffle > 0;
+
+  useEffect(() => {
+    if (game.status !== "won") {
+      return;
+    }
+
+    const nextHighest = getNextUnlockedLevel(highestUnlocked, game.level);
+
+    if (nextHighest <= highestUnlocked) {
+      return;
+    }
+
+    setHighestUnlocked(nextHighest);
+    writeHighestUnlockedLevel(nextHighest);
+  }, [game.level, game.status, highestUnlocked]);
+
+  function startLevel(level: LevelNumber) {
+    if (level > highestUnlocked) {
+      return;
+    }
+
+    setGame(createInitialGameState(level));
+    setLastSnapshot(null);
+  }
 
   function applyMove(reducer: (current: GameState) => GameState) {
     setGame((current) => {
@@ -133,7 +207,7 @@ export function SteroidTileAtlas() {
   }
 
   function handleUndo() {
-    if (!lastSnapshot) {
+    if (!lastSnapshot || game.toolsRemaining.undo <= 0) {
       return;
     }
 
@@ -142,24 +216,45 @@ export function SteroidTileAtlas() {
   }
 
   function handleReset() {
-    setGame(createInitialGameState());
+    setGame(createInitialGameState(game.level));
     setLastSnapshot(null);
   }
 
+  function handleNextLevel() {
+    if (game.status !== "won" || game.level >= 5) {
+      return;
+    }
+
+    const nextLevel = (game.level + 1) as LevelNumber;
+
+    if (nextLevel > highestUnlocked) {
+      return;
+    }
+
+    startLevel(nextLevel);
+  }
+
   return (
-    <main className="steroid-game-page">
+    <main className={`steroid-game-page steroid-level-${game.level}`}>
       <section className="steroid-game-stage" aria-label="Steroid Tile Atlas game">
         <div className="steroid-game-table">
           <header className="steroid-game-title">
-            <div>
-              <span>Independent innovation page</span>
+            <div className="steroid-game-heading">
+              <span className="steroid-game-context">
+                Campaign / Level {String(game.level).padStart(2, "0")}
+              </span>
               <h1>Steroid Tile Atlas</h1>
-              <p>
-                Clear dense, layered steroid-production tiles before the
-                seven-slot tray overflows.
-              </p>
             </div>
-            <StatusBadge status={game.status} remainingTotal={remainingTotal} />
+            <LevelTrack
+              currentLevel={game.level}
+              highestUnlocked={highestUnlocked}
+              onSelectLevel={startLevel}
+            />
+            <StatusBadge
+              level={game.level}
+              status={game.status}
+              remainingTotal={remainingTotal}
+            />
           </header>
 
           <div className="steroid-game-field">
@@ -193,7 +288,7 @@ export function SteroidTileAtlas() {
             />
 
             <div
-              className="steroid-board"
+              className={`steroid-board steroid-level-${game.level}`}
               style={BOARD_GEOMETRY_STYLE}
               aria-label="Layered main board"
             >
@@ -225,16 +320,62 @@ export function SteroidTileAtlas() {
             </div>
 
             {game.status !== "playing" ? (
-              <div className="steroid-game-result" role="status">
-                <strong>{game.status === "won" ? "Cleared" : "Tray overflow"}</strong>
-                <span>
-                  {game.status === "won"
-                    ? "All steroid tiles have been eliminated."
-                    : "The seven-slot tray is full. Reset or undo to continue testing."}
-                </span>
-                <button type="button" onClick={handleReset}>
-                  New game
-                </button>
+              <div className="steroid-game-result" role="status" aria-live="polite">
+                {game.status === "won" ? (
+                  game.level < 5 ? (
+                    <>
+                      <strong>
+                        Level {String(game.level).padStart(2, "0")} complete
+                      </strong>
+                      <span>Next level unlocked.</span>
+                      <div className="steroid-result-actions">
+                        <button
+                          type="button"
+                          className="steroid-result-primary"
+                          disabled={game.level + 1 > highestUnlocked}
+                          onClick={handleNextLevel}
+                        >
+                          Next level
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <strong>Campaign complete</strong>
+                      <span>All five levels cleared.</span>
+                      <div className="steroid-result-actions">
+                        <button
+                          type="button"
+                          className="steroid-result-primary"
+                          onClick={() => startLevel(1)}
+                        >
+                          Play again
+                        </button>
+                      </div>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <strong>
+                      Level {String(game.level).padStart(2, "0")} failed
+                    </strong>
+                    <span>The seven-slot tray reached capacity.</span>
+                    <div className="steroid-result-actions">
+                      <button
+                        type="button"
+                        className="steroid-result-primary"
+                        onClick={handleReset}
+                      >
+                        Retry level
+                      </button>
+                      {canUndo ? (
+                        <button type="button" onClick={handleUndo}>
+                          Undo
+                        </button>
+                      ) : null}
+                    </div>
+                  </>
+                )}
               </div>
             ) : null}
           </div>
@@ -246,6 +387,10 @@ export function SteroidTileAtlas() {
           <section className="steroid-panel-block steroid-panel-score">
             <span>Run status</span>
             <dl>
+              <div>
+                <dt>Level</dt>
+                <dd>{String(game.level).padStart(2, "0")}</dd>
+              </div>
               <div>
                 <dt>Moves</dt>
                 <dd>{game.moves}</dd>
@@ -264,25 +409,41 @@ export function SteroidTileAtlas() {
           <section className="steroid-panel-block">
             <span>Tools</span>
             <div className="steroid-tool-grid">
-              <button type="button" disabled={!canPutAside} onClick={handlePutAside}>
-                Put aside
+              <button
+                type="button"
+                disabled={!canPutAside}
+                aria-label={`Put aside, ${game.toolsRemaining.putAside} remaining`}
+                onClick={handlePutAside}
+              >
+                <span>Put aside</span>
+                <span className="steroid-tool-count">
+                  {game.toolsRemaining.putAside}
+                </span>
               </button>
               <button
                 type="button"
-                disabled={!lastSnapshot}
+                disabled={!canUndo}
+                aria-label={`Undo, ${game.toolsRemaining.undo} remaining`}
                 onClick={handleUndo}
               >
-                Undo
+                <span>Undo</span>
+                <span className="steroid-tool-count">
+                  {game.toolsRemaining.undo}
+                </span>
               </button>
               <button
                 type="button"
-                disabled={game.status !== "playing"}
+                disabled={!canShuffle}
+                aria-label={`Shuffle, ${game.toolsRemaining.shuffle} remaining`}
                 onClick={handleShuffle}
               >
-                Shuffle
+                <span>Shuffle</span>
+                <span className="steroid-tool-count">
+                  {game.toolsRemaining.shuffle}
+                </span>
               </button>
               <button type="button" onClick={handleReset}>
-                New game
+                New board
               </button>
             </div>
           </section>
@@ -325,6 +486,67 @@ export function SteroidTileAtlas() {
   );
 }
 
+function LevelTrack({
+  currentLevel,
+  highestUnlocked,
+  onSelectLevel,
+}: {
+  currentLevel: LevelNumber;
+  highestUnlocked: LevelNumber;
+  onSelectLevel: (level: LevelNumber) => void;
+}) {
+  return (
+    <nav className="steroid-level-track" aria-label="Campaign levels">
+      <ol>
+        {LEVEL_PROFILES.map((profile) => {
+          const isCurrent = profile.level === currentLevel;
+          const isCompleted = profile.level < highestUnlocked;
+          const isLocked = profile.level > highestUnlocked;
+          const isAvailable = !isCurrent && !isCompleted && !isLocked;
+          const className = [
+            "steroid-level-button",
+            isCurrent ? "is-current" : "",
+            isCompleted ? "is-completed" : "",
+            isAvailable ? "is-available" : "",
+            isLocked ? "is-locked" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+
+          return (
+            <li key={profile.level}>
+              <button
+                type="button"
+                className={className}
+                disabled={isLocked}
+                aria-current={isCurrent ? "step" : undefined}
+                aria-label={`Level ${profile.level}${isLocked ? ", locked" : ""}`}
+                onClick={() => onSelectLevel(profile.level)}
+              >
+                {String(profile.level).padStart(2, "0")}
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
+function PatternIcon({ pattern }: { pattern: TilePattern }) {
+  return (
+    <span
+      className={`steroid-pattern-icon steroid-pattern-icon-${pattern.toLowerCase()}`}
+      aria-hidden="true"
+    >
+      <span className="steroid-pattern-shape steroid-pattern-shape-1" />
+      <span className="steroid-pattern-shape steroid-pattern-shape-2" />
+      <span className="steroid-pattern-shape steroid-pattern-shape-3" />
+      <span className="steroid-pattern-shape steroid-pattern-shape-4" />
+    </span>
+  );
+}
+
 function TileFace({
   pattern,
   compact = false,
@@ -335,10 +557,13 @@ function TileFace({
   const meta = PATTERN_META[pattern];
 
   return (
-    <>
+    <span
+      className={`steroid-tile-face ${compact ? "is-compact" : ""}`.trim()}
+    >
+      <PatternIcon pattern={pattern} />
       <span className="steroid-tile-symbol">{meta.shortLabel}</span>
-      {!compact ? <small>{meta.detail}</small> : null}
-    </>
+      <small className="steroid-tile-detail">{meta.detail}</small>
+    </span>
   );
 }
 
@@ -404,9 +629,11 @@ function SlotTray({ slot }: { slot: ReserveTile[] }) {
 }
 
 function StatusBadge({
+  level,
   status,
   remainingTotal,
 }: {
+  level: LevelNumber;
   status: GameState["status"];
   remainingTotal: number;
 }) {
@@ -419,7 +646,9 @@ function StatusBadge({
 
   return (
     <div className={`steroid-status-badge steroid-status-${status}`}>
-      <strong>{label}</strong>
+      <strong>
+        Level {String(level).padStart(2, "0")} / {label}
+      </strong>
       <span>{remainingTotal} tiles on field</span>
     </div>
   );

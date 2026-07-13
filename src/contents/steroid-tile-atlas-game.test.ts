@@ -2,8 +2,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   BOARD_FOOTPRINT,
+  BOARD_GEOMETRY,
   LEVEL_PROFILES,
   addTileToSlot,
+  buildBlockerIds,
   createInitialGameState,
   createSeededRandom,
   createSnapshot,
@@ -14,6 +16,7 @@ import {
   selectBoardTile,
   selectReserveTile,
   shuffleRemainingTiles,
+  tilesOverlap,
   undoToSnapshot,
 } from "./steroid-tile-atlas-game.ts";
 
@@ -160,38 +163,47 @@ describe("steroid tile atlas level generation", () => {
     });
   });
 
-  it("returns a legal removal order covering every generated ID", () => {
-    const { game, solutionOrder } = generateLevel(5, createSeededRandom(505));
-    const remainingBoardIds = new Set(game.boardTiles.map((tile) => tile.id));
-    const reserveStacks = game.reserveStacks.map((stack) => [...stack]);
-
-    solutionOrder.forEach((tileId) => {
-      const boardTile = game.boardTiles.find((tile) => tile.id === tileId);
-
-      if (boardTile) {
-        const simulatedBoard = game.boardTiles.map((tile) => ({
-          ...tile,
-          removed: !remainingBoardIds.has(tile.id),
-        }));
-        const simulatedTile = simulatedBoard.find((tile) => tile.id === tileId);
-
-        assert.ok(simulatedTile);
-        assert.equal(remainingBoardIds.has(tileId), true);
-        assert.equal(isBoardTileCovered(simulatedTile, simulatedBoard), false);
-        remainingBoardIds.delete(tileId);
-        return;
-      }
-
-      const stackIndex = reserveStacks.findIndex(
-        (stack) => stack.at(-1)?.id === tileId,
+  it("replays every generated solution through the public selection API", () => {
+    LEVEL_PROFILES.forEach((profile) => {
+      const generated = generateLevel(
+        profile.level,
+        createSeededRandom(500 + profile.level),
       );
-      assert.notEqual(stackIndex, -1);
-      reserveStacks[stackIndex].pop();
-    });
+      let game = generated.game;
 
-    assert.equal(solutionOrder.length, LEVEL_PROFILES[4].totalTiles);
-    assert.equal(remainingBoardIds.size, 0);
-    assert.equal(reserveStacks.every((stack) => stack.length === 0), true);
+      generated.solutionOrder.forEach((tileId) => {
+        const boardTile = game.boardTiles.find((tile) => tile.id === tileId);
+        const previousMoves = game.moves;
+
+        if (boardTile) {
+          game = selectBoardTile(game, tileId);
+          assert.equal(game.moves, previousMoves + 1, tileId);
+          assert.equal(
+            game.boardTiles.find((tile) => tile.id === tileId)?.removed,
+            true,
+            tileId,
+          );
+          return;
+        }
+
+        const stackIndex = game.reserveStacks.findIndex(
+          (stack) => stack.at(-1)?.id === tileId,
+        );
+        assert.notEqual(stackIndex, -1, tileId);
+        const previousLength = game.reserveStacks[stackIndex].length;
+
+        game = selectReserveTile(game, stackIndex);
+        assert.equal(game.moves, previousMoves + 1, tileId);
+        assert.equal(
+          game.reserveStacks[stackIndex].length,
+          previousLength - 1,
+          tileId,
+        );
+      });
+
+      assert.equal(generated.solutionOrder.length, profile.totalTiles);
+      assert.equal(game.status, "won", `level ${profile.level}`);
+    });
   });
 });
 
@@ -220,6 +232,7 @@ describe("steroid tile atlas game rules", () => {
       x: 2,
       y: 2,
       removed: false,
+      blockerIds: ["cover"],
     };
     const cover = {
       id: "cover",
@@ -228,10 +241,118 @@ describe("steroid tile atlas game rules", () => {
       x: 2.4,
       y: 2.4,
       removed: false,
+      blockerIds: [],
     };
 
     assert.equal(isBoardTileCovered(base, [base, cover]), true);
     assert.equal(isBoardTileCovered(cover, [base, cover]), false);
+  });
+
+  it("keeps a tile covered until every rendered blocker is removed", () => {
+    const base = {
+      id: "base",
+      pattern: "Ring" as const,
+      layer: 0,
+      x: 2,
+      y: 2,
+      removed: false,
+      blockerIds: ["blocker-a", "blocker-b"],
+    };
+    const blockerA = {
+      id: "blocker-a",
+      pattern: "P450" as const,
+      layer: 1,
+      x: 3,
+      y: 2,
+      removed: false,
+      blockerIds: [],
+    };
+    const blockerB = {
+      id: "blocker-b",
+      pattern: "C27" as const,
+      layer: 2,
+      x: 2,
+      y: 3,
+      removed: false,
+      blockerIds: [],
+    };
+
+    assert.equal(isBoardTileCovered(base, [base, blockerA, blockerB]), true);
+    assert.equal(
+      isBoardTileCovered(base, [base, { ...blockerA, removed: true }, blockerB]),
+      true,
+    );
+    assert.equal(
+      isBoardTileCovered(base, [
+        base,
+        { ...blockerA, removed: true },
+        { ...blockerB, removed: true },
+      ]),
+      false,
+    );
+  });
+
+  it("uses rendered rectangle geometry with strict non-overlap at touching edges", () => {
+    const base = {
+      id: "base",
+      pattern: "Ring" as const,
+      layer: 0,
+      x: 0,
+      y: 0,
+      removed: false,
+      blockerIds: [],
+    };
+
+    assert.equal(tilesOverlap(base, { ...base, id: "x-overlap", x: 1 }), true);
+    assert.equal(tilesOverlap(base, { ...base, id: "y-overlap", y: 1 }), true);
+    assert.equal(
+      tilesOverlap(base, {
+        ...base,
+        id: "x-touching",
+        x: BOARD_GEOMETRY.tileWidth / BOARD_GEOMETRY.xStep,
+      }),
+      false,
+    );
+    assert.equal(
+      tilesOverlap(base, {
+        ...base,
+        id: "y-touching",
+        y: BOARD_GEOMETRY.tileHeight / BOARD_GEOMETRY.yStep,
+      }),
+      false,
+    );
+  });
+
+  it("builds blockers from every overlapping tile on a strictly higher layer", () => {
+    const base = {
+      id: "base",
+      pattern: "Ring" as const,
+      layer: 1,
+      x: 2,
+      y: 2,
+      removed: false,
+      blockerIds: [],
+    };
+    const higher = {
+      ...base,
+      id: "higher",
+      layer: 2,
+      x: 3,
+      removed: true,
+    };
+    const sameLayer = { ...base, id: "same-layer", x: 3 };
+    const lower = { ...base, id: "lower", layer: 0, y: 3 };
+    const touching = {
+      ...base,
+      id: "touching",
+      layer: 3,
+      x: base.x + BOARD_GEOMETRY.tileWidth / BOARD_GEOMETRY.xStep,
+    };
+
+    assert.deepEqual(
+      buildBlockerIds(base, [base, higher, sameLayer, lower, touching]),
+      ["higher"],
+    );
   });
 
   it("eliminates exactly one matching triple after a tile enters the tray", () => {
@@ -261,8 +382,8 @@ describe("steroid tile atlas game rules", () => {
     const game = {
       ...createInitialGameState(),
       boardTiles: [
-        { id: "base", pattern: "Ring" as const, layer: 0, x: 0, y: 0, removed: false },
-        { id: "cover", pattern: "P450" as const, layer: 1, x: 0.4, y: 0.4, removed: false },
+        { id: "base", pattern: "Ring" as const, layer: 0, x: 0, y: 0, removed: false, blockerIds: ["cover"] },
+        { id: "cover", pattern: "P450" as const, layer: 1, x: 0.4, y: 0.4, removed: false, blockerIds: [] },
       ],
       reserveStacks: [[{ id: "bottom", pattern: "C27" as const }, { id: "top", pattern: "OH" as const }]],
       slot: [],
@@ -293,6 +414,11 @@ describe("steroid tile atlas game rules", () => {
     };
     const snapshot = createSnapshot(game);
     const asideGame = putAside(game);
+
+    assert.notStrictEqual(
+      snapshot.boardTiles[0].blockerIds,
+      game.boardTiles[0].blockerIds,
+    );
 
     assert.deepEqual(asideGame.aside.map((tile) => tile.id), ["a", "b", "c"]);
     assert.deepEqual(asideGame.slot.map((tile) => tile.id), ["d"]);

@@ -22,13 +22,17 @@ export interface LevelProfile {
   readonly toolUses: number;
 }
 
-export interface BoardTile {
+interface BlockerCandidate {
   id: string;
-  pattern: TilePattern;
   layer: number;
   x: number;
   y: number;
+}
+
+export interface BoardTile extends BlockerCandidate {
+  pattern: TilePattern;
   removed: boolean;
+  blockerIds: string[];
 }
 
 export interface ReserveTile {
@@ -143,8 +147,8 @@ interface BoardPosition {
   y: number;
 }
 
-interface BoardIdentity extends BoardPosition {
-  id: string;
+interface BoardIdentity extends BlockerCandidate {
+  blockerIds: string[];
 }
 
 export interface GeneratedLevel {
@@ -160,6 +164,49 @@ export const BOARD_FOOTPRINT = {
   minY: 0,
   maxY: 3.5,
 } as const;
+
+export const BOARD_GEOMETRY = {
+  tileWidth: 1,
+  tileHeight: 1,
+  xStep: 0.78,
+  yStep: 0.7,
+} as const;
+
+function rectanglesOverlap(
+  a: Pick<BlockerCandidate, "x" | "y">,
+  b: Pick<BlockerCandidate, "x" | "y">,
+): boolean {
+  const horizontalDistance = Math.abs(a.x - b.x) * BOARD_GEOMETRY.xStep;
+  const verticalDistance = Math.abs(a.y - b.y) * BOARD_GEOMETRY.yStep;
+
+  return (
+    horizontalDistance < BOARD_GEOMETRY.tileWidth &&
+    verticalDistance < BOARD_GEOMETRY.tileHeight
+  );
+}
+
+function buildBlockerIdsFromCandidates(
+  tile: BlockerCandidate,
+  tiles: readonly BlockerCandidate[],
+): string[] {
+  return tiles
+    .filter(
+      (otherTile) =>
+        otherTile.layer > tile.layer && rectanglesOverlap(tile, otherTile),
+    )
+    .map((otherTile) => otherTile.id);
+}
+
+export function tilesOverlap(a: BoardTile, b: BoardTile): boolean {
+  return rectanglesOverlap(a, b);
+}
+
+export function buildBlockerIds(
+  tile: BoardTile,
+  tiles: BoardTile[],
+): string[] {
+  return buildBlockerIdsFromCandidates(tile, tiles);
+}
 
 export function createSeededRandom(seed: number): RandomSource {
   let state = seed >>> 0;
@@ -180,10 +227,16 @@ export function generateLevel(
     throw new RangeError(`Unknown level: ${level}`);
   }
 
-  const boardIdentities = generateBoardPositions(profile, random).map(
-    (position, index): BoardIdentity => ({
+  const boardPositions = generateBoardPositions(profile, random).map(
+    (position, index): BlockerCandidate => ({
       id: `board-${index}`,
       ...position,
+    }),
+  );
+  const boardIdentities = boardPositions.map(
+    (tile): BoardIdentity => ({
+      ...tile,
+      blockerIds: buildBlockerIdsFromCandidates(tile, boardPositions),
     }),
   );
   const reserveIdentities = profile.reserveSizes.map((stackSize, stackIndex) =>
@@ -318,8 +371,8 @@ function createSolutionOrder(
       .filter(
         (tile) =>
           remainingBoardIds.has(tile.id) &&
-          !hasActiveBlocker(tile, boardTiles, (otherTile) =>
-            remainingBoardIds.has(otherTile.id),
+          !tile.blockerIds.some((blockerId) =>
+            remainingBoardIds.has(blockerId),
           ),
       )
       .map((tile) => tile.id);
@@ -351,20 +404,6 @@ function createSolutionOrder(
   }
 
   return solutionOrder;
-}
-
-function hasActiveBlocker<T extends BoardIdentity>(
-  tile: BoardIdentity,
-  boardTiles: readonly T[],
-  isActive: (tile: T) => boolean,
-): boolean {
-  return boardTiles.some(
-    (otherTile) =>
-      isActive(otherTile) &&
-      otherTile.layer > tile.layer &&
-      Math.abs(otherTile.x - tile.x) < 0.9 &&
-      Math.abs(otherTile.y - tile.y) < 0.9,
-  );
 }
 
 function assignPatternsToSolution(
@@ -421,7 +460,11 @@ export function isBoardTileCovered(
   tile: BoardTile,
   boardTiles: readonly BoardTile[],
 ) {
-  return hasActiveBlocker(tile, boardTiles, (otherTile) => !otherTile.removed);
+  const activeTileIds = new Set(
+    boardTiles.filter((otherTile) => !otherTile.removed).map((tile) => tile.id),
+  );
+
+  return tile.blockerIds.some((blockerId) => activeTileIds.has(blockerId));
 }
 
 export function createSnapshot(game: GameState): MoveSnapshot {
@@ -609,7 +652,10 @@ export function shuffleRemainingTiles(game: GameState): GameState {
 
 function cloneGameState(game: GameState): GameState {
   return {
-    boardTiles: game.boardTiles.map((tile) => ({ ...tile })),
+    boardTiles: game.boardTiles.map((tile) => ({
+      ...tile,
+      blockerIds: [...tile.blockerIds],
+    })),
     reserveStacks: game.reserveStacks.map((stack) =>
       stack.map((tile) => ({ ...tile })),
     ),

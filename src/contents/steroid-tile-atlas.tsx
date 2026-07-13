@@ -610,8 +610,14 @@ function ReserveStack({
 }
 
 function SlotTray({ slot }: { slot: ReserveTile[] }) {
+  const pressureClass =
+    slot.length >= 7 ? "is-full" : slot.length >= 6 ? "is-warning" : "";
+
   return (
-    <div className="steroid-slot-tray" aria-label="Seven slot tray">
+    <div
+      className={`steroid-slot-tray ${pressureClass}`.trim()}
+      aria-label={`Seven slot tray, ${slot.length} occupied`}
+    >
       {Array.from({ length: 7 }, (_, index) => {
         const tile = slot[index];
 

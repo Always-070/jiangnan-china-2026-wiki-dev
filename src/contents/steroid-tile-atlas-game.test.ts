@@ -684,6 +684,27 @@ describe("steroid tile atlas game rules", () => {
     assert.strictEqual(shuffleRemainingTiles(game, createSeededRandom(5)), game);
   });
 
+  it("returns the same unchanged game when shuffling a completed state", () => {
+    (["failed", "won"] as const).forEach((status, index) => {
+      const game = {
+        ...createInitialGameState(1, createSeededRandom(120 + index)),
+        status,
+        toolsRemaining: { putAside: 2, undo: 2, shuffle: 2 },
+      };
+      const before = structuredClone(game);
+
+      const rejected = shuffleRemainingTiles(
+        game,
+        createSeededRandom(220 + index),
+      );
+
+      assert.strictEqual(rejected, game, status);
+      assert.equal(rejected.toolsRemaining.shuffle, 2, status);
+      assert.deepEqual(rejected, before, status);
+      assert.deepEqual(game, before, status);
+    });
+  });
+
   it("clones snapshot tool counters into a separate object", () => {
     const game = createInitialGameState();
     const snapshot = createSnapshot(game);

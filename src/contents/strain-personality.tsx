@@ -325,6 +325,8 @@ function QuizWorkspace({
     : undefined;
   const complete = isQuizComplete(questions, answers);
   const nextUnanswered = questions.find((question) => !answers[question.id]);
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const glossaryTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
     <section className="strain-lab-workspace">
@@ -439,7 +441,14 @@ function QuizWorkspace({
               <span>LAB NOTE</span>
               <h2>{glossary.term}</h2>
               <p>{glossary.explanation}</p>
-              <a href="#strain-lab-glossary">Open the full glossary →</a>
+              <button
+                ref={glossaryTriggerRef}
+                type="button"
+                className="strain-lab-note-link"
+                onClick={() => setGlossaryOpen(true)}
+              >
+                Open the full glossary →
+              </button>
             </aside>
           ) : null}
         </div>
@@ -478,18 +487,94 @@ function QuizWorkspace({
         </footer>
       </article>
 
-      <details id="strain-lab-glossary" className="strain-lab-glossary">
-        <summary>Full lab glossary</summary>
-        <div>
+      <GlossaryDialog
+        open={glossaryOpen}
+        activeTerm={glossary?.term}
+        triggerRef={glossaryTriggerRef}
+        onRequestClose={() => setGlossaryOpen(false)}
+      />
+    </section>
+  );
+}
+
+function GlossaryDialog({
+  open,
+  activeTerm,
+  triggerRef,
+  onRequestClose,
+}: {
+  open: boolean;
+  activeTerm?: string;
+  triggerRef: RefObject<HTMLButtonElement>;
+  onRequestClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  const closeDialog = () => {
+    if (dialogRef.current?.open) dialogRef.current.close();
+    else onRequestClose();
+  };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="strain-lab-dialog"
+      aria-labelledby="strain-lab-dialog-title"
+      onClose={() => {
+        onRequestClose();
+        triggerRef.current?.focus();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) closeDialog();
+      }}
+    >
+      <div className="strain-lab-dialog-panel">
+        <header>
+          <div>
+            <span className="strain-lab-question-meta">LAB GLOSSARY</span>
+            <h2 id="strain-lab-dialog-title">Synthetic biology terms</h2>
+          </div>
+          <button
+            type="button"
+            className="strain-lab-dialog-close"
+            onClick={closeDialog}
+            aria-label="Close glossary"
+          >
+            Close
+          </button>
+        </header>
+        <div className="strain-lab-dialog-list">
           {Object.values(GLOSSARY).map((entry) => (
-            <article key={entry.term}>
-              <h2>{entry.term}</h2>
+            <article
+              key={entry.term}
+              className={entry.term === activeTerm ? "is-current" : undefined}
+            >
+              <h3>{entry.term}</h3>
               <p>{entry.explanation}</p>
             </article>
           ))}
         </div>
-      </details>
-    </section>
+      </div>
+    </dialog>
   );
 }
 

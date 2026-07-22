@@ -39,17 +39,17 @@ The page avoids unsupported MBTI market statistics and does not present the quiz
 
 ### 2. Question workspace
 
-The workspace keeps the visitor oriented using the previously approved card-and-index layout:
+The workspace keeps the visitor oriented using the previously approved card-and-index layout, but uses a compact desktop treatment so the complete active question remains visible without routine page scrolling:
 
-- Four clear dimension cards form a two-by-two grid. Each card shows the letter pair, a short English label, and `answered / total` for that dimension.
+- Four compact dimension tabs form one horizontal row on desktop. Each tab shows the letter pair, a short English label, and `answered / total` for that dimension. Tablet and phone layouts use a two-by-two grid.
 - The active card uses a blue outline and selected background; the state is not communicated by color alone.
-- A separate question navigator appears immediately below. Full Protocol shows `01–16`; Quick Assay shows `01–07`.
-- Question-number buttons use a fixed square size and natural wrapping. They do not stretch to fill the entire row.
+- A slim question navigator appears immediately below. Full Protocol shows `01–16`; Quick Assay shows `01–07`.
+- Question-number buttons use compact fixed squares and natural wrapping. They do not stretch to fill the entire row.
 - Completed, current, and unanswered questions have distinct text, border, and background treatments.
-- Overall progress sits beneath the question numbers within the same navigator card, matching the approved previous visual version.
+- Overall progress shares the navigator card and is visually subordinate to the question controls.
 - No live personality score is shown during the quiz, avoiding answer bias.
 
-Question-number controls retain a 44px square target without becoming full-width buttons. The grid leaves intentional whitespace after the last number and wraps naturally without horizontal scrolling.
+The visible number squares may be smaller than 44px on pointer-based desktop layouts, while their buttons retain an accessible hit target through spacing and padding. The grid leaves intentional whitespace after the last number and wraps naturally without horizontal scrolling.
 
 ### 3. One-question view
 
@@ -59,10 +59,12 @@ The question card contains:
 - One English question.
 - A labeled seven-point response scale from `Strongly disagree` to `Strongly agree`, with `Neutral / unsure` at the midpoint.
 - Clickable numeric values `1–7` and a synchronized range input for pointer and keyboard use.
-- A contextual `Lab Note` only when the question references a glossary concept.
+- A contextual `Lab Note` summary only when the question references a glossary concept. It keeps the approved visual language: blue monospace label, strong term heading, short explanation, and a blue detail link.
 - `Previous` and `Save & next` actions.
 
 No response is assumed by default. The visual midpoint may be shown as the neutral reference, but the question remains unanswered until the visitor explicitly chooses a value. `Save & next` is disabled until the active question has a response. Visitors can still use the dimension and number controls to navigate elsewhere.
+
+The Lab Note detail link opens an accessible modal dialog rather than expanding the document flow. On desktop it is a centered overlay with the full glossary; on narrow screens it becomes a full-screen detail layer. Opening the dialog does not change the active question or answer. Closing by the close button, `Escape`, or the backdrop returns focus to the original link and restores the unchanged quiz state. Background scrolling is locked while the dialog is open.
 
 ### 4. Completion and result
 
@@ -155,10 +157,12 @@ Only one primary action appears in each screen state. State changes use 150–25
 ## Responsive and accessible behavior
 
 - Test widths: 375px, 768px, 1024px, and 1440px.
-- Four dimension cards: a stable two-by-two grid at normal desktop, tablet, and phone widths; fall back to one column only when the viewport cannot preserve readable labels.
-- Question number grid: fixed 44px square buttons in an auto-wrapping row; buttons never stretch to consume unused width.
-- `Lab Note`: right column on desktop, stacked below the question on smaller screens.
-- All buttons and scale values have at least 44px hit areas and visible focus rings.
+- Four dimension controls: one compact row on desktop and a stable two-by-two grid on tablet and phone widths; fall back to one column only when the viewport cannot preserve readable labels.
+- Question number grid: compact fixed squares in an auto-wrapping row; buttons never stretch to consume unused width, and their effective interactive targets remain accessible.
+- Desktop height target: at 1024×768 and wider, the active dimension controls, question index, question text, response controls, Lab Note summary, and navigation actions fit within the initial viewport under the global navigation. Exceptionally long translated questions may wrap, but controls must remain immediately reachable.
+- `Lab Note`: a compact summary row/card within the question panel. The full glossary is removed from normal page flow and rendered only in the modal dialog.
+- Modal dialog: centered and height-bounded on desktop with internal scrolling; full-screen on narrow screens; labelled title, visible close control, focus containment, focus restoration, and `Escape` support.
+- Primary actions and `1–7` response values have at least 44px hit areas. Dense dimension/question navigation may use smaller controls while preserving clear spacing, keyboard access, and visible focus rings.
 - Dimension and question controls expose `aria-current` or `aria-pressed` states.
 - Completed status includes accessible text, not color alone.
 - Range and numeric controls have a visible label and announce the selected value.

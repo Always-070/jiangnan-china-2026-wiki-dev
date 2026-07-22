@@ -24,6 +24,7 @@ import {
   Results,
   SafetyAndSecurity,
   Software,
+  StrainPersonality,
   Sustainability,
   WikiExcellence,
 } from "./contents";
@@ -331,6 +332,13 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         anchorSections: descriptionAnchors,
         heroFigure: descriptionFigure,
         ctaLinks: descriptionCtas,
+      },
+      {
+        name: "Strain Personality Lab",
+        title: "Strain Personality Lab",
+        path: "/strain-personality-lab",
+        component: StrainPersonality,
+        lead: "Choose a 28- or 64-question protocol and explore a synthetic-biology personality metaphor inside a Yarrowia lipolytica cell factory.",
       },
       {
         name: "Engineering",

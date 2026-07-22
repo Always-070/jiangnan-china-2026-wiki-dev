@@ -30,6 +30,7 @@ const teamPath: NavigationItem[] = [
   { name: "Attributions", path: "/attributions" },
   { name: "Contribution", path: "/contribution" },
   { name: "Education", path: "/education" },
+  { name: "Strain Lab", path: "/strain-personality-lab" },
   { name: "Sustainability", path: "/sustainability" },
 ];
 

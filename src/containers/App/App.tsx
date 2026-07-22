@@ -53,11 +53,12 @@ const App = () => {
   const currentPath = location.pathname || "/";
 
   const currentPage = pathMapping[currentPath];
-  const isImmersiveResults = currentPath === "/results";
+  const immersivePaths = new Set(["/results", "/strain-personality-lab"]);
+  const isImmersivePage = immersivePaths.has(currentPath);
   const showStandardHeader =
     currentPath !== "/" &&
     currentPath !== "/attributions" &&
-    !isImmersiveResults &&
+    !isImmersivePage &&
     !!currentPage;
 
   // Set Page Title
@@ -103,7 +104,9 @@ const App = () => {
                       ctaLinks={ctaLinks}
                     />
                   ) : null}
-                  {path === "/" || path === "/attributions" ? (
+                  {path === "/" ||
+                  path === "/attributions" ||
+                  path === "/strain-personality-lab" ? (
                     <Component />
                   ) : (
                     <div

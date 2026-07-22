@@ -110,6 +110,14 @@ export function storageKeyFor(protocol: ProtocolId) {
   return `strain-personality-lab:${protocol}:v1`;
 }
 
+export function activeProtocolStorageKey() {
+  return "strain-personality-lab:active-protocol:v1";
+}
+
+export function parseStoredProtocol(raw: string | null): ProtocolId | null {
+  return raw === "quick" || raw === "full" ? raw : null;
+}
+
 export function parseStoredSession(
   raw: string | null,
   protocol: ProtocolId,

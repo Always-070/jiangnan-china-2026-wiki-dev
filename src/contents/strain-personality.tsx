@@ -11,8 +11,10 @@ import {
   type StrainQuestion,
 } from "./strain-personality-data.ts";
 import {
+  activeProtocolStorageKey,
   isQuizComplete,
   parseStoredSession,
+  parseStoredProtocol,
   scoreQuiz,
   storageKeyFor,
   type QuizAnswers,
@@ -20,8 +22,18 @@ import {
 
 type View = "landing" | "quiz" | "result";
 
+function readInitialProtocol(): ProtocolId {
+  try {
+    return parseStoredProtocol(
+      window.localStorage.getItem(activeProtocolStorageKey()),
+    ) || "full";
+  } catch {
+    return "full";
+  }
+}
+
 export function StrainPersonality() {
-  const [protocol, setProtocol] = useState<ProtocolId>("full");
+  const [protocol, setProtocol] = useState<ProtocolId>(readInitialProtocol);
   const [view, setView] = useState<View>("landing");
   const [answers, setAnswers] = useState<QuizAnswers>({});
   const [currentQuestionId, setCurrentQuestionId] = useState("");
@@ -57,7 +69,19 @@ export function StrainPersonality() {
   }, [protocol, questions]);
 
   useEffect(() => {
+    try {
+      window.localStorage.setItem(activeProtocolStorageKey(), protocol);
+    } catch {
+      setSaveNotice("Progress is available in this tab but could not be saved locally.");
+    }
+  }, [protocol]);
+
+  useEffect(() => {
     if (!currentQuestionId) {
+      return;
+    }
+
+    if (!questions.some((question) => question.id === currentQuestionId)) {
       return;
     }
 
@@ -70,7 +94,7 @@ export function StrainPersonality() {
     } catch {
       setSaveNotice("Progress is available in this tab but could not be saved locally.");
     }
-  }, [answers, currentQuestionId, protocol]);
+  }, [answers, currentQuestionId, protocol, questions]);
 
   useEffect(() => {
     if (view === "quiz") {
@@ -87,8 +111,10 @@ export function StrainPersonality() {
   );
 
   function startQuiz() {
-    const firstUnanswered = questions.find((question) => !answers[question.id]);
-    setCurrentQuestionId(firstUnanswered?.id || questions[0].id);
+    if (!currentQuestionId) {
+      const firstUnanswered = questions.find((question) => !answers[question.id]);
+      setCurrentQuestionId(firstUnanswered?.id || questions[0].id);
+    }
     setView("quiz");
   }
 

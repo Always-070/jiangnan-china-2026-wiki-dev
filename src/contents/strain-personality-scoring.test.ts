@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { StrainQuestion } from "./strain-personality-data.ts";
 import {
+  activeProtocolStorageKey,
   isQuizComplete,
   normalizeAnswer,
   parseStoredSession,
+  parseStoredProtocol,
   scoreQuiz,
   storageKeyFor,
 } from "./strain-personality-scoring.ts";
@@ -112,8 +114,16 @@ test("reports completion only when every question has a valid answer", () => {
 });
 
 test("uses protocol-specific versioned storage keys", () => {
+  assert.equal(activeProtocolStorageKey(), "strain-personality-lab:active-protocol:v1");
   assert.equal(storageKeyFor("quick"), "strain-personality-lab:quick:v1");
   assert.equal(storageKeyFor("full"), "strain-personality-lab:full:v1");
+});
+
+test("accepts only a known active protocol from local storage", () => {
+  assert.equal(parseStoredProtocol("quick"), "quick");
+  assert.equal(parseStoredProtocol("full"), "full");
+  assert.equal(parseStoredProtocol("unknown"), null);
+  assert.equal(parseStoredProtocol(null), null);
 });
 
 test("accepts valid stored sessions and rejects corrupt or foreign answers", () => {

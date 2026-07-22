@@ -25,6 +25,7 @@ import {
   SafetyAndSecurity,
   Software,
   StrainPersonality,
+  SteroidTileAtlas,
   Sustainability,
   WikiExcellence,
 } from "./contents";
@@ -80,12 +81,31 @@ const measurementAnchors: PageAnchor[] = [
   { id: "references", label: "References" },
 ];
 
+const modelAnchors: PageAnchor[] = [
+  { id: "catapro-iteration", label: "Iteration" },
+  { id: "diagnosis", label: "Diagnosis" },
+  { id: "evidence", label: "Evidence" },
+  { id: "next-step", label: "Next" },
+  { id: "archive-boundary", label: "Archive" },
+  { id: "references", label: "References" },
+];
+
 const hpAnchors: PageAnchor[] = [
   { id: "stakeholders", label: "Stakeholders" },
   { id: "impact-map", label: "Impact Map" },
   { id: "insights", label: "Insights" },
+  { id: "feedback-routes", label: "Feedback Routes" },
   { id: "changes", label: "Project Changes" },
   { id: "implementation", label: "Implementation" },
+  { id: "references", label: "References" },
+];
+
+const educationAnchors: PageAnchor[] = [
+  { id: "overview", label: "Overview" },
+  { id: "primary-school", label: "Primary School" },
+  { id: "english-corner", label: "English Corner" },
+  { id: "education-flow", label: "Loop" },
+  { id: "iteration", label: "Iteration" },
   { id: "references", label: "References" },
 ];
 
@@ -165,6 +185,19 @@ const measurementFigure: HeroFigure = {
   ],
 };
 
+const modelFigure: HeroFigure = {
+  label: "Model Iteration",
+  title: "Failure diagnosis -> staged screening",
+  description:
+    "The current model page treats the April 28 dry-lab batch as a failed but useful screening round, so the next modeling route is grounded in what went wrong.",
+  items: [
+    "Record why the Catapro fine-tuning round did not become a final result.",
+    "Separate stable training behavior from weak quantitative prediction.",
+    "Use selected figures as iteration evidence rather than success proof.",
+    "Move toward homology analysis and MD simulation before wet-lab selection.",
+  ],
+};
+
 const hpFigure: HeroFigure = {
   label: "Implementation Loop",
   title: "Medical Need -> Manufacturing Reality -> Responsible Platform",
@@ -175,6 +208,19 @@ const hpFigure: HeroFigure = {
     "Translate manufacturing and scale-up feedback into project requirements.",
     "Connect sustainability claims to actual engineering choices.",
     "Show how outside input reshaped the platform design itself.",
+  ],
+};
+
+const educationFigure: HeroFigure = {
+  label: "Outreach Loop",
+  title: "Questionnaire -> activity -> feedback -> next audience",
+  description:
+    "Education turns steroid-related health science into a two-way learning process across age groups and language contexts.",
+  items: [
+    "Start from the audience's existing habits and questions.",
+    "Use experiments, stories, and bilingual practice before technical terms.",
+    "Record what was understood, misunderstood, and asked next.",
+    "Turn feedback into clearer vocabulary, activities, and follow-up media.",
   ],
 };
 
@@ -246,8 +292,21 @@ const resultsCtas: CallToAction[] = [
   { label: "Back to engineering", href: "/engineering", variant: "secondary" },
 ];
 
+const modelCtas: CallToAction[] = [
+  {
+    label: "Review failed round",
+    href: "#catapro-iteration",
+    variant: "primary",
+  },
+  { label: "Open evidence figures", href: "#evidence", variant: "secondary" },
+];
+
 const hpCtas: CallToAction[] = [
-  { label: "See stakeholder map", href: "#stakeholders", variant: "primary" },
+  {
+    label: "Open feedback routes",
+    href: "#feedback-routes",
+    variant: "primary",
+  },
   {
     label: "Open implementation",
     href: "#implementation",
@@ -255,8 +314,25 @@ const hpCtas: CallToAction[] = [
   },
 ];
 
+const educationCtas: CallToAction[] = [
+  {
+    label: "Open loop dossier",
+    href: "#primary-school",
+    variant: "primary",
+  },
+  {
+    label: "Review iteration plan",
+    href: "#iteration",
+    variant: "secondary",
+  },
+];
+
 const sustainabilityCtas: CallToAction[] = [
-  { label: "Open impact map", href: "#sustainability-impact-map", variant: "primary" },
+  {
+    label: "Open impact map",
+    href: "#sustainability-impact-map",
+    variant: "primary",
+  },
   {
     label: "Review readiness",
     href: "#implementation-readiness",
@@ -295,6 +371,13 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
       { label: "Open project story", href: "/description", variant: "primary" },
       { label: "Jump to roadmap", href: "#home-roadmap", variant: "secondary" },
     ],
+  },
+  {
+    name: "Steroid Game",
+    title: "Steroid Tile Atlas",
+    path: "/steroid-tile-atlas",
+    component: SteroidTileAtlas,
+    lead: "A dense interactive tile-elimination game for learning steroid biomanufacturing concepts.",
   },
   {
     name: "Team",
@@ -469,7 +552,15 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Model",
         path: "/model",
         component: Model,
-        lead: "Explain your model's assumptions, data, parameters, and results in a way that anyone could understand.",
+        lead: "Document the Catapro fine-tuning failure, the dry-lab diagnosis behind it, and the next screening route that combines activity prediction, homology analysis, and MD simulation.",
+        summaryBullets: [
+          "Use the April 28 Dry_collection batch as problem-discovery evidence, not final proof.",
+          "Explain why low R2 and data imbalance limited quantitative prediction.",
+          "Show how the failed round reshaped the next dry-lab workflow before wet-lab testing.",
+        ],
+        anchorSections: modelAnchors,
+        heroFigure: modelFigure,
+        ctaLinks: modelCtas,
       },
       {
         name: "Software",
@@ -517,7 +608,15 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Education",
         path: "/education",
         component: Education,
-        lead: "Innovative educational tools and outreach activities have the ability to establish a two-way dialogue with new communities by discussing public values and the science behind synthetic biology.",
+        lead: "Show how primary-school outreach and a bilingual university English Corner turned steroid-related health science into two-way learning.",
+        summaryBullets: [
+          "Use pre/post questionnaires and classroom interaction to locate what each audience understands.",
+          "Translate vitamin D, sunlight, and endocrine rhythms into daily-life examples before pathway detail.",
+          "Carry feedback into clearer vocabulary, more hands-on activities, and reusable outreach materials.",
+        ],
+        anchorSections: educationAnchors,
+        heroFigure: educationFigure,
+        ctaLinks: educationCtas,
       },
       {
         name: "Inclusivity",

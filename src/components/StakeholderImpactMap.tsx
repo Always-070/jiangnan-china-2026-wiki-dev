@@ -44,9 +44,7 @@ export interface StakeholderImpactItem {
   status: StakeholderImpactStatus;
 }
 
-export type StakeholderImpactMapVariant =
-  | "human-practices"
-  | "sustainability";
+export type StakeholderImpactMapVariant = "human-practices" | "sustainability";
 
 interface StakeholderImpactMapProps {
   variant?: StakeholderImpactMapVariant;
@@ -133,7 +131,8 @@ const humanPracticeItems: StakeholderImpactItem[] = [
       {
         label: "Interview note placeholder",
         type: "placeholder",
-        reason: "Reserved until the clinical or pharmacy interview note is finalized.",
+        reason:
+          "Reserved until the clinical or pharmacy interview note is finalized.",
       },
       {
         label: "Results evidence card",
@@ -196,19 +195,24 @@ const humanPracticeItems: StakeholderImpactItem[] = [
   {
     id: "public-education-audience",
     category: "public",
-    stakeholder: "Public / education audience",
-    role: "Accessible explanation and trust-building",
+    stakeholder: "Primary-school and university education audiences",
+    role: "Accessible explanation, feedback, and trust-building",
     insight:
-      "Complex steroid biosynthesis is hard to trust if the explanation is jargon-only or visually disconnected from everyday concerns.",
+      "Vitamin D, sunlight, sleep, stress, and endocrine rhythms are easier entry points than pathway diagrams when audiences first meet steroid-related biology.",
     requirement:
-      "Use plain-language visuals that show why the route matters before asking readers to accept technical pathway details.",
+      "Build education materials around daily habits, hands-on interaction, and bilingual vocabulary support before introducing synthetic biology terms.",
     projectChange:
-      "Home and Description use architecture maps and visual story blocks to make platform logic readable without hiding the science.",
+      "Education now records the questionnaire-to-activity-to-feedback loop and links public questions back to the team's communication requirements.",
     evidence: [
       {
-        label: "Survey / education feedback reserved",
-        type: "placeholder",
-        reason: "Reserved for outreach notes or survey data once collected.",
+        label: "Education activity records",
+        href: "/education#primary-school",
+        type: "survey",
+      },
+      {
+        label: "English Corner feedback loop",
+        href: "/education#english-corner",
+        type: "wiki-section",
       },
       {
         label: "Education page",
@@ -216,7 +220,7 @@ const humanPracticeItems: StakeholderImpactItem[] = [
         type: "wiki-section",
       },
     ],
-    status: "translated",
+    status: "evidence-linked",
   },
   {
     id: "safety-advisor",
@@ -384,7 +388,8 @@ export function StakeholderImpactMap({
   className = "",
 }: StakeholderImpactMapProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const items = variant === "sustainability" ? sustainabilityItems : humanPracticeItems;
+  const items =
+    variant === "sustainability" ? sustainabilityItems : humanPracticeItems;
   const itemsById = useMemo(
     () =>
       items.reduce(
@@ -435,7 +440,9 @@ export function StakeholderImpactMap({
   }, [selectedId, visibleItems]);
 
   const selectedItem = itemsById[selectedId] || visibleItems[0] || items[0];
-  const activeItem = hoveredId ? itemsById[hoveredId] || selectedItem : selectedItem;
+  const activeItem = hoveredId
+    ? itemsById[hoveredId] || selectedItem
+    : selectedItem;
 
   const updateUrlState = (itemId: string, category: FilterCategory) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -458,7 +465,9 @@ export function StakeholderImpactMap({
 
   const selectFilter = (filter: FilterCategory) => {
     const nextItems =
-      filter === "all" ? items : items.filter((item) => item.category === filter);
+      filter === "all"
+        ? items
+        : items.filter((item) => item.category === filter);
     const nextItem = nextItems[0] || items[0];
 
     setActiveFilter(filter);
@@ -705,9 +714,21 @@ function ImpactRow({
         <small>{item.role}</small>
       </div>
       <div className="impact-row-chain">
-        <ChainCell label={copy.insightLabel} tone="insight" text={item.insight} />
-        <ChainCell label="Requirement" tone="requirement" text={item.requirement} />
-        <ChainCell label={copy.changeLabel} tone="change" text={item.projectChange} />
+        <ChainCell
+          label={copy.insightLabel}
+          tone="insight"
+          text={item.insight}
+        />
+        <ChainCell
+          label="Requirement"
+          tone="requirement"
+          text={item.requirement}
+        />
+        <ChainCell
+          label={copy.changeLabel}
+          tone="change"
+          text={item.projectChange}
+        />
         <div className="impact-chain-cell impact-chain-cell-evidence">
           <span>Evidence</span>
           <EvidenceLinks evidence={item.evidence} compact />
@@ -751,7 +772,9 @@ function ImpactDrawer({
         <strong>{categoryLabels[item.category]}</strong>
       </div>
       <div className="impact-drawer-identity">
-        <span className={`impact-drawer-avatar impact-category-${item.category}`}>
+        <span
+          className={`impact-drawer-avatar impact-category-${item.category}`}
+        >
           {categoryShortLabels[item.category]}
         </span>
         <div>
@@ -816,7 +839,11 @@ function MobileImpactCard({
       <ol className="impact-mobile-chain">
         <MobileStep index="1" label={copy.insightLabel} text={item.insight} />
         <MobileStep index="2" label="Requirement" text={item.requirement} />
-        <MobileStep index="3" label={copy.changeLabel} text={item.projectChange} />
+        <MobileStep
+          index="3"
+          label={copy.changeLabel}
+          text={item.projectChange}
+        />
         <li className="impact-mobile-step impact-mobile-evidence">
           <span>4</span>
           <div>
@@ -859,10 +886,7 @@ function EvidenceLinks({
   return (
     <div className={`impact-evidence-list ${compact ? "is-compact" : ""}`}>
       {evidence.map((entry) => (
-        <EvidenceLink
-          key={`${entry.type}-${entry.label}`}
-          evidence={entry}
-        />
+        <EvidenceLink key={`${entry.type}-${entry.label}`} evidence={entry} />
       ))}
     </div>
   );
@@ -879,7 +903,10 @@ function EvidenceLink({ evidence }: { evidence: StakeholderEvidence }) {
 
   if (!evidence.href) {
     return (
-      <span className={chipClass} title={evidence.reason || "Evidence reserved"}>
+      <span
+        className={chipClass}
+        title={evidence.reason || "Evidence reserved"}
+      >
         {evidence.label}
       </span>
     );
@@ -906,7 +933,9 @@ function EvidenceLink({ evidence }: { evidence: StakeholderEvidence }) {
   );
 }
 
-function getCategoryFromParam(value: string | null): StakeholderCategory | null {
+function getCategoryFromParam(
+  value: string | null,
+): StakeholderCategory | null {
   if (!value) {
     return null;
   }

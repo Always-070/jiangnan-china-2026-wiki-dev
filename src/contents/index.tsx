@@ -20,3 +20,4 @@ export { Education } from "./education.tsx";
 export { Inclusivity } from "./inclusivity.tsx";
 export { Sustainability } from "./sustainability.tsx";
 export { StrainPersonality } from "./strain-personality.tsx";
+export { SteroidTileAtlas } from "./steroid-tile-atlas.tsx";

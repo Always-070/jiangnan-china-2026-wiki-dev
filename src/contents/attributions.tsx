@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import attributionData from "./attributions.json";
 
 interface AttributionCategory {
@@ -52,18 +53,32 @@ export function Attributions() {
   const [officialFormRequested, setOfficialFormRequested] = useState(false);
   const [officialFormLoaded, setOfficialFormLoaded] = useState(false);
 
+  const domainEntryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    ledgerData.entries.forEach((entry) => {
+      counts.set(entry.domainId, (counts.get(entry.domainId) ?? 0) + 1);
+    });
+
+    return counts;
+  }, []);
+
   const visibleDomains = useMemo(() => {
     return ledgerData.domains.filter(
       (domain) =>
-        activeCategory === "all" || domain.categoryId === activeCategory,
+        (activeCategory === "all" || domain.categoryId === activeCategory) &&
+        (domainEntryCounts.get(domain.id) ?? 0) > 0,
     );
-  }, [activeCategory]);
+  }, [activeCategory, domainEntryCounts]);
 
   const totalPending = ledgerData.entries.filter(
     (entry) => entry.status === "pending",
   ).length;
   const totalEntries = ledgerData.entries.length;
   const totalDomains = ledgerData.domains.length;
+  const activeDomainCount = ledgerData.domains.filter(
+    (domain) => (domainEntryCounts.get(domain.id) ?? 0) > 0,
+  ).length;
   const totalEvidenceLinks = ledgerData.entries.filter(
     (entry) => entry.evidenceLink,
   ).length;
@@ -99,13 +114,19 @@ export function Attributions() {
             <span className="attribution-eyebrow">Contribution ledger</span>
             <h1>Attributions</h1>
             <p>
-              A transparent, filterable record of team work, external support,
-              and pending documentation for the steroid platform wiki.
+              A transparent, filterable record of imported HP, design, dry-lab,
+              and external-resource contributions for the steroid platform wiki.
             </p>
             <div className="attribution-hero-proof" aria-label="Ledger summary">
-              <HeroMetric label="Domains" value={String(totalDomains)} />
+              <HeroMetric
+                label="Active domains"
+                value={String(activeDomainCount)}
+              />
               <HeroMetric label="Rows" value={String(totalEntries)} />
-              <HeroMetric label="Evidence links" value={String(totalEvidenceLinks)} />
+              <HeroMetric
+                label="Evidence links"
+                value={String(totalEvidenceLinks)}
+              />
             </div>
             <div
               className="attribution-hero-actions"
@@ -131,14 +152,20 @@ export function Attributions() {
           >
             <HeroWorkflowStep label="Source" value="JSON schema" />
             <HeroWorkflowStep label="Ledger" value={`${totalEntries} rows`} />
-            <HeroWorkflowStep label="Evidence" value={`${totalPending} pending`} />
+            <HeroWorkflowStep
+              label="Evidence"
+              value={`${totalPending} pending`}
+            />
             <HeroWorkflowStep label="Submit" value="iGEM form" />
           </div>
           <aside className="ledger-snapshot" aria-label="Ledger snapshot">
             <div className="ledger-snapshot-header">
               <span>Schema preview</span>
-              <strong>{totalDomains} domains mapped</strong>
-              <small>Every row below is rendered from the attribution JSON.</small>
+              <strong>{activeDomainCount} active domains</strong>
+              <small>
+                {totalDomains} schema domains are mapped; empty domains stay
+                hidden until source rows are ready.
+              </small>
             </div>
             <div className="ledger-snapshot-lane" aria-hidden="true">
               <span />
@@ -153,7 +180,7 @@ export function Attributions() {
                 label="Open entries"
                 value={`${totalPending} pending`}
               />
-              <SnapshotItem label="Evidence" value="Links pending" />
+              <SnapshotItem label="Evidence" value="Source archived" />
               <SnapshotItem label="Official form" value="Embedded below" />
             </div>
           </aside>
@@ -165,9 +192,10 @@ export function Attributions() {
           <span>Notion-style view</span>
           <h2>Contribution database</h2>
           <p>
-            Use this section as the readable layer for judges. Replace the
-            placeholders in <code>src/contents/attributions.json</code> with
-            final member data, evidence links, dates, and support notes.
+            This preview imports the May 10 HP sheets, May 6 design table, April
+            28 logo/IP document, and Dry_collection interpretation notes into a
+            judge-readable ledger. Source files remain archived locally for
+            audit.
           </p>
         </div>
 
@@ -295,40 +323,53 @@ function AttributionLedger({
         ))}
       </div>
 
-      <div className="attribution-toggle-stack">
-        {domains.map((domain) => {
-          const domainEntries = entries.filter(
-            (entry) => entry.domainId === domain.id,
-          );
+      {domains.length === 0 ? (
+        <div className="attribution-empty-state">
+          <strong>No imported rows in this category yet.</strong>
+          <span>
+            Source files are still archived locally, and this view will fill in
+            once that category has judge-ready rows.
+          </span>
+        </div>
+      ) : (
+        <div className="attribution-toggle-stack">
+          {domains.map((domain) => {
+            const domainEntries = entries.filter(
+              (entry) => entry.domainId === domain.id,
+            );
 
-          return (
-            <details className="attribution-toggle" key={domain.id} open>
-              <summary>
-                <span className="attribution-toggle-icon" aria-hidden="true" />
-                <span>
-                  <strong>{domain.title}</strong>
-                  <small>{domain.summary}</small>
-                </span>
-                <em>{domainEntries.length} rows</em>
-              </summary>
-              <div className="attribution-toggle-panel">
-                <div>
-                  <div className="attribution-row attribution-row-header">
-                    <span>Name</span>
-                    <span>Role</span>
-                    <span>Status</span>
-                    <span>Contribution</span>
-                    <span>Evidence</span>
+            return (
+              <details className="attribution-toggle" key={domain.id} open>
+                <summary>
+                  <span
+                    className="attribution-toggle-icon"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <strong>{domain.title}</strong>
+                    <small>{domain.summary}</small>
+                  </span>
+                  <em>{domainEntries.length} rows</em>
+                </summary>
+                <div className="attribution-toggle-panel">
+                  <div>
+                    <div className="attribution-row attribution-row-header">
+                      <span>Name</span>
+                      <span>Role</span>
+                      <span>Status</span>
+                      <span>Contribution</span>
+                      <span>Evidence</span>
+                    </div>
+                    {domainEntries.map((entry) => (
+                      <AttributionRow entry={entry} key={entry.id} />
+                    ))}
                   </div>
-                  {domainEntries.map((entry) => (
-                    <AttributionRow entry={entry} key={entry.id} />
-                  ))}
                 </div>
-              </div>
-            </details>
-          );
-        })}
-      </div>
+              </details>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -366,7 +407,7 @@ function AttributionRow({ entry }: { entry: AttributionEntry }) {
       </div>
       <div className="attribution-evidence-cell">
         {hasEvidence ? (
-          <a href={entry.evidenceLink}>{entry.evidenceLabel}</a>
+          <EvidenceLink href={entry.evidenceLink} label={entry.evidenceLabel} />
         ) : (
           <span
             className="attribution-evidence-disabled"
@@ -378,6 +419,18 @@ function AttributionRow({ entry }: { entry: AttributionEntry }) {
         )}
       </div>
     </article>
+  );
+}
+
+function EvidenceLink({ href, label }: { href: string; label: string }) {
+  if (href.startsWith("/")) {
+    return <Link to={href}>{label}</Link>;
+  }
+
+  return (
+    <a href={href} target="_blank" rel="noreferrer">
+      {label}
+    </a>
   );
 }
 

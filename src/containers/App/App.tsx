@@ -53,7 +53,11 @@ const App = () => {
   const currentPath = location.pathname || "/";
 
   const currentPage = pathMapping[currentPath];
-  const immersivePaths = new Set(["/results", "/strain-personality-lab"]);
+  const immersivePaths = new Set([
+    "/results",
+    "/strain-personality-lab",
+    "/steroid-tile-atlas",
+  ]);
   const isImmersivePage = immersivePaths.has(currentPath);
   const showStandardHeader =
     currentPath !== "/" &&
@@ -106,7 +110,7 @@ const App = () => {
                   ) : null}
                   {path === "/" ||
                   path === "/attributions" ||
-                  path === "/strain-personality-lab" ? (
+                  immersivePaths.has(path) ? (
                     <Component />
                   ) : (
                     <div

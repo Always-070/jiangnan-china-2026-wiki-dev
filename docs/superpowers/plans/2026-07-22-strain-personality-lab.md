@@ -17,7 +17,7 @@
 - Create `src/contents/strain-personality-scoring.ts`: normalization, scoring, completion checks, storage keys, and safe session parsing.
 - Create `src/contents/strain-personality-scoring.test.ts`: direct/reverse scoring, midpoint fallback, protocol comparability, incomplete-answer rejection, and stored-session validation.
 - Create `src/contents/strain-personality.tsx`: landing, one-question workspace, dimension/question navigation, result, reset, and local-save feedback.
-- Create `src/contents/strain-personality.css`: English GitHub-light page, approved 2×2 dimension cards, fixed square question numbers, seven-point control, result, responsive states, focus, and reduced motion.
+- Create `src/contents/strain-personality.css`: English GitHub-light page, compact responsive dimension controls, fixed square question numbers, seven-point control, result, responsive states, focus, and reduced motion.
 - Modify `src/contents/index.tsx`: export the new page component.
 - Modify `src/pages.ts`: register `/strain-personality-lab`.
 - Modify `src/components/Navbar.tsx`: add `Strain Lab` near Education.
@@ -35,7 +35,7 @@
 - Resolve an exact dimension mean of `4.00` to `E`, `S`, `T`, or `J`.
 - Do not send answers through `fetch`, forms, analytics, or another network mechanism.
 - Follow the WAI-ARIA button-group approach for dimension and question navigation. Use native buttons with `aria-pressed`/`aria-current`; do not claim a `tablist` pattern without implementing its arrow-key contract.
-- Use fixed 44px square question targets that do not stretch across unused space.
+- Use compact fixed square question targets that do not stretch across unused space; keep the seven response values and primary actions at accessible touch-target sizes.
 
 ---
 
@@ -1480,9 +1480,9 @@ Switch to Full Protocol and verify:
 At 1024px, 768px, and 375px widths verify:
 
 - No horizontal page scrolling.
-- The four dimension cards remain 2×2 at 375px and wider.
+- The four dimension controls form one row at 1024px and wider, and remain 2×2 at 768px and 375px.
 - The question buttons stay square and wrap without stretching.
-- `Lab Note` stacks below the question at 760px and below.
+- `Lab Note` remains a compact summary card; its full glossary opens in a modal dialog instead of extending normal page flow.
 - The seven response buttons remain reachable and readable.
 - The primary action is not hidden behind the global navbar or footer.
 
@@ -1553,3 +1553,577 @@ git log --oneline -5
 ```
 
 Expected: no whitespace errors; only intentional source/spec/plan changes; commits are grouped by scoring, content, UI, integration, and any browser correction.
+
+---
+
+## Compact workspace and glossary dialog follow-up
+
+This section supersedes the original density rules above where they conflict. The approved reference is `C:/Users/LX/AppData/Local/Temp/codex-clipboard-10ff80a1-96a1-4de6-acf6-a2a6f075f92b.png`. It contains no raster artwork, logo, illustration, or non-standard icon to recreate; the relevant visual truth is the white card surface, cool-gray border, blue monospace `LAB NOTE` label, strong term heading, muted explanatory copy, blue detail action, divider, and paired navigation actions.
+
+### Task 7: Establish failing browser acceptance checks
+
+**Files:**
+- Verify before editing: `src/contents/strain-personality.tsx`
+- Verify before editing: `src/contents/strain-personality.css`
+
+- [ ] **Step 1: Start the existing Vite application on a fixed local port**
+
+Run in a dedicated terminal:
+
+```bash
+npm run dev -- --host 127.0.0.1 --port 4173 --strictPort
+```
+
+Expected: Vite serves the existing project at `http://127.0.0.1:4173/` without changing dependencies or configuration.
+
+- [ ] **Step 2: Demonstrate that the current 1024×768 quiz does not meet the one-screen requirement**
+
+Open `http://127.0.0.1:4173/#/strain-personality-lab`, set the browser viewport to `1024×768`, start Full Protocol, and evaluate:
+
+```js
+const actions = document.querySelector(".strain-lab-actions");
+if (!(actions instanceof HTMLElement)) throw new Error("Quiz actions were not rendered");
+const result = {
+  viewportHeight: window.innerHeight,
+  actionsBottom: Math.round(actions.getBoundingClientRect().bottom),
+  fits: actions.getBoundingClientRect().bottom <= window.innerHeight,
+};
+if (!result.fits) throw new Error(`Quiz actions overflow: ${JSON.stringify(result)}`);
+result;
+```
+
+Expected before implementation: FAIL with `Quiz actions overflow` and an `actionsBottom` greater than `viewportHeight`. Record the measured values as RED evidence.
+
+- [ ] **Step 3: Demonstrate that the current glossary interaction is not modal**
+
+Activate `Open the full glossary →`, then evaluate:
+
+```js
+const dialog = document.querySelector("dialog[open]");
+if (!(dialog instanceof HTMLDialogElement)) {
+  throw new Error("Expected an open glossary dialog");
+}
+```
+
+Expected: FAIL with `Expected an open glossary dialog`, proving that the current anchor/details interaction does not satisfy the approved A option.
+
+### Task 8: Implement the accessible glossary dialog
+
+**Files:**
+- Modify: `src/contents/strain-personality.tsx:287-493`
+
+- [ ] **Step 1: Add quiz-local dialog state and a stable trigger reference**
+
+Inside `QuizView`, immediately after the existing `nextUnanswered` calculation, add:
+
+```tsx
+const [glossaryOpen, setGlossaryOpen] = useState(false);
+const glossaryTriggerRef = useRef<HTMLButtonElement>(null);
+```
+
+The state remains local to the quiz view, so opening or closing the glossary cannot mutate protocol, question, or answer state.
+
+- [ ] **Step 2: Replace the Lab Note anchor with a semantic button**
+
+Replace the current Lab Note markup with:
+
+```tsx
+{glossary ? (
+  <aside className="strain-lab-note">
+    <span>LAB NOTE</span>
+    <h2>{glossary.term}</h2>
+    <p>{glossary.explanation}</p>
+    <button
+      ref={glossaryTriggerRef}
+      type="button"
+      className="strain-lab-note-link"
+      onClick={() => setGlossaryOpen(true)}
+    >
+      Open the full glossary →
+    </button>
+  </aside>
+) : null}
+```
+
+- [ ] **Step 3: Add a focused native-dialog component in the same file**
+
+Add this component immediately before `ResultView`:
+
+```tsx
+function GlossaryDialog({
+  open,
+  activeTerm,
+  triggerRef,
+  onRequestClose,
+}: {
+  open: boolean;
+  activeTerm?: string;
+  triggerRef: RefObject<HTMLButtonElement>;
+  onRequestClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  const closeDialog = () => {
+    if (dialogRef.current?.open) dialogRef.current.close();
+    else onRequestClose();
+  };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="strain-lab-dialog"
+      aria-labelledby="strain-lab-dialog-title"
+      onClose={() => {
+        onRequestClose();
+        triggerRef.current?.focus();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) closeDialog();
+      }}
+    >
+      <div className="strain-lab-dialog-panel">
+        <header>
+          <div>
+            <span className="strain-lab-question-meta">LAB GLOSSARY</span>
+            <h2 id="strain-lab-dialog-title">Synthetic biology terms</h2>
+          </div>
+          <button type="button" onClick={closeDialog} aria-label="Close glossary">
+            Close
+          </button>
+        </header>
+        <div className="strain-lab-dialog-list">
+          {Object.values(GLOSSARY).map((entry) => (
+            <article
+              key={entry.term}
+              className={entry.term === activeTerm ? "is-current" : undefined}
+            >
+              <h3>{entry.term}</h3>
+              <p>{entry.explanation}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </dialog>
+  );
+}
+```
+
+- [ ] **Step 4: Render the dialog and remove the in-flow details glossary**
+
+Delete the existing `<details id="strain-lab-glossary">…</details>` block and render this after the question card:
+
+```tsx
+<GlossaryDialog
+  open={glossaryOpen}
+  activeTerm={glossary?.term}
+  triggerRef={glossaryTriggerRef}
+  onRequestClose={() => setGlossaryOpen(false)}
+/>
+```
+
+- [ ] **Step 5: Run TypeScript and lint before styling**
+
+Run:
+
+```bash
+npm run lint
+npx tsc --noEmit
+```
+
+Expected: both commands exit 0. If React's inferred dialog event type rejects the backdrop comparison, type the handler as `React.MouseEvent<HTMLDialogElement>` by importing `type MouseEvent` from React; do not weaken it to `any`.
+
+- [ ] **Step 6: Commit the dialog behavior**
+
+```bash
+git add src/contents/strain-personality.tsx
+git commit -m "feat: open strain glossary in a modal"
+```
+
+### Task 9: Compress the workspace without shrinking core response controls
+
+**Files:**
+- Modify: `src/contents/strain-personality.css:42-75`
+- Modify: `src/contents/strain-personality.css:220-501`
+- Modify: `src/contents/strain-personality.css:564-627`
+
+- [ ] **Step 1: Reduce shell and workspace height**
+
+Apply these desktop values while retaining existing tokens and fonts:
+
+```css
+.strain-lab-topbar {
+  min-height: 50px;
+  padding: 8px clamp(18px, 4vw, 52px);
+}
+
+.strain-lab-workspace {
+  padding: 12px 0 24px;
+}
+```
+
+- [ ] **Step 2: Convert dimension controls to one compact desktop row**
+
+Use:
+
+```css
+.strain-lab-dimensions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.strain-lab-dimensions button {
+  min-height: 52px;
+  padding: 9px 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.strain-lab-dimensions button span,
+.strain-lab-dimensions button em {
+  grid-column: auto;
+  grid-row: auto;
+}
+```
+
+- [ ] **Step 3: Put question numbers and progress in one slim navigator**
+
+Use:
+
+```css
+.strain-lab-navigator {
+  margin-top: 8px;
+  padding: 9px 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 14px;
+  align-items: center;
+}
+
+.strain-lab-question-index {
+  gap: 6px;
+}
+
+.strain-lab-question-index button {
+  width: 36px;
+  height: 36px;
+}
+
+.strain-lab-progress {
+  margin-top: 0;
+}
+```
+
+- [ ] **Step 4: Tighten the active question while keeping `1–7` controls at 44px**
+
+Use:
+
+```css
+.strain-lab-question-card {
+  margin-top: 8px;
+}
+
+.strain-lab-question-grid {
+  display: block;
+}
+
+.strain-lab-question-main {
+  padding: 18px 22px;
+}
+
+.strain-lab-question-main h1 {
+  margin: 7px 0 14px;
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  line-height: 1.25;
+}
+
+.strain-lab-question-main input[type="range"] {
+  margin: 10px 0 7px;
+}
+
+.strain-lab-values button {
+  min-height: 44px;
+}
+
+.strain-lab-actions {
+  padding: 8px 14px;
+}
+```
+
+- [ ] **Step 5: Preserve the reference Lab Note hierarchy in a compact full-width card**
+
+Use:
+
+```css
+.strain-lab-note {
+  padding: 12px 22px;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.35fr) minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 2px 20px;
+  align-items: center;
+  border-top: 1px solid var(--sl-border);
+  border-left: 0;
+  background: var(--sl-bg);
+}
+
+.strain-lab-note h2 {
+  margin: 2px 0 0;
+}
+
+.strain-lab-note p {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
+}
+
+.strain-lab-note-link {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  padding: 8px 0;
+  color: var(--sl-blue);
+  border: 0;
+  background: transparent;
+}
+```
+
+- [ ] **Step 6: Add desktop modal and mobile full-screen styles**
+
+Add:
+
+```css
+.strain-lab-dialog {
+  width: min(760px, calc(100% - 32px));
+  max-height: min(720px, calc(100dvh - 48px));
+  padding: 0;
+  overflow: hidden;
+  color: var(--sl-text);
+  border: 1px solid var(--sl-border);
+  border-radius: 12px;
+  background: white;
+}
+
+.strain-lab-dialog::backdrop {
+  background: rgba(31, 35, 40, 0.48);
+}
+
+.strain-lab-dialog-panel {
+  max-height: inherit;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.strain-lab-dialog-panel > header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--sl-border);
+}
+
+.strain-lab-dialog-panel h2,
+.strain-lab-dialog-list h3 {
+  margin: 0;
+}
+
+.strain-lab-dialog-list {
+  padding: 16px 20px 22px;
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+}
+
+.strain-lab-dialog-list article {
+  padding: 13px 14px;
+  border: 1px solid var(--sl-border);
+  border-radius: 9px;
+  background: var(--sl-bg);
+}
+
+.strain-lab-dialog-list article.is-current {
+  border-color: #54aeff;
+  background: var(--sl-blue-soft);
+}
+
+@media (max-width: 900px) {
+  .strain-lab-dimensions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .strain-lab-navigator {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .strain-lab-note {
+    grid-template-columns: 1fr;
+  }
+
+  .strain-lab-note p,
+  .strain-lab-note-link {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .strain-lab-dialog {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+}
+```
+
+- [ ] **Step 7: Run quality checks and commit the compact layout**
+
+Run:
+
+```bash
+npm run lint
+npm run build
+```
+
+Expected: lint exits 0; TypeScript and Vite build succeed. The existing Vite chunk-size warning is acceptable.
+
+Then commit:
+
+```bash
+git add src/contents/strain-personality.css
+git commit -m "style: compact the strain quiz workspace"
+```
+
+### Task 10: Prove the interaction, fit, and responsive design
+
+**Files:**
+- Create after user-approved execution: `design-qa.md`
+- Capture: `output/playwright/strain-personality-compact-1024x768.png`
+- Capture: `output/playwright/strain-personality-glossary-1024x768.png`
+- Capture: `output/playwright/strain-personality-compact-375x812.png`
+- Modify if a P0/P1/P2 issue is found: `src/contents/strain-personality.tsx`
+- Modify if a P0/P1/P2 issue is found: `src/contents/strain-personality.css`
+
+- [ ] **Step 1: Re-run the two RED checks as GREEN checks**
+
+At `1024×768`, start Full Protocol and verify:
+
+```js
+const actions = document.querySelector(".strain-lab-actions");
+if (!(actions instanceof HTMLElement)) throw new Error("Quiz actions were not rendered");
+const bottom = actions.getBoundingClientRect().bottom;
+if (bottom > window.innerHeight) {
+  throw new Error(`Quiz actions overflow: ${Math.round(bottom)} > ${window.innerHeight}`);
+}
+```
+
+Expected: PASS with the full action footer visible before vertical scrolling.
+
+Open the glossary and verify:
+
+```js
+const dialog = document.querySelector("dialog[open]");
+if (!(dialog instanceof HTMLDialogElement)) throw new Error("Glossary dialog is not open");
+if (document.body.style.overflow !== "hidden") throw new Error("Background scroll is not locked");
+```
+
+Expected: PASS.
+
+- [ ] **Step 2: Verify dialog exit paths and state preservation**
+
+Record the active question ID and selected response, then test close button, `Escape`, and backdrop close. After each path confirm:
+
+```js
+const current = document.querySelector(".strain-lab-question-index .is-current");
+const selected = document.querySelector(".strain-lab-values .is-selected");
+({
+  question: current?.getAttribute("aria-label"),
+  answer: selected?.textContent?.trim(),
+  dialogOpen: Boolean(document.querySelector("dialog[open]")),
+});
+```
+
+Expected: question and answer remain unchanged, `dialogOpen` is `false`, and focus returns to `Open the full glossary →`.
+
+- [ ] **Step 3: Verify mobile full-screen behavior and overflow**
+
+At `375×812`, verify the dialog bounds and page width:
+
+```js
+const dialog = document.querySelector("dialog[open]");
+if (!(dialog instanceof HTMLDialogElement)) throw new Error("Glossary dialog is not open");
+const bounds = dialog.getBoundingClientRect();
+if (Math.abs(bounds.width - window.innerWidth) > 1 || Math.abs(bounds.height - window.innerHeight) > 1) {
+  throw new Error(`Dialog is not full screen: ${JSON.stringify(bounds.toJSON())}`);
+}
+if (document.documentElement.scrollWidth > window.innerWidth) {
+  throw new Error("Horizontal overflow detected");
+}
+```
+
+Expected: PASS; response values remain readable and the page has no horizontal scroll.
+
+- [ ] **Step 4: Run screenshot-based design QA against the supplied reference**
+
+Open the supplied reference and the focused implementation capture in the same comparison view. Review typography, spacing/rhythm, GitHub-light color tokens, absence of missing image assets, copy, borders, radii, dialog states, and responsive behavior. Write `design-qa.md` with:
+
+```md
+# Strain Personality Compact Workspace Design QA
+
+- Source visual truth: C:/Users/LX/AppData/Local/Temp/codex-clipboard-10ff80a1-96a1-4de6-acf6-a2a6f075f92b.png
+- Implementation screenshots: output/playwright/strain-personality-compact-1024x768.png; output/playwright/strain-personality-glossary-1024x768.png; output/playwright/strain-personality-compact-375x812.png
+- Source pixels: 781×351
+- Implementation pixels: record each captured image's exact dimensions after capture
+- Desktop viewport: 1024×768 CSS px, device scale factor 1
+- Mobile viewport: 375×812 CSS px, device scale factor 1
+- Density normalization: compare CSS-pixel captures at device scale factor 1; crop the focused Lab Note region without rescaling
+- State: Full Protocol question with Lab Note; glossary open and closed
+- Full-view comparison evidence: describe hierarchy, density, and one-screen fit
+- Focused-region comparison evidence: compare the Lab Note region directly with the source
+- Findings: list P0/P1/P2/P3 items or state that none remain
+- Comparison history: list every P0/P1/P2 fix and its post-fix evidence
+- Primary interactions: open, close button, Escape, backdrop, question/answer preservation
+- Console: state the observed error count
+final result: passed
+```
+
+If any P0/P1/P2 issue remains, set `Final result: blocked`, fix it, recapture at the same state and viewport, append the comparison history, and repeat until the exact final line is `Final result: passed`.
+
+- [ ] **Step 5: Complete three consecutive verification rounds**
+
+For each round run, in order:
+
+```bash
+node --experimental-strip-types --test src/contents/strain-personality-data.test.ts src/contents/strain-personality-scoring.test.ts src/contents/steroid-tile-atlas-game.test.ts
+npm run lint
+VITE_BASE_PATH=/jiangnan-china-2026-wiki-dev/ VITE_ROUTER_MODE=hash npm run build
+```
+
+Expected per round: 41 tests pass, lint exits 0, and the production build succeeds with only the existing chunk-size warning. Any failure resets the consecutive count after repair.
+
+- [ ] **Step 6: Commit the QA evidence and any final corrections**
+
+```bash
+git add design-qa.md src/contents/strain-personality.tsx src/contents/strain-personality.css
+git commit -m "test: verify compact strain quiz experience"
+```
+
+Do not stage `.playwright-cli/` or unrelated workspace files. Push or redeploy only after the user reviews the verified local page or explicitly requests immediate publication.

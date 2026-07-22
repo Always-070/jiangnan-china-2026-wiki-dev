@@ -39,17 +39,17 @@ The page avoids unsupported MBTI market statistics and does not present the quiz
 
 ### 2. Question workspace
 
-The workspace keeps the visitor oriented without recreating four large cards:
+The workspace keeps the visitor oriented using the previously approved card-and-index layout:
 
-- A compact four-segment dimension bar occupies one row on desktop and a two-by-two grid on narrow screens.
-- Each segment shows the letter pair, a short English label, and `answered / total` for that dimension.
-- The active segment uses a blue inset indicator and selected background; the state is not communicated by color alone.
-- A compact question-number grid appears immediately below. Full Protocol shows `01–16`; Quick Assay shows `01–07`.
+- Four clear dimension cards form a two-by-two grid. Each card shows the letter pair, a short English label, and `answered / total` for that dimension.
+- The active card uses a blue outline and selected background; the state is not communicated by color alone.
+- A separate question navigator appears immediately below. Full Protocol shows `01–16`; Quick Assay shows `01–07`.
+- Question-number buttons use a fixed square size and natural wrapping. They do not stretch to fill the entire row.
 - Completed, current, and unanswered questions have distinct text, border, and background treatments.
-- Overall progress shares the same compact control surface instead of occupying a separate tall card.
+- Overall progress sits beneath the question numbers within the same navigator card, matching the approved previous visual version.
 - No live personality score is shown during the quiz, avoiding answer bias.
 
-All interactive controls keep a minimum 44px target. Desktop question numbers remain on one row when space permits; smaller widths wrap to eight or four columns without horizontal scrolling.
+Question-number controls retain a 44px square target without becoming full-width buttons. The grid leaves intentional whitespace after the last number and wraps naturally without horizontal scrolling.
 
 ### 3. One-question view
 
@@ -155,8 +155,8 @@ Only one primary action appears in each screen state. State changes use 150–25
 ## Responsive and accessible behavior
 
 - Test widths: 375px, 768px, 1024px, and 1440px.
-- Four dimension segments: four columns on desktop, two-by-two on phones.
-- Question number grid: sixteen columns when space allows, eight columns on tablets, four columns on narrow phones.
+- Four dimension cards: a stable two-by-two grid at normal desktop, tablet, and phone widths; fall back to one column only when the viewport cannot preserve readable labels.
+- Question number grid: fixed 44px square buttons in an auto-wrapping row; buttons never stretch to consume unused width.
 - `Lab Note`: right column on desktop, stacked below the question on smaller screens.
 - All buttons and scale values have at least 44px hit areas and visible focus rings.
 - Dimension and question controls expose `aria-current` or `aria-pressed` states.

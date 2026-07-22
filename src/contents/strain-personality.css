@@ -40,8 +40,8 @@
 }
 
 .strain-lab-topbar {
-  min-height: 62px;
-  padding: 12px clamp(18px, 4vw, 52px);
+  min-height: 50px;
+  padding: 8px clamp(18px, 4vw, 52px);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -72,6 +72,10 @@
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: clamp(28px, 5vw, 64px) 0;
+}
+
+.strain-lab-workspace {
+  padding: 12px 0 24px;
 }
 
 .strain-lab-hero {
@@ -219,15 +223,16 @@
 
 .strain-lab-dimensions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .strain-lab-dimensions button {
-  min-height: 86px;
-  padding: 16px 18px;
+  min-height: 52px;
+  padding: 9px 12px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
   align-items: center;
   text-align: left;
   color: var(--sl-text);
@@ -241,13 +246,17 @@
 }
 
 .strain-lab-dimensions button span {
-  grid-column: 1;
+  grid-column: auto;
   color: var(--sl-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
 }
 
 .strain-lab-dimensions button em {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-column: auto;
+  grid-row: auto;
   font: 700 0.82rem ui-monospace, SFMono-Regular, Consolas, monospace;
   font-style: normal;
 }
@@ -259,8 +268,12 @@
 }
 
 .strain-lab-navigator {
-  margin-top: 16px;
-  padding: 18px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 14px;
+  align-items: center;
   border: 1px solid var(--sl-border);
   border-radius: 12px;
   background: white;
@@ -269,12 +282,12 @@
 .strain-lab-question-index {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .strain-lab-question-index button {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   color: var(--sl-muted);
   border: 1px solid var(--sl-border);
@@ -300,7 +313,7 @@
 }
 
 .strain-lab-progress {
-  margin-top: 18px;
+  margin-top: 0;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 7px;
@@ -339,7 +352,7 @@
 }
 
 .strain-lab-question-card {
-  margin-top: 16px;
+  margin-top: 8px;
   overflow: hidden;
   border: 1px solid var(--sl-border);
   border-radius: 12px;
@@ -347,19 +360,18 @@
 }
 
 .strain-lab-question-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  display: block;
 }
 
 .strain-lab-question-main {
-  padding: clamp(24px, 4vw, 42px);
+  padding: 18px 22px;
 }
 
 .strain-lab-question-main h1 {
-  margin: 12px 0 28px;
+  margin: 7px 0 14px;
   max-width: 820px;
-  font-size: clamp(1.45rem, 2.6vw, 2.25rem);
-  line-height: 1.35;
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  line-height: 1.25;
 }
 
 .strain-lab-question-main h1:focus,
@@ -385,7 +397,7 @@
 
 .strain-lab-question-main input[type="range"] {
   width: 100%;
-  margin: 16px 0 12px;
+  margin: 10px 0 7px;
   accent-color: var(--sl-blue);
 }
 
@@ -415,23 +427,38 @@
 }
 
 .strain-lab-note {
-  padding: 28px 22px;
-  border-left: 1px solid var(--sl-border);
-  background: linear-gradient(180deg, var(--sl-bg), white);
+  padding: 12px 22px;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.35fr) minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 2px 20px;
+  align-items: center;
+  border-top: 1px solid var(--sl-border);
+  background: var(--sl-bg);
 }
 
 .strain-lab-note h2 {
-  margin: 10px 0 7px;
+  margin: 2px 0 0;
   font-size: 1.2rem;
 }
 
 .strain-lab-note p {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
   color: var(--sl-muted);
   line-height: 1.55;
 }
 
-.strain-lab-note a {
+.strain-lab-note-link {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  padding: 8px 0;
   color: var(--sl-blue);
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .strain-lab-save-notice {
@@ -442,7 +469,8 @@
 }
 
 .strain-lab-actions {
-  padding: 13px 18px;
+  margin-top: 0;
+  padding: 8px 14px;
   display: flex;
   gap: 10px;
   border-top: 1px solid var(--sl-border);
@@ -462,40 +490,72 @@
   margin-left: auto;
 }
 
-.strain-lab-glossary {
-  margin-top: 16px;
-  padding: 18px;
+.strain-lab-dialog {
+  width: min(760px, calc(100% - 32px));
+  max-height: min(720px, calc(100dvh - 48px));
+  padding: 0;
+  overflow: hidden;
+  color: var(--sl-text);
   border: 1px solid var(--sl-border);
   border-radius: 12px;
   background: white;
 }
 
-.strain-lab-glossary summary {
-  cursor: pointer;
+.strain-lab-dialog::backdrop {
+  background: rgba(31, 35, 40, 0.48);
+}
+
+.strain-lab-dialog-panel {
+  max-height: inherit;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.strain-lab-dialog-panel > header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--sl-border);
+}
+
+.strain-lab-dialog-panel > header h2,
+.strain-lab-dialog-list h3 {
+  margin: 0;
+}
+
+.strain-lab-dialog-close {
+  min-height: 40px;
+  padding: 0 14px;
+  color: var(--sl-text);
+  border: 1px solid var(--sl-border);
+  border-radius: 7px;
+  background: var(--sl-bg);
   font-weight: 700;
 }
 
-.strain-lab-glossary > div {
-  margin-top: 14px;
+.strain-lab-dialog-list {
+  padding: 16px 20px 22px;
+  overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
-.strain-lab-glossary article {
-  padding: 14px;
+.strain-lab-dialog-list article {
+  padding: 13px 14px;
   border: 1px solid var(--sl-border);
   border-radius: 9px;
   background: var(--sl-bg);
 }
 
-.strain-lab-glossary h2 {
-  margin: 0 0 6px;
-  font-size: 1rem;
+.strain-lab-dialog-list article.is-current {
+  border-color: #54aeff;
+  background: var(--sl-blue-soft);
 }
 
-.strain-lab-glossary p {
-  margin: 0;
+.strain-lab-dialog-list p {
+  margin: 5px 0 0;
   color: var(--sl-muted);
   line-height: 1.5;
 }
@@ -561,14 +621,23 @@
   background: white;
 }
 
+@media (max-width: 900px) {
+  .strain-lab-dimensions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .strain-lab-navigator {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 760px) {
   .strain-lab-private {
     display: none;
   }
 
   .strain-lab-hero,
-  .strain-lab-protocols,
-  .strain-lab-question-grid {
+  .strain-lab-protocols {
     grid-template-columns: 1fr;
   }
 
@@ -582,17 +651,28 @@
   }
 
   .strain-lab-dimensions button {
-    min-height: 78px;
-    padding: 12px;
+    min-height: 58px;
+    padding: 10px;
   }
 
   .strain-lab-note {
-    border-top: 1px solid var(--sl-border);
-    border-left: 0;
+    grid-template-columns: 1fr;
   }
 
-  .strain-lab-glossary > div {
-    grid-template-columns: 1fr;
+  .strain-lab-note p,
+  .strain-lab-note-link {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .strain-lab-dialog {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
   }
 
   .strain-lab-actions {

@@ -524,7 +524,16 @@ function GlossaryDialog({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      dialogRef.current?.close();
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
     return () => {
+      document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = previousOverflow;
     };
   }, [open]);

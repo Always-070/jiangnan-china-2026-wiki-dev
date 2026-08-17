@@ -1,15 +1,16 @@
-import type {
-  DimensionId,
-  PersonalityType,
-  Pole,
-  ProtocolId,
-  StrainQuestion,
+import {
+  DIMENSIONS,
+  type DimensionId,
+  type Locale,
+  type PersonalityType,
+  type Pole,
+  type StrainQuestion,
 } from "./strain-personality-data.ts";
 
 export type QuizAnswers = Record<string, number>;
 
 export interface QuizSession {
-  protocol: ProtocolId;
+  version: 2;
   currentQuestionId: string;
   answers: QuizAnswers;
 }
@@ -18,39 +19,25 @@ export interface DimensionScore {
   dimension: DimensionId;
   highPole: Pole;
   lowPole: Pole;
-  mean: number;
+  total: number;
   letter: Pole;
   strength: number;
   highPolePercent: number;
+  usedTieBreak: boolean;
 }
 
 export interface QuizResult {
   type: PersonalityType;
-  dimensions: Partial<Record<DimensionId, DimensionScore>>;
+  dimensions: Record<DimensionId, DimensionScore>;
 }
 
-const DIMENSION_POLES: Record<DimensionId, { high: Pole; low: Pole }> = {
-  EI: { high: "E", low: "I" },
-  SN: { high: "S", low: "N" },
-  TF: { high: "T", low: "F" },
-  JP: { high: "J", low: "P" },
-};
+const MIDPOINT = 20;
+const MIN_DIMENSION_SCORE = 8;
+const MAX_DIMENSION_SCORE = 32;
 
-const DIMENSION_ORDER: DimensionId[] = ["EI", "SN", "TF", "JP"];
-
-export function normalizeAnswer(
-  answer: number,
-  pole: Pole,
-  dimension: DimensionId,
-) {
+export function normalizeAnswer(answer: number, reversed: boolean) {
   assertAnswer(answer);
-  const { high, low } = DIMENSION_POLES[dimension];
-
-  if (pole !== high && pole !== low) {
-    throw new Error(`Pole ${pole} does not belong to ${dimension}`);
-  }
-
-  return pole === high ? answer : 8 - answer;
+  return reversed ? 5 - answer : answer;
 }
 
 export function isQuizComplete(
@@ -68,59 +55,76 @@ export function scoreQuiz(
     throw new Error("Complete every question before scoring");
   }
 
-  const dimensions: Partial<Record<DimensionId, DimensionScore>> = {};
+  const dimensions = {} as Record<DimensionId, DimensionScore>;
 
-  for (const dimension of DIMENSION_ORDER) {
+  for (const dimension of DIMENSIONS) {
     const dimensionQuestions = questions.filter(
-      (question) => question.dimension === dimension,
+      (question) => question.dimension === dimension.id,
     );
-
     if (!dimensionQuestions.length) {
-      continue;
+      throw new Error(`Dimension ${dimension.id} has no questions`);
     }
 
-    const sum = dimensionQuestions.reduce(
-      (total, question) =>
-        total +
-        normalizeAnswer(answers[question.id], question.pole, dimension),
+    const total = dimensionQuestions.reduce(
+      (sum, question) =>
+        sum + normalizeAnswer(answers[question.id], question.reversed),
       0,
     );
-    const mean = sum / dimensionQuestions.length;
-    const { high, low } = DIMENSION_POLES[dimension];
+    const usedTieBreak = total === MIDPOINT;
+    const tieBreakQuestion = dimensionQuestions.find(
+      (question) => question.id === dimension.tieBreakQuestionId,
+    );
+    if (!tieBreakQuestion) {
+      throw new Error(`Tie-break question is missing for ${dimension.id}`);
+    }
 
-    dimensions[dimension] = {
-      dimension,
-      highPole: high,
-      lowPole: low,
-      mean,
-      letter: mean >= 4 ? high : low,
-      strength: Math.round((Math.abs(mean - 4) / 3) * 100),
-      highPolePercent: Math.round(((mean - 1) / 6) * 100),
+    const letter =
+      total > MIDPOINT ||
+      (usedTieBreak && answers[tieBreakQuestion.id] >= 3)
+        ? dimension.highPole
+        : dimension.lowPole;
+
+    dimensions[dimension.id] = {
+      dimension: dimension.id,
+      highPole: dimension.highPole,
+      lowPole: dimension.lowPole,
+      total,
+      letter,
+      strength: Math.round(
+        (Math.abs(total - MIDPOINT) /
+          (MAX_DIMENSION_SCORE - MIDPOINT)) *
+          100,
+      ),
+      highPolePercent: Math.round(
+        ((total - MIN_DIMENSION_SCORE) /
+          (MAX_DIMENSION_SCORE - MIN_DIMENSION_SCORE)) *
+          100,
+      ),
+      usedTieBreak,
     };
   }
 
-  const type = DIMENSION_ORDER.map(
-    (dimension) => dimensions[dimension]?.letter || "",
+  const type = DIMENSIONS.map(
+    (dimension) => dimensions[dimension.id].letter,
   ).join("") as PersonalityType;
 
   return { type, dimensions };
 }
 
-export function storageKeyFor(protocol: ProtocolId) {
-  return `strain-personality-lab:${protocol}:v1`;
+export function sessionStorageKey() {
+  return "strain-personality-lab:session:v2";
 }
 
-export function activeProtocolStorageKey() {
-  return "strain-personality-lab:active-protocol:v1";
+export function localeStorageKey() {
+  return "strain-personality-lab:locale:v2";
 }
 
-export function parseStoredProtocol(raw: string | null): ProtocolId | null {
-  return raw === "quick" || raw === "full" ? raw : null;
+export function parseStoredLocale(raw: string | null): Locale | null {
+  return raw === "zh-CN" || raw === "en" ? raw : null;
 }
 
 export function parseStoredSession(
   raw: string | null,
-  protocol: ProtocolId,
   questions: StrainQuestion[],
 ): QuizSession | null {
   if (!raw) {
@@ -132,7 +136,7 @@ export function parseStoredSession(
     const validIds = new Set(questions.map((question) => question.id));
 
     if (
-      parsed.protocol !== protocol ||
+      parsed.version !== 2 ||
       typeof parsed.currentQuestionId !== "string" ||
       !validIds.has(parsed.currentQuestionId) ||
       !parsed.answers ||
@@ -141,10 +145,8 @@ export function parseStoredSession(
       return null;
     }
 
-    const entries = Object.entries(parsed.answers);
     const answers: QuizAnswers = {};
-
-    for (const [id, answer] of entries) {
+    for (const [id, answer] of Object.entries(parsed.answers)) {
       if (!validIds.has(id) || !isAnswer(answer)) {
         return null;
       }
@@ -152,7 +154,7 @@ export function parseStoredSession(
     }
 
     return {
-      protocol,
+      version: 2,
       currentQuestionId: parsed.currentQuestionId,
       answers,
     };
@@ -162,11 +164,11 @@ export function parseStoredSession(
 }
 
 function isAnswer(value: unknown): value is number {
-  return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 7;
+  return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 4;
 }
 
 function assertAnswer(answer: number) {
   if (!isAnswer(answer)) {
-    throw new Error(`Answer ${answer} must be an integer from 1 to 7`);
+    throw new Error(`Answer ${answer} must be an integer from 1 to 4`);
   }
 }

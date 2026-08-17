@@ -3,295 +3,331 @@ import "./strain-personality.css";
 import {
   DIMENSIONS,
   GLOSSARY,
-  PROTOCOLS,
-  QUESTIONS_BY_PROTOCOL,
+  LANGUAGE_OPTIONS,
+  QINGLAN_COVER_IMAGE,
+  QINGLAN_INTRO,
+  QUESTIONS,
+  QUIZ_META,
   RESULT_PROFILES,
+  SCALE_OPTIONS,
+  UI_COPY,
+  textFor,
   type DimensionId,
-  type ProtocolId,
+  type Locale,
+  type LocalizedText,
+  type ScaleValue,
   type StrainQuestion,
 } from "./strain-personality-data.ts";
 import {
-  activeProtocolStorageKey,
   isQuizComplete,
+  localeStorageKey,
+  parseStoredLocale,
   parseStoredSession,
-  parseStoredProtocol,
   scoreQuiz,
-  storageKeyFor,
+  sessionStorageKey,
   type QuizAnswers,
+  type QuizSession,
 } from "./strain-personality-scoring.ts";
 
 type View = "landing" | "quiz" | "result";
 
-function readInitialProtocol(): ProtocolId {
+interface InitialState {
+  session: QuizSession | null;
+  storageAvailable: boolean;
+}
+
+function readInitialState(): InitialState {
   try {
-    return parseStoredProtocol(
-      window.localStorage.getItem(activeProtocolStorageKey()),
-    ) || "full";
+    return {
+      session: parseStoredSession(
+        window.localStorage.getItem(sessionStorageKey()),
+        QUESTIONS,
+      ),
+      storageAvailable: true,
+    };
   } catch {
-    return "full";
+    return { session: null, storageAvailable: false };
   }
 }
 
+function readInitialLocale(): Locale {
+  try {
+    const stored = parseStoredLocale(
+      window.localStorage.getItem(localeStorageKey()),
+    );
+    if (stored) return stored;
+  } catch {
+    // The selected locale still works for this tab if storage is unavailable.
+  }
+
+  return navigator.language.toLowerCase().startsWith("en") ? "en" : "zh-CN";
+}
+
 export function StrainPersonality() {
-  const [protocol, setProtocol] = useState<ProtocolId>(readInitialProtocol);
+  const [initialState] = useState(readInitialState);
+  const [locale, setLocale] = useState<Locale>(readInitialLocale);
   const [view, setView] = useState<View>("landing");
-  const [answers, setAnswers] = useState<QuizAnswers>({});
-  const [currentQuestionId, setCurrentQuestionId] = useState("");
-  const [saveNotice, setSaveNotice] = useState("");
+  const [answers, setAnswers] = useState<QuizAnswers>(
+    initialState.session?.answers ?? {},
+  );
+  const [currentQuestionId, setCurrentQuestionId] = useState(
+    initialState.session?.currentQuestionId ?? QUESTIONS[0].id,
+  );
+  const [storageAvailable, setStorageAvailable] = useState(
+    initialState.storageAvailable,
+  );
   const questionHeadingRef = useRef<HTMLHeadingElement>(null);
   const resultHeadingRef = useRef<HTMLHeadingElement>(null);
-  const questions = QUESTIONS_BY_PROTOCOL[protocol];
   const currentQuestion =
-    questions.find((question) => question.id === currentQuestionId) || questions[0];
+    QUESTIONS.find((question) => question.id === currentQuestionId) ?? QUESTIONS[0];
   const activeDimension = currentQuestion.dimension;
-  const dimensionQuestions = questions.filter(
+  const dimensionQuestions = QUESTIONS.filter(
     (question) => question.dimension === activeDimension,
   );
-  const answeredCount = questions.filter((question) => answers[question.id]).length;
-  const complete = isQuizComplete(questions, answers);
+  const answeredCount = QUESTIONS.filter(
+    (question) => answers[question.id],
+  ).length;
+  const complete = isQuizComplete(QUESTIONS, answers);
 
   useEffect(() => {
-    let stored = null;
-
+    document.documentElement.lang = locale;
     try {
-      stored = parseStoredSession(
-        window.localStorage.getItem(storageKeyFor(protocol)),
-        protocol,
-        questions,
-      );
+      window.localStorage.setItem(localeStorageKey(), locale);
     } catch {
-      setSaveNotice("Progress is available in this tab but local storage is unavailable.");
+      setStorageAvailable(false);
     }
-
-    setAnswers(stored?.answers || {});
-    setCurrentQuestionId(stored?.currentQuestionId || questions[0].id);
-    setView("landing");
-  }, [protocol, questions]);
+  }, [locale]);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(activeProtocolStorageKey(), protocol);
-    } catch {
-      setSaveNotice("Progress is available in this tab but could not be saved locally.");
-    }
-  }, [protocol]);
-
-  useEffect(() => {
-    if (!currentQuestionId) {
-      return;
-    }
-
-    if (!questions.some((question) => question.id === currentQuestionId)) {
-      return;
-    }
-
     try {
       window.localStorage.setItem(
-        storageKeyFor(protocol),
-        JSON.stringify({ protocol, currentQuestionId, answers }),
+        sessionStorageKey(),
+        JSON.stringify({
+          version: 2,
+          currentQuestionId,
+          answers,
+        } satisfies QuizSession),
       );
-      setSaveNotice("");
     } catch {
-      setSaveNotice("Progress is available in this tab but could not be saved locally.");
+      setStorageAvailable(false);
     }
-  }, [answers, currentQuestionId, protocol, questions]);
+  }, [answers, currentQuestionId]);
 
   useEffect(() => {
-    if (view === "quiz") {
-      questionHeadingRef.current?.focus();
-    }
-    if (view === "result") {
-      resultHeadingRef.current?.focus();
-    }
+    if (view === "quiz") questionHeadingRef.current?.focus();
+    if (view === "result") resultHeadingRef.current?.focus();
   }, [currentQuestionId, view]);
 
   const result = useMemo(
-    () => (view === "result" && complete ? scoreQuiz(questions, answers) : null),
-    [answers, complete, questions, view],
+    () => (view === "result" && complete ? scoreQuiz(QUESTIONS, answers) : null),
+    [answers, complete, view],
   );
 
-  function startQuiz() {
-    if (!currentQuestionId) {
-      const firstUnanswered = questions.find((question) => !answers[question.id]);
-      setCurrentQuestionId(firstUnanswered?.id || questions[0].id);
-    }
-    setView("quiz");
-  }
-
   function chooseDimension(dimension: DimensionId) {
-    const candidates = questions.filter((question) => question.dimension === dimension);
-    const target = candidates.find((question) => !answers[question.id]) || candidates[0];
+    const candidates = QUESTIONS.filter(
+      (question) => question.dimension === dimension,
+    );
+    const target =
+      candidates.find((question) => !answers[question.id]) ?? candidates[0];
     setCurrentQuestionId(target.id);
   }
 
   function moveBy(delta: number) {
-    const index = questions.findIndex((question) => question.id === currentQuestion.id);
-    const target = questions[Math.min(Math.max(index + delta, 0), questions.length - 1)];
+    const index = QUESTIONS.findIndex(
+      (question) => question.id === currentQuestion.id,
+    );
+    const target =
+      QUESTIONS[Math.min(Math.max(index + delta, 0), QUESTIONS.length - 1)];
     setCurrentQuestionId(target.id);
   }
 
-  function resetProtocol() {
-    if (!window.confirm(`Clear all ${PROTOCOLS[protocol].name} answers?`)) {
-      return;
-    }
+  function resetQuiz() {
+    if (!window.confirm(textFor(UI_COPY.resetConfirm, locale))) return;
 
     try {
-      window.localStorage.removeItem(storageKeyFor(protocol));
+      window.localStorage.removeItem(sessionStorageKey());
     } catch {
-      setSaveNotice("The local copy could not be removed, but this tab has been reset.");
+      setStorageAvailable(false);
     }
 
     setAnswers({});
-    setCurrentQuestionId(questions[0].id);
+    setCurrentQuestionId(QUESTIONS[0].id);
     setView("landing");
   }
 
   return (
     <main className="strain-lab">
-      <header className="strain-lab-topbar">
-        <span className="strain-lab-mark" aria-hidden="true">
-          Y
-        </span>
-        <strong>Strain Personality Lab</strong>
-        <span className="strain-lab-private">LOCAL ONLY · NO ANSWERS UPLOADED</span>
-      </header>
+      <TopBar locale={locale} onLocaleChange={setLocale} />
 
       {view === "landing" ? (
         <Landing
-          protocol={protocol}
+          locale={locale}
           answeredCount={answeredCount}
-          onProtocolChange={setProtocol}
-          onStart={startQuiz}
+          onStart={() => setView("quiz")}
         />
       ) : null}
 
       {view === "quiz" ? (
         <QuizWorkspace
-          questions={questions}
+          locale={locale}
           answers={answers}
           currentQuestion={currentQuestion}
           dimensionQuestions={dimensionQuestions}
           activeDimension={activeDimension}
           answeredCount={answeredCount}
-          saveNotice={saveNotice}
+          storageAvailable={storageAvailable}
           headingRef={questionHeadingRef}
+          onLocaleChange={setLocale}
           onChooseDimension={chooseDimension}
           onChooseQuestion={setCurrentQuestionId}
           onAnswer={(answer) =>
-            setAnswers((current) => ({ ...current, [currentQuestion.id]: answer }))
+            setAnswers((current) => ({
+              ...current,
+              [currentQuestion.id]: answer,
+            }))
           }
           onPrevious={() => moveBy(-1)}
           onNext={() => moveBy(1)}
           onResult={() => setView("result")}
-          onReset={resetProtocol}
+          onReset={resetQuiz}
         />
       ) : null}
 
       {view === "result" && result ? (
         <ResultView
-          protocol={protocol}
+          locale={locale}
           result={result}
           headingRef={resultHeadingRef}
           onReview={() => setView("quiz")}
-          onReset={resetProtocol}
-          onProtocols={() => setView("landing")}
+          onReset={resetQuiz}
+          onHome={() => setView("landing")}
         />
       ) : null}
     </main>
   );
 }
 
-function Landing({
-  protocol,
-  answeredCount,
-  onProtocolChange,
-  onStart,
+function TopBar({
+  locale,
+  onLocaleChange,
 }: {
-  protocol: ProtocolId;
-  answeredCount: number;
-  onProtocolChange: (protocol: ProtocolId) => void;
-  onStart: () => void;
+  locale: Locale;
+  onLocaleChange: (locale: Locale) => void;
 }) {
   return (
-    <section className="strain-lab-landing">
-      <div className="strain-lab-hero">
-        <div>
-          <span className="strain-lab-eyebrow">Find your microbial type</span>
-          <h1>Which strain personality runs your cell factory?</h1>
-          <p>
-            Enter a <em>Yarrowia lipolytica</em> 7-DHC cell factory and explore how you
-            collaborate, read data, make trade-offs, and organize experiments.
-          </p>
-        </div>
-        <aside>
-          <strong>A creative learning metaphor</strong>
-          <p>
-            Microorganisms do not possess human personality traits, and this activity is not
-            a diagnostic assessment.
-          </p>
-        </aside>
-      </div>
+    <header className="strain-lab-topbar">
+      <span className="strain-lab-mark" aria-hidden="true">
+        Q
+      </span>
+      <strong>{textFor(UI_COPY.brand, locale)}</strong>
+      <span className="strain-lab-private">
+        {textFor(UI_COPY.localOnly, locale)}
+      </span>
+      <LanguageToggle locale={locale} onLocaleChange={onLocaleChange} />
+    </header>
+  );
+}
 
-      <fieldset className="strain-lab-protocols">
-        <legend>Choose your protocol</legend>
-        {(Object.keys(PROTOCOLS) as ProtocolId[]).map((id) => {
-          const item = PROTOCOLS[id];
-
-          return (
-            <button
-              type="button"
-              key={id}
-              className={protocol === id ? "is-selected" : ""}
-              aria-pressed={protocol === id}
-              onClick={() => onProtocolChange(id)}
-            >
-              <span>
-                <strong>{item.questionCount}</strong> QUESTIONS
-              </span>
-              <span>
-                <strong>{item.name}</strong>
-                <small>
-                  {item.questionsPerDimension} questions per dimension · {item.duration}
-                </small>
-              </span>
-            </button>
-          );
-        })}
-      </fieldset>
-
-      <div className="strain-lab-dimension-preview">
-        {DIMENSIONS.map((dimension) => (
-          <span key={dimension.id}>
-            <strong>
-              {dimension.highPole} / {dimension.lowPole}
-            </strong>
-            {dimension.label}
-          </span>
-        ))}
-      </div>
-
-      <div className="strain-lab-start-row">
-        <p>Answers are calculated and stored only in this browser.</p>
-        <button type="button" className="strain-lab-primary" onClick={onStart}>
-          {answeredCount
-            ? `Resume ${PROTOCOLS[protocol].name}`
-            : `Start ${PROTOCOLS[protocol].name}`} {" "}
-          →
+function LanguageToggle({
+  locale,
+  onLocaleChange,
+}: {
+  locale: Locale;
+  onLocaleChange: (locale: Locale) => void;
+}) {
+  return (
+    <div
+      className="strain-lab-language"
+      role="group"
+      aria-label={textFor(UI_COPY.languageGroup, locale)}
+    >
+      {LANGUAGE_OPTIONS.map((option) => (
+        <button
+          type="button"
+          key={option.locale}
+          className={locale === option.locale ? "is-active" : ""}
+          aria-pressed={locale === option.locale}
+          onClick={() => onLocaleChange(option.locale)}
+        >
+          {option.label}
         </button>
+      ))}
+    </div>
+  );
+}
+
+function Landing({
+  locale,
+  answeredCount,
+  onStart,
+}: {
+  locale: Locale;
+  answeredCount: number;
+  onStart: () => void;
+}) {
+  const tx = (text: LocalizedText) => textFor(text, locale);
+
+  return (
+    <section className="strain-lab-landing">
+      <div className="strain-lab-hero-copy">
+        <span className="strain-lab-eyebrow">{tx(UI_COPY.landingEyebrow)}</span>
+        <h1>{tx(UI_COPY.landingTitle)}</h1>
+        <p className="strain-lab-deck">{tx(UI_COPY.landingDescription)}</p>
+        <p className="strain-lab-intro">{tx(QINGLAN_INTRO)}</p>
+
+        <div className="strain-lab-facts" aria-label={tx(UI_COPY.assessmentFacts)}>
+          <strong>{tx(UI_COPY.assessmentFacts)}</strong>
+          <span>{tx(QUIZ_META.duration)}</span>
+        </div>
+
+        <div className="strain-lab-start-row">
+          <p>{tx(UI_COPY.privacy)}</p>
+          <button type="button" className="strain-lab-primary" onClick={onStart}>
+            {answeredCount ? tx(UI_COPY.resume) : tx(UI_COPY.start)}
+            <span aria-hidden="true"> →</span>
+          </button>
+        </div>
+      </div>
+
+      <figure className="strain-lab-guide">
+        <img src={QINGLAN_COVER_IMAGE} alt={tx(UI_COPY.guideAlt)} />
+        <figcaption>
+          <strong>{tx(UI_COPY.guideCaption)}</strong>
+          <span>{tx(UI_COPY.guideEnglishNote)}</span>
+        </figcaption>
+      </figure>
+
+      <div className="strain-lab-landing-footer">
+        <div className="strain-lab-dimension-preview">
+          {DIMENSIONS.map((dimension) => (
+            <article key={dimension.id}>
+              <strong>
+                {dimension.highPole} / {dimension.lowPole}
+              </strong>
+              <span>{tx(dimension.label)}</span>
+              <small>{tx(dimension.description)}</small>
+            </article>
+          ))}
+        </div>
+        <aside className="strain-lab-creative-note">
+          <strong>{tx(UI_COPY.creativeTitle)}</strong>
+          <p>{tx(UI_COPY.creativeBody)}</p>
+        </aside>
       </div>
     </section>
   );
 }
 
 function QuizWorkspace({
-  questions,
+  locale,
   answers,
   currentQuestion,
   dimensionQuestions,
   activeDimension,
   answeredCount,
-  saveNotice,
+  storageAvailable,
   headingRef,
+  onLocaleChange,
   onChooseDimension,
   onChooseQuestion,
   onAnswer,
@@ -300,42 +336,46 @@ function QuizWorkspace({
   onResult,
   onReset,
 }: {
-  questions: StrainQuestion[];
+  locale: Locale;
   answers: QuizAnswers;
   currentQuestion: StrainQuestion;
   dimensionQuestions: StrainQuestion[];
   activeDimension: DimensionId;
   answeredCount: number;
-  saveNotice: string;
+  storageAvailable: boolean;
   headingRef: RefObject<HTMLHeadingElement>;
+  onLocaleChange: (locale: Locale) => void;
   onChooseDimension: (dimension: DimensionId) => void;
   onChooseQuestion: (id: string) => void;
-  onAnswer: (answer: number) => void;
+  onAnswer: (answer: ScaleValue) => void;
   onPrevious: () => void;
   onNext: () => void;
   onResult: () => void;
   onReset: () => void;
 }) {
+  const tx = (text: LocalizedText) => textFor(text, locale);
   const answer = answers[currentQuestion.id];
-  const overallIndex = questions.findIndex(
+  const overallIndex = QUESTIONS.findIndex(
     (question) => question.id === currentQuestion.id,
   );
-  const glossary = currentQuestion.glossaryKey
-    ? GLOSSARY[currentQuestion.glossaryKey]
-    : undefined;
-  const complete = isQuizComplete(questions, answers);
-  const nextUnanswered = questions.find((question) => !answers[question.id]);
+  const knowledge = GLOSSARY[currentQuestion.knowledgeKey];
+  const complete = isQuizComplete(QUESTIONS, answers);
+  const nextUnanswered = QUESTIONS.find((question) => !answers[question.id]);
   const [glossaryOpen, setGlossaryOpen] = useState(false);
   const glossaryTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
     <section className="strain-lab-workspace">
-      <div className="strain-lab-dimensions" role="group" aria-label="Question dimensions">
+      <div
+        className="strain-lab-dimensions"
+        role="group"
+        aria-label={tx(UI_COPY.dimensionGroup)}
+      >
         {DIMENSIONS.map((dimension) => {
-          const dimensionItems = questions.filter(
+          const items = QUESTIONS.filter(
             (question) => question.dimension === dimension.id,
           );
-          const count = dimensionItems.filter((question) => answers[question.id]).length;
+          const count = items.filter((question) => answers[question.id]).length;
 
           return (
             <button
@@ -348,9 +388,9 @@ function QuizWorkspace({
               <strong>
                 {dimension.highPole} / {dimension.lowPole}
               </strong>
-              <span>{dimension.label}</span>
+              <span>{tx(dimension.label)}</span>
               <em>
-                {count} / {dimensionItems.length}
+                {count} / {items.length}
               </em>
             </button>
           );
@@ -361,127 +401,126 @@ function QuizWorkspace({
         <div
           className="strain-lab-question-index"
           role="group"
-          aria-label={`Questions in ${activeDimension}`}
+          aria-label={tx(UI_COPY.questionGroup)}
         >
-          {dimensionQuestions.map((question, index) => (
-            <button
-              type="button"
-              key={question.id}
-              className={`${answers[question.id] ? "is-answered" : ""} ${
-                question.id === currentQuestion.id ? "is-current" : ""
-              }`.trim()}
-              aria-current={question.id === currentQuestion.id ? "step" : undefined}
-              aria-label={`Question ${index + 1}, ${
-                answers[question.id] ? "answered" : "unanswered"
-              }`}
-              onClick={() => onChooseQuestion(question.id)}
-            >
-              {String(index + 1).padStart(2, "0")}
-            </button>
-          ))}
+          {dimensionQuestions.map((question, index) => {
+            const isAnswered = Boolean(answers[question.id]);
+            const isCurrent = question.id === currentQuestion.id;
+            return (
+              <button
+                type="button"
+                key={question.id}
+                className={`${isAnswered ? "is-answered" : ""} ${
+                  isCurrent ? "is-current" : ""
+                }`.trim()}
+                aria-current={isCurrent ? "step" : undefined}
+                aria-label={`${tx(UI_COPY.question)} ${index + 1}, ${
+                  isAnswered ? tx(UI_COPY.answered) : tx(UI_COPY.unanswered)
+                }`}
+                onClick={() => onChooseQuestion(question.id)}
+              >
+                {String(index + 1).padStart(2, "0")}
+              </button>
+            );
+          })}
         </div>
         <div className="strain-lab-progress">
-          <span>Overall progress</span>
+          <span>{tx(UI_COPY.overallProgress)}</span>
           <strong>
-            {answeredCount} / {questions.length}
+            {answeredCount} / {QUESTIONS.length}
           </strong>
           <progress
-            aria-label={`Overall progress: ${answeredCount} of ${questions.length}`}
-            max={questions.length}
+            aria-label={`${tx(UI_COPY.overallProgress)}: ${answeredCount} / ${QUESTIONS.length}`}
+            max={QUESTIONS.length}
             value={answeredCount}
           >
-            {answeredCount} of {questions.length}
+            {answeredCount} / {QUESTIONS.length}
           </progress>
         </div>
       </div>
 
       <article className="strain-lab-question-card">
-        <div className="strain-lab-question-grid">
-          <div className="strain-lab-question-main">
-            <span className="strain-lab-question-meta">
-              {activeDimension} · {currentQuestion.kind.toUpperCase()} QUESTION · #
-              {String(overallIndex + 1).padStart(2, "0")}
-            </span>
-            <h1 ref={headingRef} tabIndex={-1}>
-              {currentQuestion.prompt}
-            </h1>
-            <label htmlFor="strain-response">Choose a response from 1 to 7</label>
-            <div className="strain-lab-scale-labels">
-              <span>Strongly disagree</span>
-              <span>Neutral / unsure</span>
-              <span>Strongly agree</span>
-            </div>
-            <input
-              id="strain-response"
-              type="range"
-              min="1"
-              max="7"
-              step="1"
-              value={answer || 4}
-              aria-valuetext={answer ? `${answer} of 7` : "No response selected"}
-              className={answer ? "" : "is-unanswered"}
-              onChange={(event) => onAnswer(Number(event.target.value))}
-            />
-            <div className="strain-lab-values" role="group" aria-label="Response values">
-              {[1, 2, 3, 4, 5, 6, 7].map((value) => (
-                <button
-                  type="button"
-                  key={value}
-                  className={answer === value ? "is-selected" : ""}
-                  aria-pressed={answer === value}
-                  onClick={() => onAnswer(value)}
-                >
-                  {value}
-                </button>
-              ))}
-            </div>
-          </div>
-          {glossary ? (
-            <aside className="strain-lab-note">
-              <span>LAB NOTE</span>
-              <h2>{glossary.term}</h2>
-              <p>{glossary.explanation}</p>
+        <div className="strain-lab-question-main">
+          <span className="strain-lab-question-meta">
+            {activeDimension} · {tx(UI_COPY.question)} {String(overallIndex + 1).padStart(2, "0")}
+          </span>
+          <h1 ref={headingRef} tabIndex={-1}>
+            {tx(currentQuestion.prompt)}
+          </h1>
+          <p className="strain-lab-response-prompt">{tx(UI_COPY.responsePrompt)}</p>
+          <div
+            className="strain-lab-values"
+            role="group"
+            aria-label={tx(UI_COPY.responseGroup)}
+          >
+            {SCALE_OPTIONS.map((option) => (
               <button
-                ref={glossaryTriggerRef}
                 type="button"
-                className="strain-lab-note-link"
-                onClick={() => setGlossaryOpen(true)}
+                key={option.value}
+                className={answer === option.value ? "is-selected" : ""}
+                aria-pressed={answer === option.value}
+                onClick={() => onAnswer(option.value)}
               >
-                Open the full glossary →
+                <span>{option.value}</span>
+                <strong>{tx(option.label)}</strong>
               </button>
-            </aside>
-          ) : null}
+            ))}
+          </div>
         </div>
-        {saveNotice ? (
+
+        <aside className="strain-lab-note">
+          <div>
+            <span>{tx(UI_COPY.knowledgeEyebrow)}</span>
+            <h2>{tx(knowledge.term)}</h2>
+          </div>
+          <p>{tx(knowledge.summary)}</p>
+          <button
+            ref={glossaryTriggerRef}
+            type="button"
+            className="strain-lab-note-link"
+            onClick={() => setGlossaryOpen(true)}
+          >
+            {tx(UI_COPY.openKnowledge)}
+            <span aria-hidden="true"> →</span>
+          </button>
+        </aside>
+
+        {!storageAvailable ? (
           <p className="strain-lab-save-notice" role="status">
-            {saveNotice}
+            {tx(UI_COPY.storageUnavailable)}
           </p>
         ) : null}
+
         <footer className="strain-lab-actions">
           <button type="button" onClick={onPrevious} disabled={overallIndex === 0}>
-            ← Previous
+            <span aria-hidden="true">← </span>
+            {tx(UI_COPY.previous)}
           </button>
           <button type="button" onClick={onReset}>
-            Restart
+            {tx(UI_COPY.restart)}
           </button>
           {complete ? (
             <button type="button" className="strain-lab-primary" onClick={onResult}>
-              View my strain type →
+              {tx(UI_COPY.viewResult)}
+              <span aria-hidden="true"> →</span>
             </button>
           ) : (
             <button
               type="button"
               className="strain-lab-primary"
-              onClick={() =>
-                overallIndex === questions.length - 1 && nextUnanswered
-                  ? onChooseQuestion(nextUnanswered.id)
-                  : onNext()
-              }
+              onClick={() => {
+                if (overallIndex === QUESTIONS.length - 1 && nextUnanswered) {
+                  onChooseQuestion(nextUnanswered.id);
+                } else {
+                  onNext();
+                }
+              }}
               disabled={!answer}
             >
-              {overallIndex === questions.length - 1
-                ? "Go to unanswered →"
-                : "Save & next →"}
+              {overallIndex === QUESTIONS.length - 1
+                ? tx(UI_COPY.goUnanswered)
+                : tx(UI_COPY.next)}
+              <span aria-hidden="true"> →</span>
             </button>
           )}
         </footer>
@@ -489,8 +528,10 @@ function QuizWorkspace({
 
       <GlossaryDialog
         open={glossaryOpen}
-        activeTerm={glossary?.term}
+        locale={locale}
+        activeKey={currentQuestion.knowledgeKey}
         triggerRef={glossaryTriggerRef}
+        onLocaleChange={onLocaleChange}
         onRequestClose={() => setGlossaryOpen(false)}
       />
     </section>
@@ -499,55 +540,52 @@ function QuizWorkspace({
 
 function GlossaryDialog({
   open,
-  activeTerm,
+  locale,
+  activeKey,
   triggerRef,
+  onLocaleChange,
   onRequestClose,
 }: {
   open: boolean;
-  activeTerm?: string;
+  locale: Locale;
+  activeKey: keyof typeof GLOSSARY;
   triggerRef: RefObject<HTMLButtonElement>;
+  onLocaleChange: (locale: Locale) => void;
   onRequestClose: () => void;
 }) {
+  const tx = (text: LocalizedText) => textFor(text, locale);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
-
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      dialogRef.current?.close();
-    };
-
-    document.addEventListener("keydown", handleEscape);
-
     return () => {
-      document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
-  const closeDialog = () => {
+  function closeDialog() {
     if (dialogRef.current?.open) dialogRef.current.close();
     else onRequestClose();
-  };
+  }
 
   return (
     <dialog
       ref={dialogRef}
       className="strain-lab-dialog"
       aria-labelledby="strain-lab-dialog-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        closeDialog();
+      }}
       onClose={() => {
         onRequestClose();
         triggerRef.current?.focus();
@@ -559,26 +597,30 @@ function GlossaryDialog({
       <div className="strain-lab-dialog-panel">
         <header>
           <div>
-            <span className="strain-lab-question-meta">LAB GLOSSARY</span>
-            <h2 id="strain-lab-dialog-title">Synthetic biology terms</h2>
+            <span className="strain-lab-question-meta">
+              {tx(UI_COPY.knowledgeDialogEyebrow)}
+            </span>
+            <h2 id="strain-lab-dialog-title">
+              {tx(UI_COPY.knowledgeDialogTitle)}
+            </h2>
           </div>
-          <button
-            type="button"
-            className="strain-lab-dialog-close"
-            onClick={closeDialog}
-            aria-label="Close glossary"
-          >
-            Close
-          </button>
+          <div className="strain-lab-dialog-tools">
+            <LanguageToggle locale={locale} onLocaleChange={onLocaleChange} />
+            <button
+              type="button"
+              className="strain-lab-dialog-close"
+              onClick={closeDialog}
+              aria-label={tx(UI_COPY.close)}
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
         </header>
         <div className="strain-lab-dialog-list">
-          {Object.values(GLOSSARY).map((entry) => (
-            <article
-              key={entry.term}
-              className={entry.term === activeTerm ? "is-current" : undefined}
-            >
-              <h3>{entry.term}</h3>
-              <p>{entry.explanation}</p>
+          {Object.entries(GLOSSARY).map(([key, entry]) => (
+            <article key={key} className={key === activeKey ? "is-current" : ""}>
+              <h3>{tx(entry.term)}</h3>
+              <p>{tx(entry.explanation)}</p>
             </article>
           ))}
         </div>
@@ -588,72 +630,80 @@ function GlossaryDialog({
 }
 
 function ResultView({
-  protocol,
+  locale,
   result,
   headingRef,
   onReview,
   onReset,
-  onProtocols,
+  onHome,
 }: {
-  protocol: ProtocolId;
+  locale: Locale;
   result: ReturnType<typeof scoreQuiz>;
   headingRef: RefObject<HTMLHeadingElement>;
   onReview: () => void;
   onReset: () => void;
-  onProtocols: () => void;
+  onHome: () => void;
 }) {
+  const tx = (text: LocalizedText) => textFor(text, locale);
   const profile = RESULT_PROFILES[result.type];
 
   return (
     <section className="strain-lab-result">
-      <span className="strain-lab-eyebrow">Your strain type</span>
-      <h1 ref={headingRef} tabIndex={-1}>
-        {result.type}
-      </h1>
-      {profile?.name ? <h2>{profile.name}</h2> : null}
-      {profile?.summary ? <p>{profile.summary}</p> : null}
-      <p>
-        {PROTOCOLS[protocol].name} · {PROTOCOLS[protocol].questionCount} answers
-      </p>
-      <div className="strain-lab-result-dimensions">
-        {DIMENSIONS.map((dimension) => {
-          const score = result.dimensions[dimension.id];
+      <figure className="strain-lab-result-portrait">
+        <img src={profile.image} alt={tx(profile.imageAlt)} />
+      </figure>
+      <div className="strain-lab-result-copy">
+        <span className="strain-lab-eyebrow">{tx(UI_COPY.resultEyebrow)}</span>
+        <h1 ref={headingRef} tabIndex={-1}>
+          {result.type}
+        </h1>
+        <h2>{tx(profile.title)}</h2>
+        <p className="strain-lab-result-summary">{tx(profile.summary)}</p>
+        <p className="strain-lab-result-meta">{tx(UI_COPY.resultSummary)}</p>
 
-          if (!score) {
-            return null;
-          }
+        <section className="strain-lab-project-link">
+          <strong>{tx(UI_COPY.projectConnection)}</strong>
+          <p>{tx(profile.projectLink)}</p>
+        </section>
 
-          return (
-            <div key={dimension.id}>
-              <span>{score.lowPole}</span>
-              <progress
-                aria-label={`${dimension.id}: ${score.highPolePercent}% toward ${score.highPole}`}
-                max={100}
-                value={score.highPolePercent}
-              >
-                {score.highPolePercent}% toward {score.highPole}
-              </progress>
-              <span>{score.highPole}</span>
-              <strong>
-                {score.letter} · {score.strength}% preference
-              </strong>
-            </div>
-          );
-        })}
-      </div>
-      <p className="strain-lab-disclaimer">
-        This creative learning activity is not a diagnostic psychological assessment.
-      </p>
-      <div className="strain-lab-result-actions">
-        <button type="button" onClick={onReview}>
-          Review answers
-        </button>
-        <button type="button" onClick={onProtocols}>
-          Choose protocol
-        </button>
-        <button type="button" onClick={onReset}>
-          Restart
-        </button>
+        <section className="strain-lab-result-dimensions" aria-label={tx(UI_COPY.dimensionReading)}>
+          {DIMENSIONS.map((dimension) => {
+            const score = result.dimensions[dimension.id];
+            return (
+              <div key={dimension.id}>
+                <span>{tx(dimension.lowLabel)}</span>
+                <progress
+                  aria-label={`${tx(dimension.label)}: ${score.highPolePercent}%`}
+                  max={100}
+                  value={score.highPolePercent}
+                >
+                  {score.highPolePercent}%
+                </progress>
+                <span>{tx(dimension.highLabel)}</span>
+                <strong>
+                  {score.letter} · {score.strength}% {tx(UI_COPY.preference)}
+                </strong>
+              </div>
+            );
+          })}
+        </section>
+
+        <aside className="strain-lab-disclaimer">
+          <strong>{tx(UI_COPY.disclaimerTitle)}</strong>
+          <p>{tx(UI_COPY.disclaimer)}</p>
+        </aside>
+
+        <div className="strain-lab-result-actions">
+          <button type="button" className="strain-lab-primary" onClick={onReview}>
+            {tx(UI_COPY.review)}
+          </button>
+          <button type="button" onClick={onHome}>
+            {tx(UI_COPY.backHome)}
+          </button>
+          <button type="button" onClick={onReset}>
+            {tx(UI_COPY.restart)}
+          </button>
+        </div>
       </div>
     </section>
   );

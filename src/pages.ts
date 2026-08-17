@@ -421,7 +421,7 @@ const Pages: (PageDefinition | FolderDefinition)[] = [
         title: "Strain Personality Lab",
         path: "/strain-personality-lab",
         component: StrainPersonality,
-        lead: "Choose a 28- or 64-question protocol and explore a synthetic-biology personality metaphor inside a Yarrowia lipolytica cell factory.",
+        lead: "Explore a 24-question Qinglan Bay science metaphor across three dimensions, with all answers calculated and stored only in your browser.",
       },
       {
         name: "Engineering",

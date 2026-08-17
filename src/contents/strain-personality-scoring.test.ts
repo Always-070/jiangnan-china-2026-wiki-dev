@@ -1,152 +1,192 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { StrainQuestion } from "./strain-personality-data.ts";
 import {
-  activeProtocolStorageKey,
+  DIMENSIONS,
+  QUESTIONS,
+  type DimensionId,
+  type PersonalityType,
+  type StrainQuestion,
+} from "./strain-personality-data.ts";
+import {
   isQuizComplete,
+  localeStorageKey,
   normalizeAnswer,
+  parseStoredLocale,
   parseStoredSession,
-  parseStoredProtocol,
   scoreQuiz,
-  storageKeyFor,
+  sessionStorageKey,
+  type QuizAnswers,
 } from "./strain-personality-scoring.ts";
 
-const questions: StrainQuestion[] = [
-  {
-    id: "test-ei-01",
-    protocol: "quick",
-    dimension: "EI",
-    pole: "E",
-    kind: "classic",
-    prompt: "Direct E item",
-  },
-  {
-    id: "test-ei-02",
-    protocol: "quick",
-    dimension: "EI",
-    pole: "I",
-    kind: "classic",
-    prompt: "Reverse I item",
-  },
-  {
-    id: "test-sn-01",
-    protocol: "quick",
-    dimension: "SN",
-    pole: "S",
-    kind: "classic",
-    prompt: "Direct S item",
-  },
-  {
-    id: "test-tf-01",
-    protocol: "quick",
-    dimension: "TF",
-    pole: "T",
-    kind: "classic",
-    prompt: "Direct T item",
-  },
-  {
-    id: "test-jp-01",
-    protocol: "quick",
-    dimension: "JP",
-    pole: "J",
-    kind: "classic",
-    prompt: "Direct J item",
-  },
-];
+function rawAnswerForNormalized(question: StrainQuestion, normalized: number) {
+  return question.reversed ? 5 - normalized : normalized;
+}
 
-test("normalizes high-pole answers directly and low-pole answers in reverse", () => {
-  assert.equal(normalizeAnswer(6, "E", "EI"), 6);
-  assert.equal(normalizeAnswer(6, "I", "EI"), 2);
-  assert.equal(normalizeAnswer(1, "P", "JP"), 7);
-});
+function answersForType(type: PersonalityType): QuizAnswers {
+  const targetByDimension: Record<DimensionId, string> = {
+    SF: type[0],
+    AI: type[1],
+    HL: type[2],
+  };
 
-test("uses the configured high pole when a dimension mean is exactly four", () => {
-  const midpointQuestions = questions.filter((question) => question.dimension === "EI");
-  const result = scoreQuiz(midpointQuestions, {
-    "test-ei-01": 4,
-    "test-ei-02": 4,
+  return Object.fromEntries(
+    QUESTIONS.map((question) => {
+      const dimension = DIMENSIONS.find((item) => item.id === question.dimension);
+      assert.ok(dimension);
+      const normalized =
+        targetByDimension[question.dimension] === dimension.highPole ? 4 : 1;
+      return [question.id, rawAnswerForNormalized(question, normalized)];
+    }),
+  );
+}
+
+function tieAnswers(
+  dimensionId: DimensionId,
+  tieBreakAnswer: 2 | 3,
+): QuizAnswers {
+  const answers = answersForType("SAH");
+  const dimension = DIMENSIONS.find((item) => item.id === dimensionId);
+  assert.ok(dimension);
+  const questions = QUESTIONS.filter((question) => question.dimension === dimensionId);
+  const tieBreak = questions.find(
+    (question) => question.id === dimension.tieBreakQuestionId,
+  );
+  assert.ok(tieBreak);
+
+  answers[tieBreak.id] = tieBreakAnswer;
+  const otherQuestions = questions.filter((question) => question.id !== tieBreak.id);
+  const normalizedValues =
+    tieBreakAnswer === 3
+      ? [3, 3, 3, 2, 2, 2, 2]
+      : [3, 3, 3, 3, 2, 2, 2];
+
+  otherQuestions.forEach((question, index) => {
+    answers[question.id] = rawAnswerForNormalized(
+      question,
+      normalizedValues[index],
+    );
   });
 
-  assert.equal(result.type, "E");
-  assert.equal(result.dimensions.EI?.mean, 4);
-  assert.equal(result.dimensions.EI?.letter, "E");
+  return answers;
+}
+
+test("normalizes direct and confirmed reverse-keyed answers on a four-point scale", () => {
+  assert.equal(normalizeAnswer(4, false), 4);
+  assert.equal(normalizeAnswer(1, false), 1);
+  assert.equal(normalizeAnswer(4, true), 1);
+  assert.equal(normalizeAnswer(1, true), 4);
+  assert.throws(() => normalizeAnswer(0, false), /integer from 1 to 4/);
+  assert.throws(() => normalizeAnswer(5, true), /integer from 1 to 4/);
 });
 
-test("normalizes quick and full protocols to the same dimension mean", () => {
-  const quick: StrainQuestion[] = Array.from({ length: 7 }, (_, index) => ({
-    id: `quick-ei-${index + 1}`,
-    protocol: "quick",
-    dimension: "EI",
-    pole: index % 2 === 0 ? "E" : "I",
-    kind: "classic",
-    prompt: `Quick ${index + 1}`,
-  }));
-  const full: StrainQuestion[] = Array.from({ length: 16 }, (_, index) => ({
-    id: `full-ei-${index + 1}`,
-    protocol: "full",
-    dimension: "EI",
-    pole: index % 2 === 0 ? "E" : "I",
-    kind: "classic",
-    prompt: `Full ${index + 1}`,
-  }));
-  const quickAnswers = Object.fromEntries(
-    quick.map((question) => [question.id, question.pole === "E" ? 6 : 2]),
-  );
-  const fullAnswers = Object.fromEntries(
-    full.map((question) => [question.id, question.pole === "E" ? 6 : 2]),
-  );
-
-  assert.equal(scoreQuiz(quick, quickAnswers).dimensions.EI?.mean, 6);
-  assert.equal(scoreQuiz(full, fullAnswers).dimensions.EI?.mean, 6);
+test("produces every one of the eight three-letter result types", () => {
+  for (const type of [
+    "SAH",
+    "SAL",
+    "SIH",
+    "SIL",
+    "FAH",
+    "FAL",
+    "FIH",
+    "FIL",
+  ] as const) {
+    assert.equal(scoreQuiz(QUESTIONS, answersForType(type)).type, type);
+  }
 });
 
-test("rejects result generation when an answer is missing", () => {
+test("uses question 7, 16, or 17 to resolve a score of twenty", () => {
+  for (const dimension of DIMENSIONS) {
+    const highResult = scoreQuiz(QUESTIONS, tieAnswers(dimension.id, 3));
+    assert.equal(highResult.dimensions[dimension.id].total, 20);
+    assert.equal(highResult.dimensions[dimension.id].letter, dimension.highPole);
+
+    const lowResult = scoreQuiz(QUESTIONS, tieAnswers(dimension.id, 2));
+    assert.equal(lowResult.dimensions[dimension.id].total, 20);
+    assert.equal(lowResult.dimensions[dimension.id].letter, dimension.lowPole);
+  }
+});
+
+test("requires all 24 answers and accepts only integer values from one to four", () => {
+  const complete = answersForType("SAH");
+  assert.equal(isQuizComplete(QUESTIONS, complete), true);
+  assert.equal(
+    isQuizComplete(QUESTIONS, { ...complete, "qinglan-sf-01": 0 }),
+    false,
+  );
+  assert.equal(
+    isQuizComplete(QUESTIONS, { ...complete, "qinglan-sf-01": 5 }),
+    false,
+  );
   assert.throws(
-    () => scoreQuiz(questions, { "test-ei-01": 5 }),
+    () => scoreQuiz(QUESTIONS, { "qinglan-sf-01": 4 }),
     /Complete every question before scoring/,
   );
 });
 
-test("reports completion only when every question has a valid answer", () => {
-  const all = Object.fromEntries(questions.map((question) => [question.id, 4]));
-  assert.equal(isQuizComplete(questions, all), true);
-  assert.equal(isQuizComplete(questions, { ...all, "test-jp-01": 0 }), false);
+test("uses v2 session and locale keys isolated from the old v1 protocols", () => {
+  assert.equal(sessionStorageKey(), "strain-personality-lab:session:v2");
+  assert.equal(localeStorageKey(), "strain-personality-lab:locale:v2");
+  assert.doesNotMatch(sessionStorageKey(), /quick|full|v1/);
+  assert.notEqual(sessionStorageKey(), localeStorageKey());
 });
 
-test("uses protocol-specific versioned storage keys", () => {
-  assert.equal(activeProtocolStorageKey(), "strain-personality-lab:active-protocol:v1");
-  assert.equal(storageKeyFor("quick"), "strain-personality-lab:quick:v1");
-  assert.equal(storageKeyFor("full"), "strain-personality-lab:full:v1");
+test("accepts only supported persisted locales", () => {
+  assert.equal(parseStoredLocale("zh-CN"), "zh-CN");
+  assert.equal(parseStoredLocale("en"), "en");
+  assert.equal(parseStoredLocale("zh"), null);
+  assert.equal(parseStoredLocale(null), null);
 });
 
-test("accepts only a known active protocol from local storage", () => {
-  assert.equal(parseStoredProtocol("quick"), "quick");
-  assert.equal(parseStoredProtocol("full"), "full");
-  assert.equal(parseStoredProtocol("unknown"), null);
-  assert.equal(parseStoredProtocol(null), null);
-});
-
-test("accepts valid stored sessions and rejects corrupt or foreign answers", () => {
+test("loads valid v2 sessions without coupling them to the selected locale", () => {
+  const answers = answersForType("FIL");
   const raw = JSON.stringify({
-    protocol: "quick",
-    currentQuestionId: "test-ei-01",
-    answers: { "test-ei-01": 5, "test-ei-02": 3 },
+    version: 2,
+    currentQuestionId: "qinglan-ai-04",
+    answers,
   });
-  assert.deepEqual(parseStoredSession(raw, "quick", questions), {
-    protocol: "quick",
-    currentQuestionId: "test-ei-01",
-    answers: { "test-ei-01": 5, "test-ei-02": 3 },
-  });
-  assert.equal(parseStoredSession("not json", "quick", questions), null);
+  const expected = {
+    version: 2,
+    currentQuestionId: "qinglan-ai-04",
+    answers,
+  };
+
+  assert.deepEqual(parseStoredSession(raw, QUESTIONS), expected);
+  assert.equal(parseStoredLocale("en"), "en");
+  assert.deepEqual(parseStoredSession(raw, QUESTIONS), expected);
+});
+
+test("rejects v1, corrupt, foreign, and out-of-range stored answers", () => {
+  assert.equal(parseStoredSession("not json", QUESTIONS), null);
   assert.equal(
     parseStoredSession(
       JSON.stringify({
         protocol: "quick",
-        currentQuestionId: "test-ei-01",
-        answers: { unknown: 7 },
+        currentQuestionId: "quick-ei-01",
+        answers: { "quick-ei-01": 7 },
       }),
-      "quick",
-      questions,
+      QUESTIONS,
+    ),
+    null,
+  );
+  assert.equal(
+    parseStoredSession(
+      JSON.stringify({
+        version: 2,
+        currentQuestionId: "qinglan-sf-01",
+        answers: { unknown: 4 },
+      }),
+      QUESTIONS,
+    ),
+    null,
+  );
+  assert.equal(
+    parseStoredSession(
+      JSON.stringify({
+        version: 2,
+        currentQuestionId: "qinglan-sf-01",
+        answers: { "qinglan-sf-01": 7 },
+      }),
+      QUESTIONS,
     ),
     null,
   );
